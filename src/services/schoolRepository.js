@@ -9,9 +9,28 @@ const tableMappings = [
   ['loginAccounts', 'login_accounts'],
 ];
 
-const toDatabaseRow = (row) => Object.fromEntries(
-  Object.entries(row).map(([key, value]) => [key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), value])
-);
+const toDatabaseRow = (row, tableKey) => {
+  const mapped = Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), value])
+  );
+
+  // Guarantee mandatory database column constraints
+  if (tableKey === 'students') {
+    if (!mapped.gender) mapped.gender = 'L';
+    if (!mapped.canteen_balance_source) mapped.canteen_balance_source = 'TABUNGAN';
+    if (!mapped.status) mapped.status = 'AKTIF';
+    if (mapped.savings_balance === undefined || mapped.savings_balance === null) mapped.savings_balance = 0;
+    if (mapped.canteen_deposit_balance === undefined || mapped.canteen_deposit_balance === null) mapped.canteen_deposit_balance = 0;
+  }
+  if (tableKey === 'rfidCards') {
+    if (!mapped.issued_at) mapped.issued_at = new Date().toISOString().slice(0, 10);
+    if (!mapped.status) mapped.status = 'ACTIVE';
+  }
+  if (tableKey === 'ledger') {
+    if (!mapped.timestamp) mapped.timestamp = new Date().toISOString();
+  }
+  return mapped;
+};
 
 const toAppRow = (row) => Object.fromEntries(
   Object.entries(row)
@@ -25,8 +44,11 @@ export async function loadSchoolState() {
   const results = await Promise.all(
     tableMappings.map(async ([stateKey, tableName]) => {
       const { data, error } = await supabase.from(tableName).select('*');
-      if (error) throw error;
-      return [stateKey, data.map(toAppRow)];
+      if (error) {
+        console.warn(`Warning loading ${stateKey} from Supabase table ${tableName}:`, error);
+        return [stateKey, []];
+      }
+      return [stateKey, (data || []).map(toAppRow)];
     })
   );
 
@@ -39,8 +61,13 @@ export async function saveSchoolState(state) {
   for (const [stateKey, tableName] of tableMappings) {
     const rows = state[stateKey] || [];
     if (!rows.length) continue;
-    const { error } = await supabase.from(tableName).upsert(rows.map(toDatabaseRow));
-    if (error) throw error;
+
+    const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
+    const { error } = await supabase.from(tableName).upsert(dbRows);
+    if (error) {
+      console.error(`Error saving ${stateKey} to Supabase table ${tableName}:`, error);
+      throw error;
+    }
 
     // Purge obsolete card rows in Supabase so old cards are replaced cleanly
     if (stateKey === 'rfidCards') {

@@ -236,7 +236,8 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           canteenBalanceSource: 'TABUNGAN',
           rfidUid: cleanUid,
           photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
-          status: 'AKTIF'
+          status: 'AKTIF',
+          gender: 'L'
         };
       } else {
         if (!newOwnerPhone.trim() || !newOwnerRelationship.trim()) {
@@ -451,7 +452,8 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         canteenBalanceSource: 'TABUNGAN',
         rfidUid: studentForm.rfidUid.trim().toUpperCase(),
         photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
-        status: studentForm.status
+        status: studentForm.status,
+        gender: 'L'
       };
 
       const newAccountObj = {
