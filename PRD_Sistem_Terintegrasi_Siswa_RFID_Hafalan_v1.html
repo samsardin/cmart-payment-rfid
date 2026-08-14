@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD - Sistem Terintegrasi Siswa, Orang Tua & Sekolah</title>
+<style>
+:root{--primary:#14532d;--secondary:#166534;--accent:#d4a017;--bg:#f6f8f7;--card:#fff;--text:#1f2937;--muted:#64748b;--border:#dbe3df}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+.container{max-width:1180px;margin:auto;padding:28px}
+.hero{background:linear-gradient(135deg,#14532d,#166534);color:white;padding:48px 0}
+.hero h1{font-size:clamp(28px,4vw,46px);margin:0 0 10px}.hero p{margin:5px 0;opacity:.92}
+.badge{display:inline-block;padding:5px 12px;border-radius:20px;background:#ffffff20;border:1px solid #ffffff40;margin:4px 4px 0 0;font-size:13px}
+nav{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 2px 8px #0000000a}
+nav .container{display:flex;gap:8px;overflow:auto;padding-top:10px;padding-bottom:10px}nav a{white-space:nowrap;color:var(--primary);text-decoration:none;padding:7px 10px;border-radius:7px;font-size:13px}nav a:hover{background:#ecfdf5}
+section{padding:24px 0}.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;margin:14px 0;box-shadow:0 2px 8px #00000008}
+h2{color:var(--primary);border-bottom:2px solid #dbeafe;padding-bottom:8px}h3{color:var(--secondary);margin-top:22px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}th,td{border:1px solid var(--border);padding:10px;text-align:left;vertical-align:top}th{background:#f0fdf4;color:#14532d}
+ul,ol{padding-left:23px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.metric{padding:18px;border-left:4px solid var(--accent);background:#fffbeb;border-radius:8px}.metric b{display:block;font-size:22px;color:var(--primary)}
+.code{background:#0f172a;color:#e2e8f0;padding:15px;border-radius:8px;overflow:auto;font-family:Consolas,monospace;font-size:13px}
+.small{font-size:13px;color:var(--muted)}.priority{font-weight:700}.p0{color:#b91c1c}.p1{color:#c2410c}.p2{color:#0369a1}
+footer{background:#0f172a;color:#cbd5e1;padding:28px 0;margin-top:30px}
+@media print{nav{display:none}.card{box-shadow:none;break-inside:avoid}.hero{color:#000;background:#fff;border-bottom:2px solid #14532d}a{color:#000}}
+</style>
+</head>
+<body>
+<header class="hero">
+<div class="container">
+<div class="badge">PRODUCT REQUIREMENTS DOCUMENT</div>
+<div class="badge">Versi 1.0</div>
+<div class="badge">Status: Draft untuk Pengembangan</div>
+<h1>Sistem Terintegrasi Tabungan, Kantin RFID, Penjemputan & Hafalan Siswa</h1>
+<p>Platform digital untuk siswa, orang tua/wali, guru/pengelola sekolah, operator dan admin.</p>
+<p class="small" style="color:#dcfce7">Dokumen formal | Disusun: 11 Agustus 2026</p>
+</div>
+</header>
+
+<nav><div class="container">
+<a href="#ringkasan">Ringkasan</a><a href="#tujuan">Tujuan</a><a href="#aktor">Aktor</a><a href="#scope">Scope</a>
+<a href="#fitur">Fitur</a><a href="#rfid">RFID</a><a href="#data">Data</a><a href="#alur">Alur</a>
+<a href="#nonfungsional">Non-Fungsional</a><a href="#keamanan">Keamanan</a><a href="#roadmap">Roadmap</a><a href="#acceptance">Acceptance</a>
+</div></nav>
+
+<main class="container">
+<section id="ringkasan">
+<h2>1. Ringkasan Produk</h2>
+<div class="card">
+<p><b>Nama produk:</b> Sistem Terintegrasi Siswa & Sekolah (nama kerja)</p>
+<p>Produk ini merupakan platform web/mobile responsif yang mengintegrasikan empat layanan utama: <b>tabungan siswa</b>, <b>pembayaran kantin berbasis RFID</b>, <b>penjemputan siswa berbasis kartu RFID</b>, serta <b>setoran dan rekap hafalan siswa</b>.</p>
+<p>Sistem dirancang agar orang tua memperoleh visibilitas transaksi dan perkembangan hafalan, siswa memperoleh identitas digital yang praktis, sedangkan sekolah memiliki satu pusat administrasi untuk mengelola data, transaksi, RFID, penjemputan, dan laporan.</p>
+</div>
+<div class="grid">
+<div class="metric"><b>4</b>Modul utama</div><div class="metric"><b>3+</b>Kelompok pengguna utama</div>
+<div class="metric"><b>RFID</b>Identitas fisik siswa</div><div class="metric"><b>Terintegrasi</b>Keuangan, kantin, jemput & hafalan</div>
+</div>
+</section>
+
+<section id="tujuan">
+<h2>2. Tujuan & Sasaran</h2>
+<div class="card"><h3>Tujuan Bisnis</h3><ol>
+<li>Mengurangi pencatatan manual dan duplikasi administrasi.</li>
+<li>Meningkatkan transparansi saldo dan transaksi kepada orang tua.</li>
+<li>Meningkatkan keamanan proses pembayaran kantin dan penjemputan siswa.</li>
+<li>Menyediakan data perkembangan hafalan yang terdokumentasi dan dapat direkap.</li>
+<li>Menyediakan dashboard sekolah untuk pengambilan keputusan berbasis data.</li>
+</ol>
+<h3>Tujuan Pengguna</h3>
+<ul><li><b>Siswa:</b> menggunakan kartu RFID untuk transaksi dan identifikasi.</li>
+<li><b>Orang tua:</b> memantau saldo, transaksi, penjemputan, dan hafalan.</li>
+<li><b>Guru:</b> mencatat setoran hafalan dan memberikan nilai/status.</li>
+<li><b>Admin:</b> mengelola master data, saldo, RFID, transaksi, laporan, dan hak akses.</li></ul>
+</div>
+</section>
+
+<section id="aktor">
+<h2>3. Aktor & Hak Akses</h2>
+<div class="card"><table>
+<tr><th>Aktor</th><th>Hak Akses Utama</th></tr>
+<tr><td>Super Admin</td><td>Konfigurasi sistem, user, role, audit, master data, laporan global.</td></tr>
+<tr><td>Admin Keuangan</td><td>Tabungan, deposit kantin, penarikan, koreksi transaksi berotorisasi, laporan keuangan.</td></tr>
+<tr><td>Admin Kantin</td><td>Transaksi kantin RFID, cek saldo/deposit, pembatalan sesuai otorisasi.</td></tr>
+<tr><td>Petugas Penjemputan</td><td>Scan RFID, verifikasi penjemput, proses antrean/panggilan siswa, riwayat penjemputan.</td></tr>
+<tr><td>Guru Tahfidz/Wali Kelas</td><td>Input setoran, status hafalan, catatan, rekap kelas.</td></tr>
+<tr><td>Orang Tua/Wali</td><td>Dashboard anak, saldo, transaksi, top-up/deposit, riwayat jemput, hafalan, notifikasi.</td></tr>
+<tr><td>Siswa</td><td>Melihat profil, saldo/riwayat yang diizinkan, status hafalan dan aktivitas.</td></tr>
+</table></div>
+</section>
+
+<section id="scope">
+<h2>4. Ruang Lingkup</h2>
+<div class="card"><h3>In Scope</h3>
+<ul><li>Manajemen siswa, kelas, orang tua, guru, user dan kartu RFID.</li>
+<li>Tabungan siswa: setoran, penarikan, transfer internal bila diaktifkan, saldo dan mutasi.</li>
+<li>Kantin: pembayaran RFID melalui saldo tabungan atau saldo deposit kantin.</li>
+<li>Penjemputan: RFID, validasi status penjemput, pencatatan waktu dan histori.</li>
+<li>Hafalan: target, setoran, surat/juz/ayat, kualitas, catatan, status dan rekap.</li>
+<li>Dashboard dan laporan.</li><li>Notifikasi sistem.</li><li>Audit log dan kontrol hak akses.</li></ul>
+<h3>Out of Scope V1</h3>
+<ul><li>Marketplace kantin kompleks dengan vendor eksternal.</li><li>Payroll dan akuntansi sekolah penuh.</li><li>Face recognition.</li><li>Integrasi bank/payment gateway spesifik kecuali ditambahkan pada fase implementasi.</li></ul>
+</div>
+</section>
+
+<section id="fitur">
+<h2>5. Spesifikasi Fungsional</h2>
+
+<div class="card"><h3>5.1 Modul Tabungan Siswa</h3>
+<table><tr><th>ID</th><th>Kebutuhan</th><th>Prioritas</th></tr>
+<tr><td>TAB-01</td><td>Admin dapat membuat rekening/saldo tabungan untuk setiap siswa.</td><td class="priority p0">P0</td></tr>
+<tr><td>TAB-02</td><td>Setoran tabungan dicatat dengan nomor transaksi unik, waktu, petugas, nominal dan metode.</td><td class="p0">P0</td></tr>
+<tr><td>TAB-03</td><td>Penarikan dapat dilakukan berdasarkan hak akses dan otorisasi.</td><td class="p0">P0</td></tr>
+<tr><td>TAB-04</td><td>Sistem menghitung saldo secara ledger, bukan sekadar menyimpan angka saldo.</td><td class="p0">P0</td></tr>
+<tr><td>TAB-05</td><td>Orang tua melihat saldo dan mutasi transaksi anak.</td><td class="p0">P0</td></tr>
+<tr><td>TAB-06</td><td>Admin dapat mencetak/export rekap periode.</td><td class="p1">P1</td></tr>
+<tr><td>TAB-07</td><td>Notifikasi transaksi dan saldo minimum dapat dikonfigurasi.</td><td class="p1">P1</td></tr>
+</table>
+</div>
+
+<div class="card"><h3>5.2 Modul Kantin RFID</h3>
+<p>Sistem mendukung dua sumber saldo yang dapat dikonfigurasi per sekolah/siswa:</p>
+<ol><li><b>Saldo Tabungan:</b> transaksi kantin langsung mengurangi saldo tabungan siswa.</li>
+<li><b>Saldo Deposit Kantin:</b> orang tua/admin melakukan deposit khusus kantin; transaksi kantin hanya mengurangi saldo deposit.</li></ol>
+<table><tr><th>ID</th><th>Kebutuhan</th><th>Prioritas</th></tr>
+<tr><td>KNT-01</td><td>Kartu RFID dipetakan secara unik ke siswa.</td><td class="p0">P0</td></tr>
+<tr><td>KNT-02</td><td>Kasir membaca kartu dan sistem menampilkan identitas siswa serta saldo yang dapat digunakan.</td><td class="p0">P0</td></tr>
+<tr><td>KNT-03</td><td>Kasir memilih item/nominal transaksi dan mengonfirmasi pembayaran.</td><td class="p0">P0</td></tr>
+<tr><td>KNT-04</td><td>Sistem menolak transaksi jika saldo tidak mencukupi.</td><td class="p0">P0</td></tr>
+<tr><td>KNT-05</td><td>Transaksi tersimpan dengan timestamp, terminal, petugas, siswa, nominal dan sumber saldo.</td><td class="p0">P0</td></tr>
+<tr><td>KNT-06</td><td>Orang tua menerima/melihat histori belanja anak.</td><td class="p1">P1</td></tr>
+<tr><td>KNT-07</td><td>Admin dapat membatasi kategori atau nominal transaksi bila diperlukan.</td><td class="p2">P2</td></tr>
+</table>
+</div>
+
+<div class="card"><h3>5.3 Modul Penjemputan RFID</h3>
+<table><tr><th>ID</th><th>Kebutuhan</th><th>Prioritas</th></tr>
+<tr><td>JMP-01</td><td>RFID penjemput dapat dipetakan ke siswa dan data penjemput yang berwenang.</td><td class="p0">P0</td></tr>
+<tr><td>JMP-02</td><td>Petugas melakukan scan kartu dan sistem menampilkan siswa yang akan dijemput.</td><td class="p0">P0</td></tr>
+<tr><td>JMP-03</td><td>Sistem memvalidasi kartu aktif/tidak aktif dan hak penjemput.</td><td class="p0">P0</td></tr>
+<tr><td>JMP-04</td><td>Sistem mencatat antrean/status: menunggu, dipanggil, diserahkan, dibatalkan.</td><td class="p0">P0</td></tr>
+<tr><td>JMP-05</td><td>Orang tua dapat melihat histori penjemputan.</td><td class="p1">P1</td></tr>
+<tr><td>JMP-06</td><td>Notifikasi kepada pihak terkait ketika siswa dipanggil/selesai diserahkan.</td><td class="p1">P1</td></tr>
+<tr><td>JMP-07</td><td>Jika kartu tidak dikenal, sistem menolak dan mencatat kejadian keamanan.</td><td class="p0">P0</td></tr>
+</table>
+</div>
+
+<div class="card"><h3>5.4 Modul Setoran & Rekap Hafalan</h3>
+<table><tr><th>ID</th><th>Kebutuhan</th><th>Prioritas</th></tr>
+<tr><td>HAF-01</td><td>Guru dapat memilih siswa dan mencatat setoran hafalan.</td><td class="p0">P0</td></tr>
+<tr><td>HAF-02</td><td>Data mencakup tanggal, surah/juz, ayat/rentang, jenis setoran dan guru.</td><td class="p0">P0</td></tr>
+<tr><td>HAF-03</td><td>Guru dapat memberi status/nilai, misalnya Lancar, Perlu Murajaah, Mengulang.</td><td class="p0">P0</td></tr>
+<tr><td>HAF-04</td><td>Catatan guru dan rekomendasi murajaah dapat disimpan.</td><td class="p1">P1</td></tr>
+<tr><td>HAF-05</td><td>Sistem menghasilkan rekap per siswa, kelas, guru dan periode.</td><td class="p0">P0</td></tr>
+<tr><td>HAF-06</td><td>Orang tua melihat perkembangan hafalan anak sesuai hak akses.</td><td class="p0">P0</td></tr>
+<tr><td>HAF-07</td><td>Target hafalan dapat dibuat per siswa/kelas/periode.</td><td class="p1">P1</td></tr>
+</table>
+</div>
+</section>
+
+<section id="rfid">
+<h2>6. Arsitektur RFID & Perangkat</h2>
+<div class="card"><p>RFID diposisikan sebagai <b>identitas/token</b>, bukan tempat penyimpanan saldo atau data sensitif. Saldo dan transaksi wajib berada di server/database.</p>
+<h3>Perangkat Minimum</h3><ul><li>RFID card/tag siswa dan/atau kartu penjemput.</li><li>RFID reader yang kompatibel dengan kartu.</li><li>Terminal kantin/penjemputan, misalnya ESP32 + reader + display/buzzer sesuai kebutuhan.</li><li>Koneksi jaringan untuk sinkronisasi transaksi.</li><li>Server/API dan database terpusat.</li></ul>
+<h3>Prinsip Transaksi</h3>
+<div class="code">RFID Scan → Baca UID → Validasi kartu → Ambil identitas siswa
+→ Cek hak akses & saldo → Buat transaksi atomik → Simpan audit
+→ Kirim hasil ke terminal → Notifikasi (opsional)</div>
+<p><b>Catatan penting:</b> sistem harus mencegah double-tap/double-charge melalui transaction ID, idempotency key dan lock/atomic transaction pada sisi server.</p>
+</div>
+</section>
+
+<section id="data">
+<h2>7. Model Data Inti</h2>
+<div class="card"><table>
+<tr><th>Entitas</th><th>Field Kunci</th><th>Relasi</th></tr>
+<tr><td>students</td><td>id, nis, nama, kelas, status, foto</td><td>orang tua, kartu, transaksi, hafalan</td></tr>
+<tr><td>guardians</td><td>id, nama, kontak, status</td><td>siswa, kartu penjemput</td></tr>
+<tr><td>rfid_cards</td><td>id, uid_hash, tipe, status, assigned_to, issued_at</td><td>siswa/penjemput</td></tr>
+<tr><td>accounts</td><td>id, student_id, type, balance</td><td>ledger transaksi</td></tr>
+<tr><td>ledger_transactions</td><td>id, account_id, type, amount, reference, timestamp, actor</td><td>tabungan/deposit/kantin</td></tr>
+<tr><td>canteen_transactions</td><td>id, student_id, source_account, amount, terminal_id, cashier_id</td><td>ledger</td></tr>
+<tr><td>pickup_events</td><td>id, student_id, pickup_card, status, timestamp, officer_id</td><td>siswa/penjemput</td></tr>
+<tr><td>memorization_records</td><td>id, student_id, teacher_id, date, surah, ayat_from, ayat_to, status, note</td><td>siswa/guru</td></tr>
+<tr><td>notifications</td><td>id, recipient, type, payload, status, sent_at</td><td>user</td></tr>
+<tr><td>audit_logs</td><td>id, actor, action, entity, entity_id, before, after, timestamp, ip/device</td><td>semua modul</td></tr>
+</table></div>
+</section>
+
+<section id="alur">
+<h2>8. Alur Bisnis Utama</h2>
+<div class="card"><h3>8.1 Top Up Tabungan</h3><ol><li>Admin mencari siswa.</li><li>Memilih setoran dan metode pembayaran.</li><li>Sistem membuat transaksi.</li><li>Ledger bertambah.</li><li>Saldo diperbarui berdasarkan ledger.</li><li>Orang tua menerima histori/notifikasi.</li></ol>
+<h3>8.2 Pembayaran Kantin</h3><ol><li>Siswa tap kartu RFID.</li><li>Terminal mengambil identitas siswa.</li><li>Kasir memasukkan nominal/item.</li><li>Sistem memilih sumber saldo sesuai konfigurasi.</li><li>Jika cukup, transaksi diproses secara atomik.</li><li>Struk/status berhasil ditampilkan.</li></ol>
+<h3>8.3 Penjemputan</h3><ol><li>Penjemput tap kartu.</li><li>Sistem validasi kartu dan relasi penjemput-siswa.</li><li>Siswa masuk antrean pemanggilan.</li><li>Petugas memproses penyerahan.</li><li>Status menjadi selesai dan dicatat dalam histori.</li></ol>
+<h3>8.4 Setoran Hafalan</h3><ol><li>Guru memilih kelas dan siswa.</li><li>Input materi hafalan yang disetor.</li><li>Guru memberikan status/nilai dan catatan.</li><li>Sistem menyimpan rekam setoran.</li><li>Rekap siswa/kelas diperbarui.</li><li>Orang tua dapat melihat perkembangan.</li></ol>
+</div>
+</section>
+
+<section id="nonfungsional">
+<h2>9. Kebutuhan Non-Fungsional</h2>
+<div class="card"><table><tr><th>Area</th><th>Target</th></tr>
+<tr><td>Availability</td><td>Target awal 99,5% untuk layanan produksi, tidak termasuk maintenance terjadwal.</td></tr>
+<tr><td>Performance</td><td>95% request API umum ≤ 2 detik pada kondisi jaringan normal; transaksi RFID diproses secepat kondisi perangkat/jaringan memungkinkan.</td></tr>
+<tr><td>Responsive</td><td>Web dapat digunakan pada desktop, tablet dan smartphone.</td></tr>
+<tr><td>Security</td><td>RBAC, HTTPS, password hashing, session management, audit log, rate limiting dan prinsip least privilege.</td></tr>
+<tr><td>Data Integrity</td><td>Transaksi keuangan immutable secara normal; koreksi menggunakan reversal/adjustment berotorisasi.</td></tr>
+<tr><td>Backup</td><td>Backup database terjadwal dan prosedur restore yang diuji.</td></tr>
+<tr><td>Scalability</td><td>Arsitektur API/database memungkinkan penambahan siswa, terminal RFID dan cabang/unit tanpa redesign besar.</td></tr>
+</table></div>
+</section>
+
+<section id="keamanan">
+<h2>10. Keamanan, Privasi & Audit</h2>
+<div class="card"><ul>
+<li>UID RFID tidak boleh menjadi satu-satunya faktor otorisasi untuk operasi sensitif.</li>
+<li>Kartu dapat diblokir, diterbitkan ulang, dan dilacak riwayatnya.</li>
+<li>Saldo tidak boleh diubah langsung oleh UI; seluruh perubahan harus melalui transaksi.</li>
+<li>Penarikan, refund, reversal dan perubahan master data penting harus memiliki otorisasi.</li>
+<li>Data anak hanya dapat diakses oleh akun yang berhak.</li>
+<li>Audit log menyimpan siapa, kapan, dari perangkat mana, tindakan apa dan perubahan data apa.</li>
+<li>Backup dan recovery plan wajib diuji secara berkala.</li>
+<li>Notifikasi tidak boleh mengungkap data sensitif secara berlebihan.</li>
+</ul></div>
+</section>
+
+<section>
+<h2>11. Dashboard</h2>
+<div class="card"><table><tr><th>Dashboard</th><th>Komponen</th></tr>
+<tr><td>Orang Tua</td><td>Profil anak, saldo tabungan, saldo kantin, transaksi terbaru, status penjemputan, rekap hafalan, notifikasi.</td></tr>
+<tr><td>Admin</td><td>Jumlah siswa aktif, saldo, transaksi hari ini, transaksi kantin, aktivitas penjemputan, progres hafalan, alert.</td></tr>
+<tr><td>Guru</td><td>Kelas, daftar siswa, target hafalan, setoran terbaru, siswa perlu murajaah.</td></tr>
+<tr><td>Kantin</td><td>Scanner RFID, identitas siswa, saldo, keranjang/item, transaksi hari ini, status koneksi.</td></tr>
+<tr><td>Penjemputan</td><td>Scanner RFID, antrean siswa, status panggilan, siswa telah diserahkan, kartu ditolak.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>12. Laporan</h2>
+<div class="card"><ul>
+<li>Laporan saldo tabungan per siswa/kelas/periode.</li>
+<li>Mutasi tabungan dan deposit kantin.</li>
+<li>Laporan transaksi kantin per hari, siswa, item, kasir dan terminal.</li>
+<li>Laporan penjemputan per siswa, penjemput, tanggal dan status.</li>
+<li>Rekap hafalan per siswa, kelas, guru dan periode.</li>
+<li>Daftar siswa yang belum mencapai target hafalan.</li>
+<li>Audit aktivitas admin.</li>
+<li>Export CSV/XLSX/PDF sesuai kebutuhan implementasi.</li>
+</ul></div>
+</section>
+
+<section>
+<h2>13. Notifikasi</h2>
+<div class="card"><table><tr><th>Event</th><th>Penerima</th><th>Saluran</th></tr>
+<tr><td>Setoran tabungan</td><td>Orang tua</td><td>In-app; WhatsApp/email opsional</td></tr>
+<tr><td>Pembayaran kantin</td><td>Orang tua</td><td>In-app; push/WhatsApp opsional</td></tr>
+<tr><td>Saldo rendah</td><td>Orang tua/admin</td><td>In-app/push</td></tr>
+<tr><td>Penjemputan</td><td>Petugas/orang tua</td><td>In-app/push/display</td></tr>
+<tr><td>Setoran hafalan</td><td>Orang tua</td><td>In-app/push</td></tr>
+</table></div>
+</section>
+
+<section id="roadmap">
+<h2>14. Roadmap Pengembangan</h2>
+<div class="card"><table><tr><th>Fase</th><th>Isi</th></tr>
+<tr><td>V1 - Core</td><td>Login/RBAC, master siswa, RFID, tabungan, ledger, kantin RFID, penjemputan, hafalan, dashboard dasar, audit.</td></tr>
+<tr><td>V2 - Parent Experience</td><td>Aplikasi/portal orang tua, notifikasi, laporan lebih lengkap, target hafalan, approval workflow.</td></tr>
+<tr><td>V3 - Hardware & Reliability</td><td>Optimasi ESP32/reader, offline queue terbatas, sinkronisasi, monitoring terminal, device management.</td></tr>
+<tr><td>V4 - Integrasi</td><td>Payment gateway, WhatsApp provider, integrasi akademik/keuangan, analitik lanjutan.</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>15. Risiko & Mitigasi</h2>
+<div class="card"><table><tr><th>Risiko</th><th>Dampak</th><th>Mitigasi</th></tr>
+<tr><td>Kartu RFID hilang</td><td>Transaksi/akses tidak sah</td><td>Blokir instan, penerbitan ulang, audit.</td></tr>
+<tr><td>Internet putus</td><td>Transaksi terhenti</td><td>Untuk transaksi finansial, prioritaskan mode online; jika offline diizinkan, gunakan queue aman, batas nominal dan sinkronisasi idempotent.</td></tr>
+<tr><td>Double tap</td><td>Saldo terpotong dua kali</td><td>Debounce terminal + idempotency + atomic transaction server.</td></tr>
+<tr><td>Kesalahan input nominal</td><td>Saldo tidak sesuai</td><td>Konfirmasi transaksi, role approval, reversal, audit.</td></tr>
+<tr><td>Data anak bocor</td><td>Risiko privasi</td><td>RBAC, encryption, minimal data exposure, audit dan security testing.</td></tr>
+<tr><td>Ketergantungan perangkat</td><td>Operasional terganggu</td><td>Device monitoring, spare device, prosedur manual darurat.</td></tr>
+</table></div>
+</section>
+
+<section id="acceptance">
+<h2>16. Acceptance Criteria MVP</h2>
+<div class="card"><ol>
+<li>Admin dapat membuat siswa, orang tua, guru, kelas dan kartu RFID.</li>
+<li>Setoran dan penarikan tabungan menghasilkan ledger yang benar dan dapat diaudit.</li>
+<li>Pembayaran kantin RFID mengurangi sumber saldo yang dipilih dan menolak saldo tidak cukup.</li>
+<li>Transaksi kantin tidak boleh terduplikasi akibat tap berulang/request ulang.</li>
+<li>Kartu penjemput hanya dapat memicu proses untuk siswa/penjemput yang valid.</li>
+<li>Seluruh event penjemputan tersimpan dan dapat ditelusuri.</li>
+<li>Guru dapat mencatat setoran hafalan dan sistem menghasilkan rekap.</li>
+<li>Orang tua dapat melihat data anak yang menjadi kewenangannya.</li>
+<li>Role yang berbeda tidak dapat mengakses fungsi di luar kewenangannya.</li>
+<li>Laporan utama dapat difilter berdasarkan tanggal, siswa dan kelas serta diekspor.</li>
+<li>Audit log tersedia untuk transaksi dan tindakan administratif penting.</li>
+</ol></div>
+</section>
+
+<section>
+<h2>17. Definition of Done</h2>
+<div class="card"><ul>
+<li>Requirement P0 telah diimplementasikan dan diuji.</li>
+<li>Unit test, integration test dan UAT untuk alur utama selesai.</li>
+<li>Security review dasar selesai.</li>
+<li>Backup dan restore diuji.</li>
+<li>Dokumentasi admin, guru, kasir dan petugas penjemputan tersedia.</li>
+<li>Perangkat RFID telah diuji pada lingkungan operasional sekolah.</li>
+<li>Data transaksi dapat direkonsiliasi dengan ledger.</li>
+<li>Tidak ada blocker severity tinggi yang terbuka saat go-live.</li>
+</ul></div>
+</section>
+
+<section>
+<h2>18. Rekomendasi Arsitektur Teknis</h2>
+<div class="card"><p>Arsitektur yang direkomendasikan:</p>
+<div class="code">RFID Terminal / Web / Mobile
+          ↓
+      REST/JSON API
+          ↓
+ Authentication + RBAC
+          ↓
+ Business Logic / Transaction Service
+          ↓
+ PostgreSQL / MySQL
+          ↓
+ Audit Log + Backup
+          ↘ Notification Service
+          ↘ Reporting / Export</div>
+<p>Untuk perangkat ESP32, gunakan API terautentikasi, device ID unik, HTTPS/TLS, heartbeat perangkat, retry dengan idempotency key, dan konfigurasi yang dapat dikelola dari server.</p></div>
+</section>
+
+<section>
+<h2>19. Keputusan Desain yang Disarankan</h2>
+<div class="card"><ol>
+<li><b>Jangan menjadikan kartu RFID sebagai dompet.</b> Kartu hanya identitas.</li>
+<li><b>Gunakan ledger untuk uang.</b> Jangan mengandalkan update balance biasa tanpa jejak transaksi.</li>
+<li><b>Pisahkan saldo tabungan dan saldo kantin secara logis</b> jika sekolah ingin membatasi uang yang dapat dibelanjakan.</li>
+<li><b>Penjemputan harus berbasis whitelist.</b> Kartu yang valid tetapi tidak memiliki relasi aktif dengan siswa tetap harus ditolak.</li>
+<li><b>Jangan membuat mode offline finansial terlalu cepat.</b> Offline memang terlihat praktis, tetapi membuka risiko saldo ganda dan konflik data.</li>
+<li><b>Audit bukan fitur tambahan.</b> Untuk uang dan data anak, audit adalah komponen inti.</li>
+</ol></div>
+</section>
+
+<section>
+<h2>20. Approval & Sign-Off</h2>
+<div class="card"><table><tr><th>Peran</th><th>Nama</th><th>Tanggal</th><th>Tanda Tangan</th></tr>
+<tr><td>Pimpinan Sekolah/Yayasan</td><td></td><td></td><td></td></tr>
+<tr><td>Penanggung Jawab Program</td><td></td><td></td><td></td></tr>
+<tr><td>Admin/Operator</td><td></td><td></td><td></td></tr>
+<tr><td>Perwakilan Guru</td><td></td><td></td><td></td></tr>
+</table></div>
+</section>
+</main>
+
+<footer><div class="container"><b>PRD — Sistem Terintegrasi Siswa & Sekolah</b><br>
+Dokumen ini merupakan baseline kebutuhan produk. Detail teknis, nominal transaksi, kebijakan sekolah, perangkat RFID, dan integrasi pihak ketiga perlu divalidasi sebelum development dan go-live.</div></footer>
+</body>
+</html>
