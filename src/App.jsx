@@ -61,8 +61,11 @@ export default function App() {
 
         const cleanState = {
           ...savedState,
-          students: cleanStudents,
-          rfidCards: cleanRfidCards,
+          students: (cleanStudents && cleanStudents.length > 0) ? cleanStudents : INITIAL_STUDENTS,
+          guardians: (savedState.guardians && savedState.guardians.length > 0) ? savedState.guardians : INITIAL_GUARDIANS,
+          rfidCards: (cleanRfidCards && cleanRfidCards.length > 0) ? cleanRfidCards : INITIAL_RFID_CARDS,
+          ledger: (savedState.ledger && savedState.ledger.length > 0) ? savedState.ledger : INITIAL_LEDGER,
+          auditLogs: (savedState.auditLogs && savedState.auditLogs.length > 0) ? savedState.auditLogs : INITIAL_AUDIT_LOGS,
           loginAccounts: savedState.loginAccounts || LOGIN_ACCOUNTS
         };
 
@@ -73,11 +76,11 @@ export default function App() {
       console.warn('Failed to load state from localStorage', e);
     }
     return {
-      students: [],
-      guardians: [],
-      rfidCards: [],
-      ledger: [],
-      auditLogs: [],
+      students: INITIAL_STUDENTS,
+      guardians: INITIAL_GUARDIANS,
+      rfidCards: INITIAL_RFID_CARDS,
+      ledger: INITIAL_LEDGER,
+      auditLogs: INITIAL_AUDIT_LOGS,
       loginAccounts: LOGIN_ACCOUNTS,
     };
   });

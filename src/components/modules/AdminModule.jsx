@@ -397,26 +397,32 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   // -------------------------------------------------------------
   const handleOpenAddStudentModal = () => {
     setEditingStudent(null);
+    const autoNis = `2026${Math.floor(1000 + Math.random() * 9000)}`;
     setStudentForm({
       name: '',
-      nis: `2026${Math.floor(1000 + Math.random() * 9000)}`,
+      nis: autoNis,
       class: uniqueClasses[0] || '5-A Tahfidz',
       rfidUid: '',
       guardianName: 'Orang Tua / Wali',
-      status: 'AKTIF'
+      status: 'AKTIF',
+      username: autoNis,
+      password: `${autoNis}123`
     });
     setStudentModalType('ADD');
   };
 
   const handleOpenEditStudentModal = (student) => {
     setEditingStudent(student);
+    const acc = (state.loginAccounts || []).find(a => a.studentId === student.id || a.username === student.nis);
     setStudentForm({
       name: student.name || '',
       nis: student.nis || '',
       class: student.class || '',
       rfidUid: student.rfidUid || '',
       guardianName: student.guardianName || '',
-      status: student.status || 'AKTIF'
+      status: student.status || 'AKTIF',
+      username: acc?.username || student.nis,
+      password: acc?.password || `${student.nis}123`
     });
     setStudentModalType('EDIT');
   };
@@ -427,6 +433,9 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       setFeedback({ type: 'error', text: 'Nama, NIS, dan Kelas wajib diisi!' });
       return;
     }
+
+    const targetUsername = (studentForm.username || studentForm.nis).trim().toLowerCase();
+    const targetPassword = (studentForm.password || `${studentForm.nis}123`).trim();
 
     if (studentModalType === 'ADD') {
       const newStudentId = `STD-${Date.now()}`;
@@ -445,13 +454,44 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         status: studentForm.status
       };
 
+      const newAccountObj = {
+        id: `ACC-${newStudentId}`,
+        username: targetUsername,
+        password: targetPassword,
+        roleId: 'SISWA',
+        studentId: newStudentId
+      };
+
       setState(prev => ({
         ...prev,
-        students: [newStudentObj, ...prev.students]
+        students: [newStudentObj, ...prev.students],
+        loginAccounts: [...(prev.loginAccounts || []), newAccountObj]
       }));
 
-      setFeedback({ type: 'success', text: `Siswa baru "${newStudentObj.name}" berhasil ditambahkan!` });
+      setFeedback({ type: 'success', text: `Siswa baru "${newStudentObj.name}" & akun login (${targetUsername}) berhasil ditambahkan!` });
     } else if (studentModalType === 'EDIT' && editingStudent) {
+      const targetStudentId = editingStudent.id;
+      const existingAccIdx = (state.loginAccounts || []).findIndex(a => a.studentId === targetStudentId || a.username === editingStudent.nis);
+
+      let updatedAccounts = [...(state.loginAccounts || [])];
+      if (existingAccIdx >= 0) {
+        updatedAccounts[existingAccIdx] = {
+          ...updatedAccounts[existingAccIdx],
+          username: targetUsername,
+          password: targetPassword,
+          roleId: 'SISWA',
+          studentId: targetStudentId
+        };
+      } else {
+        updatedAccounts.push({
+          id: `ACC-${targetStudentId}`,
+          username: targetUsername,
+          password: targetPassword,
+          roleId: 'SISWA',
+          studentId: targetStudentId
+        });
+      }
+
       setState(prev => ({
         ...prev,
         students: prev.students.map(s => {
@@ -467,10 +507,11 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
             };
           }
           return s;
-        })
+        }),
+        loginAccounts: updatedAccounts
       }));
 
-      setFeedback({ type: 'success', text: `Data siswa "${studentForm.name}" berhasil diperbarui!` });
+      setFeedback({ type: 'success', text: `Data & akun login siswa "${studentForm.name}" berhasil diperbarui!` });
     }
 
     setStudentModalType(null);
@@ -1431,6 +1472,30 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     value={studentForm.class}
                     onChange={(e) => setStudentForm({ ...studentForm, class: e.target.value })}
                     required
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--slate-200)' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 700 }}>Username Login Siswa</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Username..."
+                    value={studentForm.username || ''}
+                    onChange={(e) => setStudentForm({ ...studentForm, username: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 700 }}>Password Login Siswa</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Password..."
+                    value={studentForm.password || ''}
+                    onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
                   />
                 </div>
               </div>
