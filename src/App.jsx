@@ -33,11 +33,36 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
   return STATE_COLLECTIONS.reduce((mergedState, collection) => {
     const cloudRows = cloudState[collection] || [];
     const localRows = localState[collection] || [];
+    const localMap = new Map(localRows.map((row) => [row.id, row]));
+
+    if (collection === 'students') {
+      const mergedStudents = cloudRows.map((cloudStudent) => {
+        const localStudent = localMap.get(cloudStudent.id);
+        if (!localStudent) return cloudStudent;
+        return {
+          ...cloudStudent,
+          ...localStudent,
+          savingsBalance: Math.max(Number(cloudStudent.savingsBalance) || 0, Number(localStudent.savingsBalance) || 0),
+          canteenDepositBalance: Math.max(Number(cloudStudent.canteenDepositBalance) || 0, Number(localStudent.canteenDepositBalance) || 0),
+          rfidUid: localStudent.rfidUid || cloudStudent.rfidUid
+        };
+      });
+
+      const cloudIds = new Set(cloudRows.map((row) => row.id));
+      const brandNewLocalStudents = localRows.filter((row) => !cloudIds.has(row.id));
+
+      return {
+        ...mergedState,
+        students: [...mergedStudents, ...brandNewLocalStudents]
+      };
+    }
+
     const cloudIds = new Set(cloudRows.map((row) => row.id));
+    const newLocalRows = localRows.filter((row) => !cloudIds.has(row.id));
 
     return {
       ...mergedState,
-      [collection]: [...cloudRows, ...localRows.filter((row) => !cloudIds.has(row.id))],
+      [collection]: [...cloudRows, ...newLocalRows],
     };
   }, { ...cloudState });
 }
@@ -50,20 +75,11 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const savedState = JSON.parse(saved);
-        // Purge any locally created entries for "Zahfan" and UID "0958459907"
-        const cleanStudents = (savedState.students || []).filter(s =>
-          !(s.name && s.name.toLowerCase().includes('zahfan'))
-        );
-        const cleanRfidCards = (savedState.rfidCards || []).filter(c =>
-          !(c.uid && c.uid.includes('0958459907')) &&
-          !(c.assignedToName && c.assignedToName.toLowerCase().includes('zahfan'))
-        );
-
         const cleanState = {
           ...savedState,
-          students: (cleanStudents && cleanStudents.length > 0) ? cleanStudents : INITIAL_STUDENTS,
+          students: (savedState.students && savedState.students.length > 0) ? savedState.students : INITIAL_STUDENTS,
           guardians: (savedState.guardians && savedState.guardians.length > 0) ? savedState.guardians : INITIAL_GUARDIANS,
-          rfidCards: (cleanRfidCards && cleanRfidCards.length > 0) ? cleanRfidCards : INITIAL_RFID_CARDS,
+          rfidCards: (savedState.rfidCards && savedState.rfidCards.length > 0) ? savedState.rfidCards : INITIAL_RFID_CARDS,
           ledger: (savedState.ledger && savedState.ledger.length > 0) ? savedState.ledger : INITIAL_LEDGER,
           auditLogs: (savedState.auditLogs && savedState.auditLogs.length > 0) ? savedState.auditLogs : INITIAL_AUDIT_LOGS,
           loginAccounts: savedState.loginAccounts || LOGIN_ACCOUNTS
