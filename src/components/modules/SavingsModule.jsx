@@ -46,6 +46,16 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
     };
   }, [state.students, state.ledger]);
 
+  // Keep activeStudent synced with latest state.students
+  useEffect(() => {
+    if (activeStudent) {
+      const fresh = state.students.find(s => s.id === activeStudent.id);
+      if (fresh && (fresh.savingsBalance !== activeStudent.savingsBalance || fresh.canteenDepositBalance !== activeStudent.canteenDepositBalance || fresh.rfidUid !== activeStudent.rfidUid)) {
+        setActiveStudent(fresh);
+      }
+    }
+  }, [state.students]);
+
   // Auto-focus nominal input field cleanly after student card is identified
   useEffect(() => {
     if (activeStudent) {
@@ -58,7 +68,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [activeStudent]);
+  }, [activeStudent?.id]);
 
   // Handle scanned card result from App props or direct scan
   useEffect(() => {
@@ -436,13 +446,13 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
                 <div>
                   <div style={{ fontSize: '0.7rem', color: '#a7f3d0', textTransform: 'uppercase', fontWeight: 600 }}>Saldo Tabungan Utama</div>
                   <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#34d399' }}>
-                    Rp {activeStudent.savingsBalance.toLocaleString('id-ID')}
+                    Rp {(Number(activeStudent.savingsBalance) || 0).toLocaleString('id-ID')}
                   </div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.7rem', color: '#fde68a', textTransform: 'uppercase', fontWeight: 600 }}>Saldo Deposit Kantin</div>
                   <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#fbbf24' }}>
-                    Rp {activeStudent.canteenDepositBalance.toLocaleString('id-ID')}
+                    Rp {(Number(activeStudent.canteenDepositBalance) || 0).toLocaleString('id-ID')}
                   </div>
                 </div>
               </div>

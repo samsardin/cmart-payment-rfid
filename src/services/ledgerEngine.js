@@ -24,9 +24,9 @@ export const executeLedgerTransaction = (state, {
   const student = state.students[studentIndex];
   
   // Current balance check
-  const currentBalance = accountType === 'TABUNGAN' 
-    ? (student.savingsBalance || 0)
-    : (student.canteenDepositBalance || 0);
+  const currentSavings = Number(student.savingsBalance) || 0;
+  const currentDeposit = Number(student.canteenDepositBalance) || 0;
+  const currentBalance = accountType === 'TABUNGAN' ? currentSavings : currentDeposit;
 
   let newBalance = currentBalance;
   if (type === 'CREDIT') {
@@ -60,8 +60,8 @@ export const executeLedgerTransaction = (state, {
   const updatedStudents = [...state.students];
   updatedStudents[studentIndex] = {
     ...student,
-    savingsBalance: accountType === 'TABUNGAN' ? newBalance : student.savingsBalance,
-    canteenDepositBalance: accountType === 'DEPOSIT_KANTIN' ? newBalance : student.canteenDepositBalance
+    savingsBalance: accountType === 'TABUNGAN' ? newBalance : currentSavings,
+    canteenDepositBalance: accountType === 'DEPOSIT_KANTIN' ? newBalance : currentDeposit
   };
 
   // Create Audit Log
