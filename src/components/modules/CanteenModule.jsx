@@ -79,6 +79,16 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
     }
   }, [scannedCardResult]);
 
+  // Keep activeStudent synced with latest state.students
+  useEffect(() => {
+    if (activeStudent?.id) {
+      const fresh = state.students.find(s => s.id === activeStudent.id);
+      if (fresh) {
+        setActiveStudent({ ...fresh });
+      }
+    }
+  }, [state.students]);
+
   // Process Canteen Payment
   const handleProcessPayment = (e) => {
     if (e) e.preventDefault();
@@ -99,8 +109,8 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
 
     const accountType = balanceSource === 'DEPOSIT' ? 'DEPOSIT_KANTIN' : 'TABUNGAN';
     const currentBalance = balanceSource === 'DEPOSIT' 
-      ? activeStudent.canteenDepositBalance 
-      : activeStudent.savingsBalance;
+      ? (Number(activeStudent.canteenDepositBalance) || 0) 
+      : (Number(activeStudent.savingsBalance) || 0);
 
     if (currentBalance < paymentAmount) {
       setIsProcessing(false);
@@ -837,6 +847,79 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
 
         </div>
 
+      </div>
+
+      {/* ======================================================== */}
+      {/* RIWAYAT TRANSAKSI PEMBAYARAN KANTIN TERAKHIR */}
+      {/* ======================================================== */}
+      <div className="glass-card" style={{ padding: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Receipt size={20} style={{ color: '#f59e0b' }} />
+            Riwayat Transaksi Pembayaran Kasir Kantin
+          </h3>
+          <span className="badge badge-gold" style={{ fontWeight: 800 }}>
+            {state.ledger.filter(l => l.category === 'BELANJA_KANTIN_RFID' || l.accountType === 'DEPOSIT_KANTIN').length} Transaksi
+          </span>
+        </div>
+
+        <div className="table-container" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+          <table className="custom-table">
+            <thead>
+              <tr>
+                <th>No. Referensi / Waktu</th>
+                <th>Siswa</th>
+                <th>Akun Potongan</th>
+                <th>Kategori</th>
+                <th>Nominal Pembayaran</th>
+                <th>Sisa Saldo</th>
+                <th>Petugas Kasir</th>
+              </tr>
+            </thead>
+            <tbody>
+              {state.ledger.filter(l => l.category === 'BELANJA_KANTIN_RFID' || l.accountType === 'DEPOSIT_KANTIN').length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--slate-400)' }}>
+                    Belum ada riwayat transaksi pembayaran kasir kantin tercatat.
+                  </td>
+                </tr>
+              ) : (
+                state.ledger
+                  .filter(l => l.category === 'BELANJA_KANTIN_RFID' || l.accountType === 'DEPOSIT_KANTIN')
+                  .map(t => (
+                    <tr key={t.id}>
+                      <td>
+                        <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.8rem', color: 'var(--slate-900)' }}>
+                          {t.reference || t.id}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)' }}>
+                          {new Date(t.timestamp).toLocaleString('id-ID')}
+                        </div>
+                      </td>
+                      <td style={{ fontWeight: 800, color: 'var(--slate-900)' }}>{t.studentName}</td>
+                      <td>
+                        <span className={`badge ${t.accountType === 'DEPOSIT_KANTIN' ? 'badge-gold' : 'badge-emerald'}`}>
+                          {t.accountType === 'DEPOSIT_KANTIN' ? 'Deposit Kantin' : 'Tabungan Utama'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="badge badge-purple" style={{ fontSize: '0.7rem' }}>
+                          {t.category}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 900, color: '#dc2626' }}>
+                        - Rp {(Number(t.amount) || 0).toLocaleString('id-ID')}
+                      </td>
+                      <td style={{ fontWeight: 700, color: 'var(--slate-800)' }}>
+                        Rp {(Number(t.balanceAfter) || 0).toLocaleString('id-ID')}
+                      </td>
+                      <td style={{ fontSize: '0.78rem', color: 'var(--slate-600)' }}>{t.actor}</td>
+                    </tr>
+                  ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
