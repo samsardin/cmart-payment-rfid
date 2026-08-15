@@ -308,6 +308,7 @@ export default function App() {
         allowRoleSwitch={authenticatedSession?.roleId === 'SUPER_ADMIN'}
         isOnline={isOnline}
         isSyncingCloud={isSyncingCloud}
+        isSupabaseConfigured={isSupabaseConfigured}
       />
 
       {/* Main Content Area */}

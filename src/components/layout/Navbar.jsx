@@ -27,7 +27,8 @@ export default function Navbar({
   allowRoleSwitch = false,
   notificationCount = 2,
   isOnline = true,
-  isSyncingCloud = false
+  isSyncingCloud = false,
+  isSupabaseConfigured = false
 }) {
 
   // Define tabs available per role
@@ -105,8 +106,16 @@ export default function Navbar({
             {/* Online / Offline & Cloud Sync Status Badge */}
             <div
               style={{
-                background: isOnline ? (isSyncingCloud ? 'rgba(245, 158, 11, 0.22)' : 'rgba(16, 185, 129, 0.22)') : 'rgba(239, 68, 68, 0.28)',
-                border: isOnline ? (isSyncingCloud ? '1px solid #f59e0b' : '1px solid #34d399') : '1px solid #f87171',
+                background: !isSupabaseConfigured
+                  ? 'rgba(245, 158, 11, 0.28)'
+                  : isOnline
+                    ? (isSyncingCloud ? 'rgba(245, 158, 11, 0.22)' : 'rgba(16, 185, 129, 0.22)')
+                    : 'rgba(239, 68, 68, 0.28)',
+                border: !isSupabaseConfigured
+                  ? '1px solid #f59e0b'
+                  : isOnline
+                    ? (isSyncingCloud ? '1px solid #f59e0b' : '1px solid #34d399')
+                    : '1px solid #f87171',
                 padding: '0.35rem 0.65rem',
                 borderRadius: 'var(--radius-sm)',
                 display: 'flex',
@@ -117,9 +126,20 @@ export default function Navbar({
                 color: 'white',
                 backdropFilter: 'blur(8px)'
               }}
-              title={isOnline ? (isSyncingCloud ? 'Mengunggah data lokal ke Supabase Cloud...' : 'Terhubung ke Cloud Supabase (Otomatis Tersinkron)') : 'Mode Offline: Transaksi tersimpan lokal & otomatis di-sync saat internet terhubung kembali'}
+              title={
+                !isSupabaseConfigured
+                  ? 'PERHATIAN: Environment variables Supabase belum dikonfigurasi di Vercel (Project Settings > Environment Variables). Data saat ini tersimpan lokal di browser.'
+                  : isOnline
+                    ? (isSyncingCloud ? 'Mengunggah data ke Supabase Cloud...' : 'Terhubung & Tersinkron ke Supabase Cloud')
+                    : 'Mode Offline: Transaksi tersimpan lokal'
+              }
             >
-              {isOnline ? (
+              {!isSupabaseConfigured ? (
+                <>
+                  <WifiOff size={13} style={{ color: '#fbbf24' }} />
+                  <span>Mode Lokal (Tanpa Supabase)</span>
+                </>
+              ) : isOnline ? (
                 isSyncingCloud ? (
                   <>
                     <RefreshCw size={13} className="spin-icon" style={{ color: '#fbbf24' }} />
@@ -128,7 +148,7 @@ export default function Navbar({
                 ) : (
                   <>
                     <Wifi size={13} style={{ color: '#34d399' }} />
-                    <span>Online (Cloud)</span>
+                    <span>Supabase Connected</span>
                   </>
                 )
               ) : (
