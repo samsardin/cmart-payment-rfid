@@ -48,10 +48,10 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
 
   // Keep activeStudent synced with latest state.students
   useEffect(() => {
-    if (activeStudent) {
+    if (activeStudent?.id) {
       const fresh = state.students.find(s => s.id === activeStudent.id);
-      if (fresh && (fresh.savingsBalance !== activeStudent.savingsBalance || fresh.canteenDepositBalance !== activeStudent.canteenDepositBalance || fresh.rfidUid !== activeStudent.rfidUid)) {
-        setActiveStudent(fresh);
+      if (fresh) {
+        setActiveStudent({ ...fresh });
       }
     }
   }, [state.students]);
@@ -164,11 +164,13 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
     }
 
     const newCard = {
+      id: `CARD-${Date.now()}`,
       uid: unregisteredUid,
       type: regCardType,
+      assignedToName: targetStudent.name,
       assignedToId: targetStudent.id,
       status: 'ACTIVE',
-      issuedDate: new Date().toISOString().slice(0, 10)
+      issuedAt: new Date().toISOString().slice(0, 10)
     };
 
     const updatedStudents = state.students.map(s => 
