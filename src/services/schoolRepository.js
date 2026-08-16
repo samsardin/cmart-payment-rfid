@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { getLocalIsoTimestamp, getLocalTodayDateString } from './dateUtils';
 
 const tableMappings = [
   ['students', 'students'],
@@ -26,18 +27,18 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.id) mapped.id = `CARD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     if (!mapped.assigned_to_name) mapped.assigned_to_name = mapped.assigned_to_id || 'Siswa Sekolah';
     if (!mapped.assigned_to_id) mapped.assigned_to_id = 'STD-UNKNOWN';
-    if (!mapped.issued_at) mapped.issued_at = mapped.issued_date || new Date().toISOString().slice(0, 10);
+    if (!mapped.issued_at) mapped.issued_at = mapped.issued_date || getLocalTodayDateString();
     if (!mapped.status) mapped.status = 'ACTIVE';
     delete mapped.issued_date;
   }
   if (tableKey === 'ledger') {
-    if (!mapped.timestamp) mapped.timestamp = new Date().toISOString();
+    if (!mapped.timestamp) mapped.timestamp = getLocalIsoTimestamp();
     if (!mapped.student_name) mapped.student_name = 'Siswa';
     if (!mapped.actor) mapped.actor = 'Admin Keuangan';
     if (!mapped.description) mapped.description = 'Transaksi Ledger';
   }
   if (tableKey === 'auditLogs') {
-    if (!mapped.timestamp) mapped.timestamp = new Date().toISOString();
+    if (!mapped.timestamp) mapped.timestamp = getLocalIsoTimestamp();
     if (!mapped.actor) mapped.actor = 'System';
     if (!mapped.action) mapped.action = 'LOG';
     if (!mapped.entity) mapped.entity = 'system';

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
+import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings }) {
   const [activeSubTab, setActiveSubTab] = useState('rfid'); // 'rfid' | 'students' | 'audit'
@@ -144,7 +145,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
       const newAudit = {
         id: `AUD-${Date.now()}`,
-        timestamp: new Date().toISOString(),
+        timestamp: getLocalIsoTimestamp(),
         actor: currentRole?.name || 'Admin',
         action: newStatus === 'BLOCKED' ? 'BLOKIR_KARTU_RFID' : 'AKTIFKAN_KARTU_RFID',
         entity: 'rfid_cards',
@@ -168,7 +169,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     setState((prev) => {
       const auditLog = {
         id: `AUD-${Date.now()}`,
-        timestamp: new Date().toISOString(),
+        timestamp: getLocalIsoTimestamp(),
         actor: currentRole?.name || 'Admin',
         action: 'HAPUS_KARTU_RFID',
         entity: 'rfid_cards',
@@ -288,12 +289,12 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       assignedToName: assignedName,
       assignedToId: assignedId,
       status: 'ACTIVE',
-      issuedAt: new Date().toISOString().slice(0, 10)
+      issuedAt: getLocalTodayDateString()
     };
 
     const newAudit = {
       id: `AUD-${Date.now()}`,
-      timestamp: new Date().toISOString(),
+      timestamp: getLocalIsoTimestamp(),
       actor: currentRole?.name || 'Admin',
       action: 'REGISTRASI_KARTU_RFID',
       entity: 'rfid_cards',

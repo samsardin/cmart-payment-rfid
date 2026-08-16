@@ -7,6 +7,7 @@ import {
 import confetti from 'canvas-confetti';
 import { executeLedgerTransaction } from '../../services/ledgerEngine';
 import { verifyRfidCard, checkIdempotency, playRfidBeep } from '../../services/rfidService';
+import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 
 export default function SavingsModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
   // activeStudent is null by default until an RFID card is scanned
@@ -170,7 +171,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
       assignedToName: targetStudent.name,
       assignedToId: targetStudent.id,
       status: 'ACTIVE',
-      issuedAt: new Date().toISOString().slice(0, 10)
+      issuedAt: getLocalTodayDateString()
     };
 
     const updatedStudents = state.students.map(s => 
@@ -179,7 +180,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
 
     const newAudit = {
       id: `AUD-${Date.now()}`,
-      timestamp: new Date().toISOString(),
+      timestamp: getLocalIsoTimestamp(),
       actor: 'Admin Keuangan',
       action: 'REGISTER_RFID_CARD',
       entity: 'rfidCards',

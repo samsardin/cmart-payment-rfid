@@ -1,3 +1,5 @@
+import { getLocalIsoTimestamp } from './dateUtils';
+
 // Ledger Accounting Engine for Student Savings & Canteen Accounts
 
 export const executeLedgerTransaction = (state, {
@@ -40,10 +42,10 @@ export const executeLedgerTransaction = (state, {
     throw new Error(`Tipe transaksi '${type}' tidak valid.`);
   }
 
-  // Create immutable ledger record
+  // Create immutable ledger record with local timezone offset
   const newTransaction = {
     id: `TX-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    timestamp: new Date().toISOString(),
+    timestamp: getLocalIsoTimestamp(),
     studentId,
     studentName: student.name,
     accountType,
@@ -64,10 +66,10 @@ export const executeLedgerTransaction = (state, {
     canteenDepositBalance: accountType === 'DEPOSIT_KANTIN' ? newBalance : currentDeposit
   };
 
-  // Create Audit Log
+  // Create Audit Log with local timezone offset
   const newAudit = {
     id: `AUD-${Date.now()}`,
-    timestamp: new Date().toISOString(),
+    timestamp: getLocalIsoTimestamp(),
     actor,
     action: category,
     entity: 'students',
