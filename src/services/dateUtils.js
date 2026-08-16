@@ -6,11 +6,6 @@
 export function getLocalIsoTimestamp(date = new Date()) {
   const pad = (n, len = 2) => String(Math.floor(Math.abs(n))).padStart(len, '0');
   
-  const offsetMinutes = -date.getTimezoneOffset();
-  const sign = offsetMinutes >= 0 ? '+' : '-';
-  const offsetHours = pad(Math.floor(Math.abs(offsetMinutes) / 60));
-  const offsetMins = pad(Math.abs(offsetMinutes) % 60);
-
   const year = date.getFullYear();
   const month = pad(date.getMonth() + 1);
   const day = pad(date.getDate());
@@ -19,7 +14,8 @@ export function getLocalIsoTimestamp(date = new Date()) {
   const seconds = pad(date.getSeconds());
   const ms = pad(date.getMilliseconds(), 3);
 
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${offsetHours}:${offsetMins}`;
+  // Formats as exact local wall-clock timestamp string so Postgres/Supabase stores local hours directly
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}`;
 }
 
 export function getLocalTodayDateString(date = new Date()) {
