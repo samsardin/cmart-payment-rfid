@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/layout/Navbar';
 import RfidQuickScannerModal from './components/layout/RfidQuickScannerModal';
 import FinanceDashboardModule from './components/modules/FinanceDashboardModule';
