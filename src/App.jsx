@@ -142,6 +142,9 @@ export default function App() {
     }
   });
 
+  // Ref tracking the baseline JSON signature of state synced with Supabase Cloud
+  const lastSyncedStateRef = useRef(null);
+
   // Load the shared database state once Supabase has been configured.
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -149,14 +152,16 @@ export default function App() {
     let isMounted = true;
     loadSchoolState()
       .then((cloudState) => {
-        if (isMounted && cloudState?.students?.length) {
-          setState((currentState) => ({
-            ...currentState,
-            ...mergeLocalDataIntoCloud(cloudState, currentState),
-          }));
+        if (isMounted && cloudState && Object.keys(cloudState).length > 0) {
+          setState((currentState) => {
+            const merged = mergeLocalDataIntoCloud(cloudState, currentState);
+            // Establish the initial cloud sync baseline to prevent immediate stale write-backs
+            lastSyncedStateRef.current = JSON.stringify(merged);
+            return merged;
+          });
         }
       })
-      .catch((error) => console.error('Failed to load Supabase data', error))
+      .catch((error) => console.error('Failed to load Supabase data:', error))
       .finally(() => {
         if (isMounted) setCloudStateLoaded(true);
       });
@@ -173,11 +178,17 @@ export default function App() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      if (isSupabaseConfigured) {
-        setIsSyncingCloud(true);
-        saveSchoolState(state)
-          .catch((error) => console.error('Failed to auto-sync to Supabase on reconnect', error))
-          .finally(() => setIsSyncingCloud(false));
+      if (isSupabaseConfigured && cloudStateLoaded) {
+        const currentStateJson = JSON.stringify(state);
+        if (lastSyncedStateRef.current !== currentStateJson) {
+          setIsSyncingCloud(true);
+          saveSchoolState(state)
+            .then(() => {
+              lastSyncedStateRef.current = currentStateJson;
+            })
+            .catch((error) => console.error('Failed to auto-sync to Supabase on reconnect:', error))
+            .finally(() => setIsSyncingCloud(false));
+        }
       }
     };
 
@@ -192,7 +203,7 @@ export default function App() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [state]);
+  }, [state, cloudStateLoaded]);
 
   // Keep a local backup, then synchronize changes to Supabase when configured.
   useEffect(() => {
@@ -203,8 +214,18 @@ export default function App() {
     }
 
     if (isSupabaseConfigured && cloudStateLoaded && isOnline) {
+      const currentStateJson = JSON.stringify(state);
+
+      // Prevent redundant network calls or overwriting cloud state if state hasn't changed since last sync/load
+      if (lastSyncedStateRef.current === currentStateJson) {
+        return;
+      }
+
       setIsSyncingCloud(true);
       saveSchoolState(state)
+        .then(() => {
+          lastSyncedStateRef.current = currentStateJson;
+        })
         .catch((error) => {
           console.error('Failed to save Supabase data', error);
         })

@@ -36,6 +36,18 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.actor) mapped.actor = 'Admin Keuangan';
     if (!mapped.description) mapped.description = 'Transaksi Ledger';
   }
+  if (tableKey === 'auditLogs') {
+    if (!mapped.timestamp) mapped.timestamp = new Date().toISOString();
+    if (!mapped.actor) mapped.actor = 'System';
+    if (!mapped.action) mapped.action = 'LOG';
+    if (!mapped.entity) mapped.entity = 'system';
+    if (!mapped.details) mapped.details = 'Audit Log Event';
+  }
+  if (tableKey === 'loginAccounts') {
+    if (!mapped.username) mapped.username = mapped.id || 'user';
+    if (!mapped.role_id && mapped.role) mapped.role_id = mapped.role;
+    if (!mapped.role_id) mapped.role_id = 'KASIR_KANTIN';
+  }
   return mapped;
 };
 
