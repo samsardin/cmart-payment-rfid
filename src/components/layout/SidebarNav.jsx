@@ -163,13 +163,13 @@ export default function SidebarNav({
         {roleId !== 'ADMIN_PENJEMPUTAN' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <div style={{
-              background: 'white',
-              padding: '0.3rem 0.55rem',
+              background: '#ffffff',
+              padding: '0.35rem 0.65rem',
               borderRadius: '12px',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), 0 0 12px rgba(255, 255, 255, 0.8)',
-              border: '1.5px solid rgba(255, 255, 255, 0.9)'
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
+              border: '1px solid #e2e8f0'
             }}>
-              <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '88px', height: 'auto', filter: 'drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.8))' }} />
+              <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '88px', height: 'auto' }} />
             </div>
             <div>
               <h1 style={{ color: 'white', fontSize: '1.1rem', letterSpacing: '-0.02em', margin: 0 }}>
@@ -524,12 +524,13 @@ export default function SidebarNav({
           {roleId !== 'ADMIN_PENJEMPUTAN' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{
-                background: 'white',
+                background: '#ffffff',
                 padding: '0.2rem 0.45rem',
                 borderRadius: '9px',
-                boxShadow: '0 3px 10px rgba(0, 0, 0, 0.2), 0 0 8px rgba(255, 255, 255, 0.7)'
+                boxShadow: '0 3px 10px rgba(0, 0, 0, 0.2)',
+                border: '1px solid #e2e8f0'
               }}>
-                <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '70px', height: 'auto', filter: 'drop-shadow(0px 0px 3px rgba(255, 255, 255, 0.8))' }} />
+                <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '70px', height: 'auto' }} />
               </div>
               <span style={{ fontWeight: 800, fontSize: '1rem', color: 'white' }}>C-Mart</span>
             </div>
