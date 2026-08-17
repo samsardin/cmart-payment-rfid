@@ -136,15 +136,17 @@ export default function Navbar({
           {/* Controls Container - Responsive Modern Layout */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             
-            {/* RFID Terminal Button */}
-            <button
-              onClick={onOpenRfidModal}
-              className="btn btn-gold btn-sm"
-              style={{ fontWeight: 700, padding: '0.38rem 0.85rem', fontSize: '0.78rem', borderRadius: '10px' }}
-            >
-              <Radio size={14} className="pulse-rfid" />
-              <span>Scan Kartu RFID</span>
-            </button>
+            {/* RFID Terminal Button (Hidden for ADMIN_PENJEMPUTAN role) */}
+            {roleId !== 'ADMIN_PENJEMPUTAN' && (
+              <button
+                onClick={onOpenRfidModal}
+                className="btn btn-gold btn-sm"
+                style={{ fontWeight: 700, padding: '0.38rem 0.85rem', fontSize: '0.78rem', borderRadius: '10px' }}
+              >
+                <Radio size={14} className="pulse-rfid" />
+                <span>Scan Kartu RFID</span>
+              </button>
+            )}
 
             {/* Export Excel Button in Navbar menu bar */}
             {activeTab === 'savings' && onExportLedger && (
