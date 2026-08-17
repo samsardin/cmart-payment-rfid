@@ -96,11 +96,12 @@ export default function Navbar({
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
               <div style={{
                 background: 'white',
-                padding: '0.25rem 0.4rem',
-                borderRadius: '10px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.18)'
+                padding: '0.3rem 0.55rem',
+                borderRadius: '12px',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), 0 0 12px rgba(255, 255, 255, 0.8)',
+                border: '1.5px solid rgba(255, 255, 255, 0.9)'
               }}>
-                <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '88px', height: 'auto' }} />
+                <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '92px', height: 'auto', filter: 'drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.8))' }} />
               </div>
               <div>
                 <h1 style={{ color: 'white', fontSize: '1.15rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>

@@ -162,8 +162,14 @@ export default function SidebarNav({
       <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
         {roleId !== 'ADMIN_PENJEMPUTAN' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{ background: 'white', padding: '0.25rem 0.45rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-              <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '84px', height: 'auto' }} />
+            <div style={{
+              background: 'white',
+              padding: '0.3rem 0.55rem',
+              borderRadius: '12px',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), 0 0 12px rgba(255, 255, 255, 0.8)',
+              border: '1.5px solid rgba(255, 255, 255, 0.9)'
+            }}>
+              <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '88px', height: 'auto', filter: 'drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.8))' }} />
             </div>
             <div>
               <h1 style={{ color: 'white', fontSize: '1.1rem', letterSpacing: '-0.02em', margin: 0 }}>
@@ -517,7 +523,14 @@ export default function SidebarNav({
 
           {roleId !== 'ADMIN_PENJEMPUTAN' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <img src={cmartLogo} alt="C-Mart Logo" style={{ width: '70px', height: 'auto' }} />
+              <div style={{
+                background: 'white',
+                padding: '0.2rem 0.45rem',
+                borderRadius: '9px',
+                boxShadow: '0 3px 10px rgba(0, 0, 0, 0.2), 0 0 8px rgba(255, 255, 255, 0.7)'
+              }}>
+                <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '70px', height: 'auto', filter: 'drop-shadow(0px 0px 3px rgba(255, 255, 255, 0.8))' }} />
+              </div>
               <span style={{ fontWeight: 800, fontSize: '1rem', color: 'white' }}>C-Mart</span>
             </div>
           ) : (
