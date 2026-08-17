@@ -530,14 +530,16 @@ export default function SidebarNav({
 
         {/* Right: Quick Action Scan RFID + Bell */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button
-            onClick={onOpenRfidModal}
-            className="btn btn-gold btn-sm"
-            style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '8px' }}
-          >
-            <Radio size={14} className="pulse-rfid" />
-            <span>Scan RFID</span>
-          </button>
+          {roleId !== 'ADMIN_PENJEMPUTAN' && (
+            <button
+              onClick={onOpenRfidModal}
+              className="btn btn-gold btn-sm"
+              style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '8px' }}
+            >
+              <Radio size={14} className="pulse-rfid" />
+              <span>Scan RFID</span>
+            </button>
+          )}
 
           <div style={{ position: 'relative', padding: '0.3rem', cursor: 'pointer' }}>
             <Bell size={18} color="white" />
