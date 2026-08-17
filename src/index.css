@@ -815,3 +815,110 @@ main {
   }
 }
 
+/* ==========================================================================
+   PICKUP AUDIO MP3 MODULE RESPONSIVE STYLES (MOBILE & TABLET OPTIMIZED)
+   ========================================================================== */
+
+.pickup-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.1rem 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.pickup-operator-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.pickup-tv-container {
+  background: linear-gradient(135deg, #0b1329 0%, #111827 60%, #1f2937 100%);
+  border-radius: 24px;
+  padding: 2rem;
+  color: #ffffff;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  min-height: 680px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.75rem;
+}
+
+.pickup-tv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Tablet Screens (768px - 1023px) */
+@media (max-width: 1023px) {
+  .pickup-operator-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .pickup-tv-container {
+    padding: 1.25rem !important;
+    border-radius: 18px !important;
+    min-height: auto !important;
+  }
+
+  .pickup-tv-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 1rem !important;
+  }
+}
+
+/* Mobile & Smartphone Screens (<= 767px) */
+@media (max-width: 767px) {
+  .pickup-header-card {
+    padding: 1rem !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+  }
+
+  .pickup-header-card > div:last-child {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .pickup-header-card button {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 0.78rem !important;
+    padding: 0.55rem 0.5rem !important;
+  }
+
+  .pickup-operator-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .pickup-tv-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pickup-tv-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+}
+
+/* Small Smartphone Screens (<= 480px) */
+@media (max-width: 480px) {
+  .pickup-header-card > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+}
+

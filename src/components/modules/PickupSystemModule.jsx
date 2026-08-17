@@ -268,18 +268,10 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
 
       {/* Header Toolbar & Mode Switcher */}
       <div
-        className="glass-card"
+        className="glass-card pickup-header-card"
         style={{
-          padding: '1.1rem 1.5rem',
-          borderRadius: '16px',
           background: viewMode === 'DISPLAY_TV' ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : '#ffffff',
-          color: viewMode === 'DISPLAY_TV' ? '#ffffff' : 'inherit',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.06)'
+          color: viewMode === 'DISPLAY_TV' ? '#ffffff' : 'inherit'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
@@ -351,7 +343,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
 
       {/* MODE 1: OPERATOR POS SATPAM */}
       {viewMode === 'OPERATOR' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 360px) 1fr', gap: '1.25rem', alignItems: 'start' }}>
+        <div className="pickup-operator-grid">
           
           {/* Left Column: Quick RFID Scan Gate & Stats */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -674,21 +666,9 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
 
       {/* MODE 2: DISPLAY LIVE TV MONITOR RUANG TUNGGU SISWA */}
       {viewMode === 'DISPLAY_TV' && (
-        <div style={{
-          background: 'linear-gradient(135deg, #0b1329 0%, #111827 60%, #1f2937 100%)',
-          borderRadius: '24px',
-          padding: '2rem',
-          color: '#ffffff',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          minHeight: '680px',
-          display: 'flex',
-          flexDirection: 'column',
-          justify: 'space-between',
-          gap: '1.75rem'
-        }}>
+        <div className="pickup-tv-container">
           {/* Top Banner Live TV Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid rgba(255,255,255,0.12)', paddingBottom: '1.25rem' }}>
+          <div className="pickup-tv-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid rgba(255,255,255,0.12)', paddingBottom: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{
                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
@@ -741,7 +721,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.25rem' }}>
+              <div className="pickup-tv-grid">
                 {pickupLogs.filter(p => p.status === 'DIPANGGIL').map(item => (
                   <div
                     key={item.id}
