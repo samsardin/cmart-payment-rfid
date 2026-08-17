@@ -91,7 +91,18 @@ export async function saveSchoolState(state) {
 
   for (const [stateKey, tableName] of tableMappings) {
     const rows = state[stateKey] || [];
-    if (!rows.length) continue;
+    if (!rows.length) {
+      try {
+        if (tableName === 'login_accounts') {
+          await supabase.from(tableName).delete().in('role_id', ['ORANG_TUA', 'SISWA']);
+        } else {
+          await supabase.from(tableName).delete().not('id', 'is', null);
+        }
+      } catch (emptyErr) {
+        console.warn(`Warning clearing empty table ${tableName} in Supabase:`, emptyErr);
+      }
+      continue;
+    }
 
     const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
     const { error } = await supabase.from(tableName).upsert(dbRows);
@@ -100,17 +111,15 @@ export async function saveSchoolState(state) {
       throw error;
     }
 
-    // Purge obsolete card rows in Supabase so old cards are replaced cleanly
-    if (stateKey === 'rfidCards') {
-      try {
-        const activeIds = rows.map(r => r.id).filter(Boolean);
-        if (activeIds.length > 0) {
-          const formattedIds = activeIds.join(',');
-          await supabase.from('rfid_cards').delete().not('id', 'in', `(${formattedIds})`);
-        }
-      } catch (purgeErr) {
-        console.warn('Non-fatal warning purging obsolete cards in Supabase:', purgeErr);
+    // Purge obsolete rows in Supabase so deleted items in state are purged cleanly
+    try {
+      const activeIds = rows.map(r => r.id).filter(Boolean);
+      if (activeIds.length > 0) {
+        const formattedIds = activeIds.join(',');
+        await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
       }
+    } catch (purgeErr) {
+      console.warn(`Non-fatal warning purging obsolete rows in ${tableName}:`, purgeErr);
     }
   }
 }
@@ -124,17 +133,53 @@ export async function deleteRfidCard(cardId) {
 
 /**
  * Reset all operational data (students, guardians, rfid_cards, ledger, audit_logs)
- * EXCLUDES login_accounts so role management credentials remain intact.
+ * AND purge non-management accounts (ORANG_TUA, SISWA).
+ * EXCLUDES Role Management accounts (SUPER_ADMIN, ADMIN_KEUANGAN, KASIR_KANTIN) so system credentials remain intact.
  */
 export async function resetOperationalDatabase(currentState) {
+  const managementAccounts = (currentState?.loginAccounts || []).filter(
+    acc => ['SUPER_ADMIN', 'ADMIN_KEUANGAN', 'KASIR_KANTIN'].includes(acc.roleId || acc.role_id || acc.role)
+  );
+
   if (supabase) {
-    const operationalTables = ['students', 'guardians', 'rfid_cards', 'ledger', 'audit_logs'];
-    for (const tableName of operationalTables) {
+    // Delete in reverse dependency order to avoid foreign key errors
+    const deleteOrder = [
+      'ledger',
+      'audit_logs',
+      'rfid_cards',
+      'guardians',
+      'students'
+    ];
+
+    for (const tableName of deleteOrder) {
       try {
-        await supabase.from(tableName).delete().neq('id', '___NON_EXISTENT_ID___');
+        const { error } = await supabase.from(tableName).delete().not('id', 'is', null);
+        if (error) {
+          const { data: idRows } = await supabase.from(tableName).select('id');
+          if (idRows && idRows.length > 0) {
+            const ids = idRows.map(r => r.id);
+            await supabase.from(tableName).delete().in('id', ids);
+          }
+        }
       } catch (err) {
-        console.warn(`Warning resetting table ${tableName} in Supabase:`, err);
+        console.warn(`Error purging table ${tableName} in Supabase:`, err);
       }
+    }
+
+    // Purge non-management accounts in Supabase (ORANG_TUA & SISWA)
+    try {
+      await supabase.from('login_accounts').delete().in('role_id', ['ORANG_TUA', 'SISWA']);
+      const { data: allAccs } = await supabase.from('login_accounts').select('id, role_id');
+      if (allAccs && allAccs.length > 0) {
+        const nonMgmtIds = allAccs
+          .filter(a => ['ORANG_TUA', 'SISWA'].includes(a.role_id))
+          .map(a => a.id);
+        if (nonMgmtIds.length > 0) {
+          await supabase.from('login_accounts').delete().in('id', nonMgmtIds);
+        }
+      }
+    } catch (accErr) {
+      console.warn('Error purging non-management accounts in Supabase:', accErr);
     }
   }
 
@@ -150,10 +195,10 @@ export async function resetOperationalDatabase(currentState) {
       action: 'RESET_DATABASE_OPERASIONAL',
       entity: 'system',
       entityId: 'reset-all',
-      details: 'Pembersihan total seluruh data operasional sekolah (Siswa, Kartu RFID, Mutasi Tabungan & Audit Log) oleh Super Admin',
+      details: 'Pembersihan total seluruh data operasional sekolah (Siswa, Wali, Kartu RFID, Mutasi Tabungan, Audit Log & Akun Siswa/Wali) oleh Super Admin',
       ip: '127.0.0.1'
     }],
-    loginAccounts: currentState?.loginAccounts || []
+    loginAccounts: managementAccounts
   };
 
   if (supabase) {

@@ -77,12 +77,12 @@ export default function App() {
         const savedState = JSON.parse(saved);
         const cleanState = {
           ...savedState,
-          students: (savedState.students && savedState.students.length > 0) ? savedState.students : INITIAL_STUDENTS,
-          guardians: (savedState.guardians && savedState.guardians.length > 0) ? savedState.guardians : INITIAL_GUARDIANS,
-          rfidCards: (savedState.rfidCards && savedState.rfidCards.length > 0) ? savedState.rfidCards : INITIAL_RFID_CARDS,
-          ledger: (savedState.ledger && savedState.ledger.length > 0) ? savedState.ledger : INITIAL_LEDGER,
-          auditLogs: (savedState.auditLogs && savedState.auditLogs.length > 0) ? savedState.auditLogs : INITIAL_AUDIT_LOGS,
-          loginAccounts: savedState.loginAccounts || LOGIN_ACCOUNTS
+          students: Array.isArray(savedState.students) ? savedState.students : INITIAL_STUDENTS,
+          guardians: Array.isArray(savedState.guardians) ? savedState.guardians : INITIAL_GUARDIANS,
+          rfidCards: Array.isArray(savedState.rfidCards) ? savedState.rfidCards : INITIAL_RFID_CARDS,
+          ledger: Array.isArray(savedState.ledger) ? savedState.ledger : INITIAL_LEDGER,
+          auditLogs: Array.isArray(savedState.auditLogs) ? savedState.auditLogs : INITIAL_AUDIT_LOGS,
+          loginAccounts: Array.isArray(savedState.loginAccounts) ? savedState.loginAccounts : LOGIN_ACCOUNTS
         };
 
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleanState));

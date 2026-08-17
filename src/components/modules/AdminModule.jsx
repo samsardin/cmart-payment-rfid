@@ -138,12 +138,17 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
     try {
       const emptyState = await resetOperationalDatabase(state);
+      try {
+        localStorage.setItem('sistem_sekolah_rfid_v1', JSON.stringify(emptyState));
+      } catch (lsErr) {
+        console.warn('Warning updating localStorage on reset:', lsErr);
+      }
       setState(emptyState);
       setIsResetModalOpen(false);
       setResetConfirmText('');
       setFeedback({
         type: 'success',
-        text: 'DATABASE OPERASIONAL BERHASIL DIRESET! Seluruh data Siswa, Kartu RFID, Ledger, dan Log Audit telah dibersihkan. Akun Role Management tetap aman.'
+        text: `DATABASE OPERASIONAL BERHASIL DIRESET! Seluruh data Siswa, Wali, Kartu RFID, Mutasi Ledger, dan Akun Siswa/Wali telah dibersihkan. Akun Role Management (${emptyState.loginAccounts?.length || 0} Akun) tetap aman.`
       });
     } catch (err) {
       setFeedback({ type: 'error', text: `Gagal melakukan reset database: ${err.message}` });
