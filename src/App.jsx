@@ -141,6 +141,11 @@ export default function App() {
       return;
     }
 
+    if (activeTab === 'pickup') {
+      setScannedCardResult({ ...cardResult, uid: cleanUid, scanTimestamp: Date.now() });
+      return;
+    }
+
     // If card is unregistered OR user is in Admin module, route to Admin & auto-fill form immediately!
     if (currentRole.id === 'KASIR_KANTIN' && cardResult.isUnregistered) {
       setScannedCardResult(cardResult);
@@ -456,6 +461,7 @@ export default function App() {
               state={state}
               setState={setState}
               onOpenRfidModal={() => setIsRfidModalOpen(true)}
+              scannedCardResult={scannedCardResult}
             />
           )}
 

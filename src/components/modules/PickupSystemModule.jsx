@@ -24,7 +24,7 @@ import {
 import { audioPickupService } from '../../services/audioPickupService';
 import { verifyRfidCard, playRfidBeep } from '../../services/rfidService';
 
-export default function PickupSystemModule({ state, setState, onOpenRfidModal }) {
+export default function PickupSystemModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
   const [viewMode, setViewMode] = useState('OPERATOR'); // 'OPERATOR' or 'DISPLAY_TV'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('ALL');
@@ -39,6 +39,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal })
 
   // Auto Refresh Clock for Display Mode
   const [currentTime, setCurrentTime] = useState(new Date());
+  const lastProcessedKeyRef = useRef(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -54,6 +55,16 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal })
       enableChime
     });
   }, [volume, rate, pitch, enableChime]);
+
+  // Listen to physical USB RFID Reader Taps automatically
+  useEffect(() => {
+    if (!scannedCardResult || !scannedCardResult.uid) return;
+    const scanKey = `${scannedCardResult.uid}-${scannedCardResult.scanTimestamp || Date.now()}`;
+    if (lastProcessedKeyRef.current === scanKey) return;
+    lastProcessedKeyRef.current = scanKey;
+
+    handleSimulateGateTap(scannedCardResult.uid);
+  }, [scannedCardResult]);
 
   const uniqueClasses = Array.from(new Set(state.students.map(s => s.class))).filter(Boolean).sort();
   const pickupLogs = state.pickupLogs || [];
@@ -274,39 +285,53 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal })
           {/* Left Column: Quick RFID Scan Gate & Stats */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
-            {/* Gate Scanner Simulator Box */}
-            <div className="glass-card" style={{ background: '#f0fdf4', border: '1.5px solid #a7f3d0' }}>
-              <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#065f46', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {/* Gate Scanner Status & Simulator Box */}
+            <div className="glass-card" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', border: '1.5px solid #a7f3d0' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#065f46', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Radio size={20} className="pulse-rfid" style={{ color: '#059669' }} />
-                <span>Simulasi Tap Gerbang Penjemputan</span>
+                <span>Reader RFID USB: SIAP / AKTIF</span>
               </div>
-              <p style={{ fontSize: '0.78rem', color: '#047857', marginBottom: '0.85rem' }}>
-                Tempelkan Kartu RFID Penjemput pada USB Reader atau klik tombol di bawah untuk menyuarakan panggilan otomatis.
-              </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {state.rfidCards.filter(c => c.type === 'PENJEMPUT').map(card => {
-                  const g = state.guardians.find(g => g.id === card.assignedToId || g.rfidCardUid?.toUpperCase() === card.uid.toUpperCase());
-                  const label = g?.name || card.assignedToName || 'Orang Tua / Penjemput';
-                  return (
-                    <button
-                      key={card.id}
-                      className="btn btn-gold btn-sm"
-                      onClick={() => handleSimulateGateTap(card.uid)}
-                      style={{ textAlign: 'left', justifyContent: 'flex-start', padding: '0.6rem 0.8rem', fontSize: '0.8rem', fontWeight: 800 }}
-                    >
-                      ⚡ Tap {label} (UID: {card.uid})
-                    </button>
-                  );
-                })}
+              <div style={{ background: '#ffffff', padding: '0.75rem 0.9rem', borderRadius: '12px', border: '1px solid #6ee7b7', marginBottom: '0.85rem' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#047857', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <CheckCircle2 size={16} style={{ color: '#10b981' }} />
+                  <span>Langsung Tempelkan Kartu RFID USB</span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--slate-600)', marginTop: '0.2rem' }}>
+                  Setiap kali kartu di-tap pada scanner fisik USB, audio pemanggilan & bel chime akan <b>otomatis berbunyi instan</b>.
+                </div>
+              </div>
 
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={onOpenRfidModal}
-                  style={{ marginTop: '0.35rem', fontWeight: 700 }}
-                >
-                  <Radio size={14} /> Scanner RFID Universal
-                </button>
+              {/* Collapsible / Manual Test Buttons Section */}
+              <div style={{ borderTop: '1px dashed #a7f3d0', paddingTop: '0.75rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#065f46', marginBottom: '0.5rem' }}>
+                  🛠️ Uji Coba Manual Software (Klik Tombol):
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  {state.rfidCards.filter(c => c.type === 'PENJEMPUT').map(card => {
+                    const g = state.guardians.find(g => g.id === card.assignedToId || g.rfidCardUid?.toUpperCase() === card.uid.toUpperCase());
+                    const label = g?.name || card.assignedToName || 'Orang Tua / Penjemput';
+                    return (
+                      <button
+                        key={card.id}
+                        className="btn btn-gold btn-sm"
+                        onClick={() => handleSimulateGateTap(card.uid)}
+                        style={{ textAlign: 'left', justifyContent: 'flex-start', padding: '0.5rem 0.75rem', fontSize: '0.78rem', fontWeight: 800 }}
+                      >
+                        ⚡ Simulasikan Tap: {label} ({card.uid})
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={onOpenRfidModal}
+                    style={{ marginTop: '0.25rem', fontWeight: 700, fontSize: '0.78rem' }}
+                  >
+                    <Radio size={14} /> Input UID RFID Manual
+                  </button>
+                </div>
               </div>
             </div>
 
