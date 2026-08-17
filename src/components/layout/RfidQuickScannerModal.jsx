@@ -97,7 +97,18 @@ export default function RfidQuickScannerModal({ isOpen, onClose, cards, students
                     {scanResult.cardType === 'SISWA' ? (
                       <>Siswa: <b>{scanResult.student?.name}</b> ({scanResult.student?.class}) | Saldo: <b>Rp {(scanResult.student?.savingsBalance || 0).toLocaleString('id-ID')}</b></>
                     ) : (
-                      <>Penjemput: <b>{scanResult.guardian?.name}</b> → Siswa: <b>{scanResult.student?.name}</b></>
+                      <div>
+                        Penjemput: <b>{scanResult.guardian?.name || 'Orang Tua / Wali'}</b> ({scanResult.guardian?.relationship || 'Wali'})
+                        <div style={{ marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          {(scanResult.students && scanResult.students.length > 0 ? scanResult.students : [scanResult.student]).map((st, idx) => (
+                            st && (
+                              <div key={st.id || idx} style={{ background: '#ffffff', padding: '0.3rem 0.6rem', borderRadius: '6px', border: '1px solid #93c5fd', fontSize: '0.78rem', fontWeight: 700, color: '#1e3a8a' }}>
+                                🧒 Anak {idx + 1}: <b>{st.name}</b> (Kelas {st.class})
+                              </div>
+                            )
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </>
                 ) : (

@@ -85,12 +85,18 @@ export const verifyRfidCard = (uid, cards, students, guardians) => {
     };
   } else if (card.type === 'PENJEMPUT') {
     const guardian = guardians.find(g => g.id === card.assignedToId || g.rfidCardUid?.toUpperCase() === cleanUid);
-    const student = students.find(s => s.guardianId === guardian?.id || s.id === guardian?.studentId);
+    const childrenList = students.filter(s =>
+      (guardian?.id && s.guardianId === guardian.id) ||
+      (guardian?.studentId && s.id === guardian.studentId) ||
+      (guardian?.name && s.guardianName && s.guardianName.toLowerCase() === guardian.name.toLowerCase())
+    );
+    const primaryStudent = childrenList[0] || students.find(s => s.guardianId === guardian?.id || s.id === guardian?.studentId);
     return {
       success: true,
       cardType: 'PENJEMPUT',
       guardian,
-      student,
+      student: primaryStudent,
+      students: childrenList.length > 0 ? childrenList : (primaryStudent ? [primaryStudent] : []),
       card
     };
   }
