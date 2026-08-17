@@ -637,7 +637,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         class: studentForm.class.trim(),
         gender: studentForm.gender || 'L',
         guardianId: newGuardianId,
-        guardianName: studentForm.guardianName.trim() || 'Orang Tua / Wali',
+        guardianName: (studentForm.guardianName.trim() && !studentForm.guardianName.toLowerCase().includes('orang tua')) ? studentForm.guardianName.trim() : '',
         savingsBalance: 0,
         canteenDepositBalance: 0,
         canteenBalanceSource: 'TABUNGAN',
@@ -687,7 +687,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
       let updatedGuardians = [...(state.guardians || [])];
       const gIdx = updatedGuardians.findIndex(g => g.id === editingStudent.guardianId || g.studentId === targetStudentId);
-      if (studentForm.guardianName.trim()) {
+      if (studentForm.guardianName.trim() && !studentForm.guardianName.toLowerCase().includes('orang tua')) {
         if (gIdx >= 0) {
           updatedGuardians[gIdx] = {
             ...updatedGuardians[gIdx],
@@ -720,7 +720,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
               gender: studentForm.gender || 'L',
               photo: studentForm.photo || s.photo,
               rfidUid: studentForm.rfidUid.trim().toUpperCase(),
-              guardianName: studentForm.guardianName.trim() || s.guardianName,
+              guardianName: (studentForm.guardianName.trim() && !studentForm.guardianName.toLowerCase().includes('orang tua')) ? studentForm.guardianName.trim() : '',
               status: studentForm.status
             };
           }
@@ -2172,19 +2172,20 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     type="text"
                     className="form-input"
                     placeholder="Nama lengkap Ayah/Ibu/Wali..."
-                    value={
-                      (!studentForm.guardianName || studentForm.guardianName.toLowerCase().includes('orang tua'))
-                        ? ''
-                        : studentForm.guardianName
-                    }
-                    onChange={(e) => setStudentForm({ ...studentForm, guardianName: e.target.value })}
+                    value={studentForm.guardianName || ''}
+                    onChange={(e) => {
+                      const text = e.target.value;
+                      setStudentForm(prev => ({ ...prev, guardianName: text }));
+                    }}
                     onFocus={(e) => {
-                      if (!e.target.value || e.target.value.toLowerCase().includes('orang tua') || (studentForm.guardianName && studentForm.guardianName.toLowerCase().includes('orang tua'))) {
+                      if (e.target.value.toLowerCase().includes('orang tua') || (studentForm.guardianName && studentForm.guardianName.toLowerCase().includes('orang tua'))) {
                         setStudentForm(prev => ({ ...prev, guardianName: '' }));
+                      } else {
+                        e.target.select();
                       }
                     }}
                     onClick={(e) => {
-                      if (!e.target.value || e.target.value.toLowerCase().includes('orang tua') || (studentForm.guardianName && studentForm.guardianName.toLowerCase().includes('orang tua'))) {
+                      if (e.target.value.toLowerCase().includes('orang tua') || (studentForm.guardianName && studentForm.guardianName.toLowerCase().includes('orang tua'))) {
                         setStudentForm(prev => ({ ...prev, guardianName: '' }));
                       }
                     }}
