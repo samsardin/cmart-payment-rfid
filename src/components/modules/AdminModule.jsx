@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ShieldCheck, Users, CreditCard, Activity, Search, Lock, Unlock, Plus,
   AlertCircle, Zap, CheckCircle2, Usb, Trash2, Upload, FileSpreadsheet,
-  Edit3, Filter, XCircle, X, Download
+  Edit3, Filter, XCircle, X, Download, Camera, User
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
@@ -534,6 +534,27 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   // -------------------------------------------------------------
   // MASTER SISWA: SINGLE STUDENT CRUD HANDLERS
   // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // MASTER SISWA: SINGLE STUDENT CRUD HANDLERS
+  // -------------------------------------------------------------
+  const handlePhotoFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setFeedback({ type: 'error', text: 'File yang dipilih harus berupa gambar (JPG/PNG/WEBP/GIF)!' });
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setFeedback({ type: 'error', text: 'Ukuran file gambar maksimal 3 MB!' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      setStudentForm(prev => ({ ...prev, photo: uploadEvent.target?.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleOpenAddStudentModal = () => {
     setEditingStudent(null);
     const autoNis = `2026${Math.floor(1000 + Math.random() * 9000)}`;
@@ -541,8 +562,12 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       name: '',
       nis: autoNis,
       class: uniqueClasses[0] || '5-A Tahfidz',
+      gender: 'L',
+      photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
       rfidUid: '',
-      guardianName: 'Orang Tua / Wali',
+      guardianName: '',
+      guardianPhone: '',
+      guardianRelationship: 'Ayah',
       status: 'AKTIF',
       username: autoNis,
       password: `${autoNis}123`
@@ -553,12 +578,17 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   const handleOpenEditStudentModal = (student) => {
     setEditingStudent(student);
     const acc = (state.loginAccounts || []).find(a => a.studentId === student.id || a.username === student.nis);
+    const gdr = (state.guardians || []).find(g => g.id === student.guardianId || g.studentId === student.id || g.name === student.guardianName);
     setStudentForm({
       name: student.name || '',
       nis: student.nis || '',
       class: student.class || '',
+      gender: student.gender || 'L',
+      photo: student.photo || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
       rfidUid: student.rfidUid || '',
-      guardianName: student.guardianName || '',
+      guardianName: student.guardianName || gdr?.name || '',
+      guardianPhone: gdr?.phone || '',
+      guardianRelationship: gdr?.relationship || 'Ayah',
       status: student.status || 'AKTIF',
       username: acc?.username || student.nis,
       password: acc?.password || `${student.nis}123`
@@ -578,20 +608,38 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
     if (studentModalType === 'ADD') {
       const newStudentId = `STD-${Date.now()}`;
+      let newGuardianId = `GDR-${Date.now()}`;
+
+      let updatedGuardians = [...(state.guardians || [])];
+      if (studentForm.guardianName.trim()) {
+        const newGuardianObj = {
+          id: newGuardianId,
+          name: studentForm.guardianName.trim(),
+          phone: studentForm.guardianPhone.trim(),
+          relationship: studentForm.guardianRelationship || 'Orang Tua',
+          studentId: newStudentId,
+          rfidCardUid: '',
+          address: ''
+        };
+        updatedGuardians.push(newGuardianObj);
+      } else {
+        newGuardianId = '';
+      }
+
       const newStudentObj = {
         id: newStudentId,
         nis: studentForm.nis.trim(),
         name: studentForm.name.trim(),
         class: studentForm.class.trim(),
-        guardianId: '',
+        gender: studentForm.gender || 'L',
+        guardianId: newGuardianId,
         guardianName: studentForm.guardianName.trim() || 'Orang Tua / Wali',
         savingsBalance: 0,
         canteenDepositBalance: 0,
         canteenBalanceSource: 'TABUNGAN',
         rfidUid: studentForm.rfidUid.trim().toUpperCase(),
-        photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
-        status: studentForm.status,
-        gender: 'L'
+        photo: studentForm.photo || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
+        status: studentForm.status
       };
 
       const newAccountObj = {
@@ -605,10 +653,11 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       setState(prev => ({
         ...prev,
         students: [newStudentObj, ...prev.students],
+        guardians: updatedGuardians,
         loginAccounts: [...(prev.loginAccounts || []), newAccountObj]
       }));
 
-      setFeedback({ type: 'success', text: `Siswa baru "${newStudentObj.name}" & akun login (${targetUsername}) berhasil ditambahkan!` });
+      setFeedback({ type: 'success', text: `Siswa baru "${newStudentObj.name}" & foto profil berhasil disimpan!` });
     } else if (studentModalType === 'EDIT' && editingStudent) {
       const targetStudentId = editingStudent.id;
       const existingAccIdx = (state.loginAccounts || []).findIndex(a => a.studentId === targetStudentId || a.username === editingStudent.nis);
@@ -632,6 +681,29 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         });
       }
 
+      let updatedGuardians = [...(state.guardians || [])];
+      const gIdx = updatedGuardians.findIndex(g => g.id === editingStudent.guardianId || g.studentId === targetStudentId);
+      if (studentForm.guardianName.trim()) {
+        if (gIdx >= 0) {
+          updatedGuardians[gIdx] = {
+            ...updatedGuardians[gIdx],
+            name: studentForm.guardianName.trim(),
+            phone: studentForm.guardianPhone.trim() || updatedGuardians[gIdx].phone,
+            relationship: studentForm.guardianRelationship || updatedGuardians[gIdx].relationship
+          };
+        } else {
+          updatedGuardians.push({
+            id: `GDR-${Date.now()}`,
+            name: studentForm.guardianName.trim(),
+            phone: studentForm.guardianPhone.trim(),
+            relationship: studentForm.guardianRelationship || 'Orang Tua',
+            studentId: targetStudentId,
+            rfidCardUid: '',
+            address: ''
+          });
+        }
+      }
+
       setState(prev => ({
         ...prev,
         students: prev.students.map(s => {
@@ -641,6 +713,8 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
               name: studentForm.name.trim(),
               nis: studentForm.nis.trim(),
               class: studentForm.class.trim(),
+              gender: studentForm.gender || 'L',
+              photo: studentForm.photo || s.photo,
               rfidUid: studentForm.rfidUid.trim().toUpperCase(),
               guardianName: studentForm.guardianName.trim() || s.guardianName,
               status: studentForm.status
@@ -648,10 +722,11 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           }
           return s;
         }),
+        guardians: updatedGuardians,
         loginAccounts: updatedAccounts
       }));
 
-      setFeedback({ type: 'success', text: `Data & akun login siswa "${studentForm.name}" berhasil diperbarui!` });
+      setFeedback({ type: 'success', text: `Data siswa "${studentForm.name}" berhasil diperbarui!` });
     }
 
     setStudentModalType(null);
@@ -1443,6 +1518,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 <tr>
                   <th>Siswa</th>
                   <th>NIS</th>
+                  <th>JK</th>
                   <th>Kelas</th>
                   <th>Orang Tua / Wali</th>
                   <th>UID RFID</th>
@@ -1455,44 +1531,58 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
               <tbody>
                 {filteredStudentsList.length === 0 ? (
                   <tr>
-                    <td colSpan="9" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--slate-400)' }}>
+                    <td colSpan="10" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--slate-400)' }}>
                       Tidak ada data siswa ditemukan.
                     </td>
                   </tr>
                 ) : (
-                  filteredStudentsList.map(s => (
-                    <tr key={s.id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <img src={s.photo} alt={s.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--slate-300)' }} />
-                          <div>
-                            <div style={{ fontWeight: 800, color: 'var(--slate-900)' }}>{s.name}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)', fontFamily: 'monospace' }}>{s.id}</div>
+                  filteredStudentsList.map(s => {
+                    const gdrObj = (state.guardians || []).find(g => g.id === s.guardianId || g.studentId === s.id || g.name === s.guardianName);
+                    return (
+                      <tr key={s.id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <img src={s.photo} alt={s.name} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--slate-300)', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' }} />
+                            <div>
+                              <div style={{ fontWeight: 800, color: 'var(--slate-900)' }}>{s.name}</div>
+                              <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)', fontFamily: 'monospace' }}>{s.id}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td style={{ fontWeight: 700, fontFamily: 'monospace' }}>{s.nis}</td>
-                      <td>
-                        <span className="badge badge-emerald" style={{ fontWeight: 800 }}>{s.class}</span>
-                      </td>
-                      <td style={{ fontSize: '0.82rem', color: 'var(--slate-700)' }}>{s.guardianName}</td>
-                      <td>
-                        {s.rfidUid ? (
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', color: 'var(--primary-800)' }}>
-                            {s.rfidUid}
+                        </td>
+                        <td style={{ fontWeight: 700, fontFamily: 'monospace' }}>{s.nis}</td>
+                        <td>
+                          <span className={`badge ${s.gender === 'P' ? 'badge-purple' : 'badge-emerald'}`} style={{ fontWeight: 800 }}>
+                            {s.gender === 'P' ? 'P (Perempuan)' : 'L (Laki-laki)'}
                           </span>
-                        ) : (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)', italic: 'true' }}>
-                            Belum Ada RFID
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ fontWeight: 800, color: '#047857', textAlign: 'right' }}>
-                        Rp {(Number(s.savingsBalance) || 0).toLocaleString('id-ID')}
-                      </td>
-                      <td style={{ fontWeight: 800, color: '#b45309', textAlign: 'right' }}>
-                        Rp {(Number(s.canteenDepositBalance) || 0).toLocaleString('id-ID')}
-                      </td>
+                        </td>
+                        <td>
+                          <span className="badge badge-gold" style={{ fontWeight: 800 }}>{s.class}</span>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700, color: 'var(--slate-800)', fontSize: '0.82rem' }}>{s.guardianName || 'Belum Diisi'}</div>
+                          {gdrObj && (
+                            <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
+                              {gdrObj.relationship || 'Wali'} • {gdrObj.phone || ''}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {s.rfidUid ? (
+                            <span style={{ fontFamily: 'monospace', fontWeight: 800, background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', color: 'var(--primary-800)' }}>
+                              {s.rfidUid}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)', italic: 'true' }}>
+                              Belum Ada RFID
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ fontWeight: 800, color: '#047857', textAlign: 'right' }}>
+                          Rp {(Number(s.savingsBalance) || 0).toLocaleString('id-ID')}
+                        </td>
+                        <td style={{ fontWeight: 800, color: '#b45309', textAlign: 'right' }}>
+                          Rp {(Number(s.canteenDepositBalance) || 0).toLocaleString('id-ID')}
+                        </td>
                       <td>
                         <span className={`badge ${s.status === 'AKTIF' ? 'badge-emerald' : 'badge-red'}`}>
                           {s.status || 'AKTIF'}
@@ -1519,8 +1609,9 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                           </button>
                         </div>
                       </td>
-                    </tr>
-                  ))
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1894,7 +1985,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           justifyContent: 'center',
           padding: '1rem'
         }}>
-          <div className="glass-card" style={{ maxWidth: '520px', width: '100%', padding: '1.75rem', background: 'white', border: '1px solid var(--slate-200)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+          <div className="glass-card" style={{ maxWidth: '540px', width: '100%', padding: '1.75rem', background: 'white', border: '1px solid var(--slate-200)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
             
             <div className="flex-between" style={{ marginBottom: '1.25rem' }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--slate-900)' }}>
@@ -1906,6 +1997,62 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
             </div>
 
             <form onSubmit={handleSaveStudentSubmit} style={{ display: 'grid', gap: '1rem' }}>
+              
+              {/* UPLOAD FOTO PROFIL SISWA */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '14px', border: '1px solid var(--slate-200)' }}>
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={studentForm.photo}
+                    alt="Preview Foto Siswa"
+                    style={{ width: '84px', height: '84px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #ffffff', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
+                  />
+                  <label
+                    htmlFor="student-photo-file-input"
+                    style={{
+                      position: 'absolute',
+                      bottom: '0',
+                      right: '0',
+                      background: '#3b82f6',
+                      color: '#ffffff',
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+                    }}
+                    title="Upload Foto Profil Siswa"
+                  >
+                    <Camera size={15} />
+                  </label>
+                  <input
+                    id="student-photo-file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoFileChange}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <label htmlFor="student-photo-file-input" className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', fontSize: '0.78rem' }}>
+                    <Upload size={13} /> Upload Foto Profil
+                  </label>
+                  {studentForm.photo && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setStudentForm({ ...studentForm, photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80' })}
+                      style={{ fontSize: '0.78rem', color: '#64748b' }}
+                    >
+                      Reset Default
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="form-group">
                 <label className="form-label">Nama Lengkap Siswa *</label>
                 <input
@@ -1943,6 +2090,35 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 </div>
               </div>
 
+              {/* JENIS KELAMIN & STATUS */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Jenis Kelamin *</label>
+                  <select
+                    className="form-select"
+                    value={studentForm.gender || 'L'}
+                    onChange={(e) => setStudentForm({ ...studentForm, gender: e.target.value })}
+                    required
+                  >
+                    <option value="L">Laki-laki (L)</option>
+                    <option value="P">Perempuan (P)</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Status Siswa</label>
+                  <select
+                    className="form-select"
+                    value={studentForm.status}
+                    onChange={(e) => setStudentForm({ ...studentForm, status: e.target.value })}
+                  >
+                    <option value="AKTIF">AKTIF</option>
+                    <option value="NON-AKTIF">NON-AKTIF / ALUMNI</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* AKUN LOGIN SISWA */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--slate-200)' }}>
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 700 }}>Username Login Siswa</label>
@@ -1979,27 +2155,49 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Nama Orang Tua / Wali</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Nama orang tua/wali..."
-                  value={studentForm.guardianName}
-                  onChange={(e) => setStudentForm({ ...studentForm, guardianName: e.target.value })}
-                />
-              </div>
+              {/* DATA ORANG TUA / WALI LENGKAP */}
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--slate-200)', display: 'grid', gap: '0.75rem' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--slate-800)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <User size={15} style={{ color: '#f59e0b' }} />
+                  <span>Data Orang Tua / Wali Siswa</span>
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Status Siswa</label>
-                <select
-                  className="form-select"
-                  value={studentForm.status}
-                  onChange={(e) => setStudentForm({ ...studentForm, status: e.target.value })}
-                >
-                  <option value="AKTIF">AKTIF</option>
-                  <option value="NON-AKTIF">NON-AKTIF / ALUMNI</option>
-                </select>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Nama Orang Tua / Wali</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Nama lengkap Ayah/Ibu/Wali..."
+                    value={studentForm.guardianName}
+                    onChange={(e) => setStudentForm({ ...studentForm, guardianName: e.target.value })}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '0.78rem' }}>Hubungan / Relasi</label>
+                    <select
+                      className="form-select"
+                      value={studentForm.guardianRelationship || 'Ayah'}
+                      onChange={(e) => setStudentForm({ ...studentForm, guardianRelationship: e.target.value })}
+                    >
+                      <option value="Ayah">Ayah</option>
+                      <option value="Ibu">Ibu</option>
+                      <option value="Wali">Wali</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '0.78rem' }}>No. HP / WA Wali</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="0812xxxxxxx"
+                      value={studentForm.guardianPhone}
+                      onChange={(e) => setStudentForm({ ...studentForm, guardianPhone: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
