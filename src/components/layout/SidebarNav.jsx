@@ -117,7 +117,11 @@ export default function SidebarNav({
 
       case 'ADMIN_PENJEMPUTAN':
         return [
-          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2, submenus: pickupSubmenus }
+          { id: 'pickup', action: 'operator_mode', label: 'Mode Operator Pos Satpam', icon: ShieldCheck },
+          { id: 'pickup', action: 'manual_call', label: 'Panggil Manual (Kartu Tertinggal)', icon: Megaphone },
+          { id: 'pickup', action: 'tv_display', label: 'Mode TV Display Ruang Tunggu', icon: Tv },
+          { id: 'pickup', action: 'audio_settings', label: 'Setting Suara Audio', icon: Sliders },
+          { id: 'pickup', action: 'test_voice', label: 'Tes Uji Suara Panggilan', icon: Volume2 }
         ];
 
       case 'KASIR_KANTIN':
@@ -252,18 +256,20 @@ export default function SidebarNav({
         </div>
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          {navTree.map(item => {
+          {navTree.map((item, index) => {
             const IconComponent = item.icon;
-            const isMainActive = activeTab === item.id;
+            const isMainActive = item.action
+              ? (activeTab === item.id && pickupAction === item.action)
+              : (activeTab === item.id);
             const hasSubmenus = Array.isArray(item.submenus) && item.submenus.length > 0;
 
             return (
-              <div key={item.id} style={{ display: 'flex', flexDirection: 'column' }}>
+              <div key={item.action ? `${item.id}-${item.action}` : item.id} style={{ display: 'flex', flexDirection: 'column' }}>
                 
                 {/* Main Item Button */}
                 <button
                   type="button"
-                  onClick={() => handleMenuClick(item.id, hasSubmenus ? item.submenus[0].id : null)}
+                  onClick={() => handleMenuClick(item.id, item.action || (hasSubmenus ? item.submenus[0].id : null))}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
