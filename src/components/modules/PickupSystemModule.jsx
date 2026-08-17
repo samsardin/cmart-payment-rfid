@@ -19,7 +19,10 @@ import {
   Maximize2, 
   Sparkles,
   Award,
-  AlertCircle
+  AlertCircle,
+  Megaphone,
+  UserPlus,
+  X
 } from 'lucide-react';
 import { audioPickupService } from '../../services/audioPickupService';
 import { verifyRfidCard, playRfidBeep } from '../../services/rfidService';
@@ -30,6 +33,12 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   
+  // State for Manual Pickup Call (Kartu Penjemput Tertinggal)
+  const [showManualPickupModal, setShowManualPickupModal] = useState(false);
+  const [manualSearchQuery, setManualSearchQuery] = useState('');
+  const [manualClassFilter, setManualClassFilter] = useState('ALL');
+  const [manualPickupFeedback, setManualPickupFeedback] = useState(null);
+
   // Audio Settings Modal & State
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [volume, setVolume] = useState(1.0);
@@ -135,6 +144,59 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
       ...prev,
       pickupLogs: [...newLogs, ...(prev.pickupLogs || [])]
     }));
+  };
+
+  // Handle Manual Student Voice Call (Kartu Tertinggal)
+  const handleManualStudentPickup = (student) => {
+    if (!student) return;
+
+    const gObj = state.guardians.find(g => g.id === student.guardianId || g.studentId === student.id) || {
+      id: '',
+      name: student.guardianName || 'Orang Tua / Wali (Kartu Tertinggal)',
+      relationship: 'Wali'
+    };
+
+    const timestamp = new Date().toISOString();
+    const newLog = {
+      id: `PICKUP-MANUAL-${Date.now()}`,
+      studentId: student.id,
+      studentName: student.name,
+      studentPhoto: student.photo,
+      className: student.class,
+      nis: student.nis,
+      guardianId: gObj.id || '',
+      guardianName: gObj.name || student.guardianName || 'Orang Tua / Wali',
+      guardianPhone: gObj.phone || '',
+      guardianRelationship: gObj.relationship || 'Wali',
+      rfidUid: 'KARTU_TERTINGGAL',
+      timestamp,
+      status: 'DIPANGGIL',
+      calledCount: 1,
+      isManualEntry: true
+    };
+
+    // Trigger Audio MP3 Bell + Voice Announcement
+    audioPickupService.enqueueAnnouncement({
+      student,
+      children: [student],
+      guardian: gObj,
+      isRepeat: false
+    });
+
+    // Update global state pickupLogs
+    setState(prev => ({
+      ...prev,
+      pickupLogs: [newLog, ...(prev.pickupLogs || [])]
+    }));
+
+    setManualPickupFeedback({
+      type: 'success',
+      text: `Pemanggilan suara MP3 untuk ${student.name} (Kelas ${student.class}) [Kartu Tertinggal] BERHASIL Diproses!`
+    });
+
+    setTimeout(() => {
+      setManualPickupFeedback(null);
+    }, 4000);
   };
 
   // Re-announce Voice Call for a Pickup Item
@@ -252,6 +314,15 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
           </button>
 
           <button
+            className="btn btn-gold"
+            onClick={() => setShowManualPickupModal(true)}
+            style={{ fontWeight: 800, fontSize: '0.84rem' }}
+            title="Panggil siswa secara manual jika kartu penjemput tertinggal"
+          >
+            <Megaphone size={16} /> Panggil Manual (Kartu Tertinggal)
+          </button>
+
+          <button
             className={`btn ${viewMode === 'DISPLAY_TV' ? 'btn-gold' : 'btn-secondary'}`}
             onClick={() => setViewMode('DISPLAY_TV')}
             style={{ fontWeight: 800, fontSize: '0.84rem' }}
@@ -285,6 +356,83 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
           {/* Left Column: Quick RFID Scan Gate & Stats */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
+            {/* MANUAL PICKUP CALL CARD (KARTU TERTINGGAL) */}
+            <div className="glass-card" style={{ background: '#fffbeb', border: '1.5px solid #fde68a' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.94rem', color: '#92400e', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <Megaphone size={18} style={{ color: '#d97706' }} />
+                <span>Panggil Manual (Kartu Tertinggal)</span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#b45309', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                Masukkan nama siswa atau pilih kelas jika penjemput <b>tidak membawa / tertinggal kartu RFID</b>.
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#92400e' }} />
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Cari nama siswa / NIS..."
+                    style={{ paddingLeft: '30px', fontSize: '0.8rem', borderRadius: '8px', background: '#ffffff', borderColor: '#fcd34d' }}
+                    value={manualSearchQuery}
+                    onChange={(e) => setManualSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <select
+                  className="form-select"
+                  value={manualClassFilter}
+                  onChange={(e) => setManualClassFilter(e.target.value)}
+                  style={{ fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px', background: '#ffffff', borderColor: '#fcd34d' }}
+                >
+                  <option value="ALL">Semua Kelas ({state.students.length})</option>
+                  {uniqueClasses.map(cls => (
+                    <option key={cls} value={cls}>Kelas {cls}</option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  className="btn btn-gold btn-sm"
+                  onClick={() => setShowManualPickupModal(true)}
+                  style={{ fontWeight: 800, fontSize: '0.8rem', justifyContent: 'center', marginTop: '0.2rem' }}
+                >
+                  <Search size={14} /> Buka Pencarian Siswa Lengkap
+                </button>
+              </div>
+
+              {/* Inline Search Quick Results (up to 4 items) */}
+              {manualSearchQuery.trim() && (
+                <div style={{ marginTop: '0.65rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '190px', overflowY: 'auto' }}>
+                  {state.students
+                    .filter(s => {
+                      const q = manualSearchQuery.trim().toLowerCase();
+                      const matchesSearch = !q || s.name.toLowerCase().includes(q) || s.nis.includes(q) || (s.guardianName || '').toLowerCase().includes(q);
+                      const matchesClass = manualClassFilter === 'ALL' || s.class === manualClassFilter;
+                      return matchesSearch && matchesClass;
+                    })
+                    .slice(0, 4)
+                    .map(st => (
+                      <div key={st.id} style={{ background: '#ffffff', padding: '0.5rem 0.65rem', borderRadius: '8px', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#78350f' }}>{st.name}</div>
+                          <div style={{ fontSize: '0.68rem', color: '#b45309' }}>Kelas: {st.class} • NIS: {st.nis}</div>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleManualStudentPickup(st)}
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.72rem', fontWeight: 800 }}
+                          title="Panggil Audio MP3 Siswa Ini"
+                        >
+                          <Volume2 size={12} /> Panggil
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
             {/* Gate Scanner Status & Simulator Box */}
             <div className="glass-card" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', border: '1.5px solid #a7f3d0' }}>
               <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#065f46', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -464,7 +612,11 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
                             {new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                           </div>
                           <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)', fontFamily: 'monospace' }}>
-                            {item.rfidUid}
+                            {item.rfidUid === 'KARTU_TERTINGGAL' || item.isManualEntry ? (
+                              <span className="badge badge-gold" style={{ fontSize: '0.65rem', padding: '1px 5px', fontWeight: 800 }}>⚠️ Kartu Tertinggal</span>
+                            ) : (
+                              item.rfidUid
+                            )}
                           </div>
                         </td>
                         <td>
@@ -801,6 +953,150 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
                 Simpan & Tutup
               </button>
 
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PANGGIL MANUAL SISWA (KARTU PENJEMPUT TERTINGGAL) */}
+      {showManualPickupModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div className="glass-card" style={{ maxWidth: '640px', width: '100%', padding: '1.5rem', background: '#ffffff', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--slate-200)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            
+            <div className="flex-between" style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <div style={{ background: '#fef3c7', padding: '0.55rem', borderRadius: '12px', color: '#d97706' }}>
+                  <Megaphone size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--slate-900)' }}>
+                    Panggil Manual Siswa (Kartu Penjemput Tertinggal)
+                  </h3>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)' }}>
+                    Pencarian siswa berdasarkan Nama, Kelas, atau NIS untuk pemanggilan audio pengeras suara MP3
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setShowManualPickupModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-400)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {manualPickupFeedback && (
+              <div className="badge badge-emerald" style={{ padding: '0.65rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', fontWeight: 700 }}>
+                <CheckCircle2 size={16} />
+                <span>{manualPickupFeedback.text}</span>
+              </div>
+            )}
+
+            {/* Filter controls */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Ketik nama siswa, NIS, atau nama orang tua..."
+                  style={{ paddingLeft: '36px', borderRadius: '10px' }}
+                  value={manualSearchQuery}
+                  onChange={(e) => setManualSearchQuery(e.target.value)}
+                  autoFocus
+                />
+              </div>
+
+              <select
+                className="form-select"
+                value={manualClassFilter}
+                onChange={(e) => setManualClassFilter(e.target.value)}
+                style={{ fontSize: '0.84rem', fontWeight: 700, borderRadius: '10px' }}
+              >
+                <option value="ALL">Semua Kelas ({state.students.length})</option>
+                {uniqueClasses.map(cls => (
+                  <option key={cls} value={cls}>Kelas {cls}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* List of matching students */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '420px', paddingRight: '0.2rem' }}>
+              {state.students
+                .filter(s => {
+                  const q = manualSearchQuery.trim().toLowerCase();
+                  const matchesSearch = !q ||
+                    s.name.toLowerCase().includes(q) ||
+                    s.nis.includes(q) ||
+                    s.class.toLowerCase().includes(q) ||
+                    (s.guardianName || '').toLowerCase().includes(q);
+
+                  const matchesClass = manualClassFilter === 'ALL' || s.class === manualClassFilter;
+                  return matchesSearch && matchesClass;
+                })
+                .map(st => {
+                  const gObj = state.guardians.find(g => g.id === st.guardianId || g.studentId === st.id);
+                  return (
+                    <div
+                      key={st.id}
+                      style={{
+                        padding: '0.85rem 1rem',
+                        borderRadius: '12px',
+                        background: '#f8fafc',
+                        border: '1px solid var(--slate-200)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <img
+                          src={st.photo}
+                          alt={st.name}
+                          style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--slate-300)' }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 800, color: 'var(--slate-900)', fontSize: '0.92rem' }}>
+                            {st.name}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px' }}>
+                            <span className="badge badge-gold" style={{ fontSize: '0.68rem', padding: '1px 6px', fontWeight: 800 }}>Kelas {st.class}</span>
+                            <span>NIS: {st.nis}</span>
+                            <span>• Wali: {gObj?.name || st.guardianName || 'Orang Tua'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => handleManualStudentPickup(st)}
+                        style={{ fontWeight: 800, fontSize: '0.82rem', padding: '0.5rem 0.9rem', whiteSpace: 'nowrap' }}
+                      >
+                        <Volume2 size={16} /> Panggil Suara MP3
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+
+            <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--slate-200)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowManualPickupModal(false)}
+              >
+                Tutup
+              </button>
             </div>
 
           </div>
