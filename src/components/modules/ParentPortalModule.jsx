@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Wallet, Radio, CreditCard, KeyRound, LockKeyhole } from 'lucide-react';
+import { Users, Wallet, Radio, CreditCard, KeyRound, LockKeyhole, GraduationCap } from 'lucide-react';
 
 export default function ParentPortalModule({ state, authenticatedSession, onOpenRfidModal, view, onChangePassword }) {
   const [currentPassword, setCurrentPassword] = useState('');
