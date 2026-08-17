@@ -178,15 +178,20 @@ export default function App() {
     loadSchoolState()
       .then((cloudState) => {
         if (cloudState) {
+          const cloudAccounts = cloudState.loginAccounts || [];
+          const cloudUsernames = new Set(cloudAccounts.map(a => a.username));
+          const mergedAccounts = [
+            ...cloudAccounts,
+            ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
+          ];
+
           const freshCloudState = {
             students: cloudState.students || [],
             guardians: cloudState.guardians || [],
             rfidCards: cloudState.rfidCards || [],
             ledger: cloudState.ledger || [],
             auditLogs: cloudState.auditLogs || [],
-            loginAccounts: (cloudState.loginAccounts && cloudState.loginAccounts.length > 0)
-              ? cloudState.loginAccounts
-              : LOGIN_ACCOUNTS
+            loginAccounts: mergedAccounts
           };
 
           lastSyncedStateRef.current = JSON.stringify(freshCloudState);

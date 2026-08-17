@@ -94,13 +94,16 @@ export async function loadSchoolState() {
     if (missingDefaults.length > 0) {
       stateObj.loginAccounts = [...stateObj.loginAccounts, ...missingDefaults];
       const dbRows = missingDefaults.map(d => toDatabaseRow(d, 'loginAccounts'));
-      supabase.from('login_accounts').upsert(dbRows).then(({ error }) => {
+      try {
+        const { error } = await supabase.from('login_accounts').upsert(dbRows);
         if (error) {
-          console.warn('Auto-seed default system accounts to Supabase login_accounts table warning:', error);
+          console.warn('Auto-seed default system accounts to Supabase warning:', error);
         } else {
           console.log('Successfully seeded missing default accounts to Supabase login_accounts table:', missingDefaults.map(m => m.username));
         }
-      });
+      } catch (err) {
+        console.warn('Auto-seed default accounts error:', err);
+      }
     }
   }
 
