@@ -21,7 +21,10 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
-  Volume2
+  Volume2,
+  Megaphone,
+  Tv,
+  Sliders
 } from 'lucide-react';
 import { ROLES } from '../../data/mockData';
 import cmartLogo from '../../assets/cmart-logo.png';
@@ -33,6 +36,8 @@ export default function SidebarNav({
   setActiveTab,
   adminSubTab,
   setAdminSubTab,
+  pickupAction,
+  setPickupAction,
   onOpenRfidModal,
   onExportLedger,
   onLogout,
@@ -54,6 +59,14 @@ export default function SidebarNav({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const pickupSubmenus = [
+    { id: 'operator_mode', label: 'Mode Operator Pos Satpam', icon: ShieldCheck },
+    { id: 'manual_call', label: 'Panggil Manual (Kartu Tertinggal)', icon: Megaphone },
+    { id: 'tv_display', label: 'Mode TV Display Ruang Tunggu', icon: Tv },
+    { id: 'audio_settings', label: 'Setting Suara Audio', icon: Sliders },
+    { id: 'test_voice', label: 'Tes Uji Suara Panggilan', icon: Volume2 }
+  ];
 
   // Build navigation items with submenus according to role
   const getNavTree = (roleId) => {
@@ -78,14 +91,14 @@ export default function SidebarNav({
               { id: 'database', label: '🛡️ Pemeliharaan Database', icon: Database }
             ]
           },
-          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2 },
+          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2, submenus: pickupSubmenus },
           { id: 'role_management', label: 'Role Management', icon: Users }
         ];
 
       case 'ADMIN_KEUANGAN':
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2 },
+          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2, submenus: pickupSubmenus },
           { 
             id: 'savings', 
             label: 'Tabungan & Ledger', 
@@ -106,13 +119,13 @@ export default function SidebarNav({
 
       case 'ADMIN_PENJEMPUTAN':
         return [
-          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2 }
+          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2, submenus: pickupSubmenus }
         ];
 
       case 'KASIR_KANTIN':
         return [
           { id: 'canteen', label: 'Terminal Kasir Kantin', icon: ShoppingBag },
-          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2 }
+          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2, submenus: pickupSubmenus }
         ];
 
       case 'ORANG_TUA':
@@ -132,8 +145,11 @@ export default function SidebarNav({
 
   const handleMenuClick = (tabId, subTabId = null) => {
     setActiveTab(tabId);
-    if (subTabId && setAdminSubTab) {
+    if (tabId === 'admin' && subTabId && setAdminSubTab) {
       setAdminSubTab(subTabId);
+    }
+    if (tabId === 'pickup' && subTabId && setPickupAction) {
+      setPickupAction(subTabId);
     }
     setIsMobileDrawerOpen(false);
   };
@@ -290,7 +306,10 @@ export default function SidebarNav({
                   >
                     {item.submenus.map(sub => {
                       const SubIcon = sub.icon;
-                      const isSubActive = isMainActive && adminSubTab === sub.id;
+                      const isSubActive = isMainActive && (
+                        (item.id === 'admin' && adminSubTab === sub.id) ||
+                        (item.id === 'pickup' && pickupAction === sub.id)
+                      );
 
                       return (
                         <button

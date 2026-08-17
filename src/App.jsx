@@ -131,6 +131,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('savings');
   // Active Admin SubTab
   const [adminSubTab, setAdminSubTab] = useState('rfid');
+  // Active Pickup Action / SubTab
+  const [pickupAction, setPickupAction] = useState('operator_mode');
   // RFID Quick Scanner Modal Open State
   const [isRfidModalOpen, setIsRfidModalOpen] = useState(false);
   // Scanned Unregistered Card UID for Admin auto-fill
@@ -415,6 +417,8 @@ export default function App() {
         setActiveTab={setActiveTab}
         adminSubTab={adminSubTab}
         setAdminSubTab={setAdminSubTab}
+        pickupAction={pickupAction}
+        setPickupAction={setPickupAction}
         onOpenRfidModal={() => setIsRfidModalOpen(true)}
         onExportLedger={handleExportLedgerCsv}
         onLogout={() => {
@@ -488,6 +492,8 @@ export default function App() {
               setState={setState}
               onOpenRfidModal={() => setIsRfidModalOpen(true)}
               scannedCardResult={scannedCardResult}
+              pickupAction={pickupAction}
+              setPickupAction={setPickupAction}
             />
           )}
 

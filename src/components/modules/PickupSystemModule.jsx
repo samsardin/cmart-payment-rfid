@@ -27,11 +27,27 @@ import {
 import { audioPickupService } from '../../services/audioPickupService';
 import { verifyRfidCard, playRfidBeep } from '../../services/rfidService';
 
-export default function PickupSystemModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
+export default function PickupSystemModule({ state, setState, onOpenRfidModal, scannedCardResult, pickupAction, setPickupAction }) {
   const [viewMode, setViewMode] = useState('OPERATOR'); // 'OPERATOR' or 'DISPLAY_TV'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Handle external sidebar sub-navigation clicks
+  useEffect(() => {
+    if (!pickupAction) return;
+    if (pickupAction === 'operator_mode' || pickupAction === 'OPERATOR') {
+      setViewMode('OPERATOR');
+    } else if (pickupAction === 'manual_call') {
+      setShowManualPickupModal(true);
+    } else if (pickupAction === 'tv_display' || pickupAction === 'DISPLAY_TV') {
+      setViewMode('DISPLAY_TV');
+    } else if (pickupAction === 'audio_settings') {
+      setShowSettingsModal(true);
+    } else if (pickupAction === 'test_voice') {
+      handleTestVoiceCall();
+    }
+  }, [pickupAction]);
   
   // State for Manual Pickup Call (Kartu Penjemput Tertinggal)
   const [showManualPickupModal, setShowManualPickupModal] = useState(false);
@@ -298,65 +314,8 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
       {viewMode === 'OPERATOR' && (
         <div className="pickup-operator-grid">
           
-          {/* Left Column: Vertical Sidebar Menu & Gate Scan & Stats */}
+          {/* Left Column: Gate Scan & Stats */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            
-            {/* VERTICAL MODULE SIDEBAR NAVIGATION MENU */}
-            <div className="glass-card pickup-sidebar-menu" style={{ background: '#ffffff', padding: '1rem', borderRadius: '16px', border: '1px solid var(--slate-200)' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.65rem' }}>
-                Navigasi Modul Penjemputan
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                <button
-                  type="button"
-                  className={`btn ${viewMode === 'OPERATOR' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setViewMode('OPERATOR')}
-                  style={{ fontWeight: 800, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem' }}
-                >
-                  <ShieldCheck size={16} /> Mode Operator Pos Satpam
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-gold"
-                  onClick={() => setShowManualPickupModal(true)}
-                  style={{ fontWeight: 800, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem' }}
-                  title="Panggil siswa secara manual jika kartu penjemput tertinggal"
-                >
-                  <Megaphone size={16} /> Panggil Manual (Kartu Tertinggal)
-                </button>
-
-                <button
-                  type="button"
-                  className={`btn ${viewMode === 'DISPLAY_TV' ? 'btn-gold' : 'btn-secondary'}`}
-                  onClick={() => setViewMode('DISPLAY_TV')}
-                  style={{ fontWeight: 800, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem' }}
-                >
-                  <Tv size={16} /> Mode TV Display Ruang Tunggu
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowSettingsModal(true)}
-                  style={{ fontWeight: 700, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem' }}
-                  title="Pengaturan Suara Audio & Volume"
-                >
-                  <Sliders size={16} /> Setting Suara
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleTestVoiceCall}
-                  style={{ fontWeight: 700, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem', color: '#0284c7', borderColor: '#bae6fd' }}
-                  title="Uji Coba Suara Panggilan"
-                >
-                  <Volume2 size={16} /> Uji Suara
-                </button>
-              </div>
-            </div>
             
             {/* MANUAL PICKUP CALL CARD (KARTU TERTINGGAL) */}
             <div className="glass-card" style={{ background: '#fffbeb', border: '1.5px solid #fde68a' }}>
