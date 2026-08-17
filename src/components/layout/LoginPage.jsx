@@ -25,22 +25,24 @@ export default function LoginPage({ onPasswordLogin, onRfidLogin, rfidFeedback }
   const message = rfidFeedback || feedback;
 
   return (
-    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '1.25rem', background: 'radial-gradient(circle at 15% 15%, #34d399 0%, transparent 26%), radial-gradient(circle at 85% 85%, #0ea5e9 0%, transparent 28%), linear-gradient(135deg, #022c22, #064e3b 55%, #0f172a)' }}>
-      <section style={{ width: 'min(960px, 100%)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', background: 'rgba(255,255,255,0.96)', overflow: 'hidden', borderRadius: '24px', boxShadow: '0 28px 80px rgba(2, 44, 34, 0.42)', border: '1px solid rgba(255,255,255,0.3)' }}>
-        <div style={{ padding: '3rem', background: 'linear-gradient(155deg, #022c22, #047857)', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', padding: '0.65rem 0.85rem', borderRadius: '16px', background: 'white', marginBottom: '1.5rem', boxShadow: '0 12px 30px rgba(0,0,0,0.2)' }}>
-            <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '190px', maxWidth: '100%', height: 'auto' }} />
+    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '1.25rem', background: 'var(--bg-gradient)' }}>
+      <section style={{ width: 'min(920px, 100%)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', background: '#ffffff', overflow: 'hidden', borderRadius: '24px', boxShadow: '0 20px 60px -15px rgba(15, 23, 42, 0.12)', border: '1px solid var(--slate-200)' }}>
+        <div style={{ padding: '3rem 2.5rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', color: 'var(--slate-800)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', borderRight: '1px solid var(--slate-200)' }}>
+          <div style={{ display: 'inline-flex', padding: '0.65rem 0.85rem', borderRadius: '16px', background: '#ffffff', marginBottom: '1.5rem', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', border: '1px solid var(--slate-200)' }}>
+            <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '180px', maxWidth: '100%', height: 'auto' }} />
           </div>
-          <h1 style={{ color: 'white', fontSize: '1.75rem', lineHeight: 1.2 }}>C-Mart Payment</h1>
-          <p style={{ color: '#d1fae5', marginTop: '0.6rem', lineHeight: 1.6 }}>Sistem Pembayaran CMart berbasis kartu RFID melalui Deposit atau Tabungan</p>
-          <div style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: '10px', background: 'rgba(255,255,255,0.1)', fontSize: '0.84rem', color: '#ecfdf5', lineHeight: 1.6 }}>
-            <b>Login kartu RFID</b><br />
+          <h1 style={{ color: 'var(--slate-900)', fontSize: '1.6rem', lineHeight: 1.2, fontWeight: 800 }}>C-Mart Payment</h1>
+          <p style={{ color: 'var(--slate-600)', marginTop: '0.5rem', fontSize: '0.88rem', lineHeight: 1.6 }}>Sistem Pembayaran CMart berbasis kartu RFID melalui Deposit atau Tabungan</p>
+          <div style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: '12px', background: '#ffffff', border: '1px solid var(--slate-200)', fontSize: '0.84rem', color: 'var(--slate-700)', lineHeight: 1.6, textAlign: 'left' }}>
+            <b style={{ color: 'var(--primary-800)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
+              <CreditCard size={16} style={{ color: 'var(--primary-600)' }} /> Login Kartu RFID
+            </b>
             Siswa dan orang tua/wali dapat tap kartu RFID di halaman ini untuk masuk langsung ke portal masing-masing.
           </div>
         </div>
 
-        <div style={{ padding: '3rem' }}>
-          <h2 style={{ fontSize: '1.35rem', color: 'var(--slate-900)' }}>Masuk ke aplikasi</h2>
+        <div style={{ padding: '3rem 2.5rem' }}>
+          <h2 style={{ fontSize: '1.35rem', color: 'var(--slate-900)', fontWeight: 800 }}>Masuk ke Aplikasi</h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--slate-500)', marginTop: '0.3rem', marginBottom: '1.25rem' }}>Gunakan username dan password sesuai peran Anda.</p>
           {message && <div style={{ marginBottom: '1rem', padding: '0.7rem', borderRadius: '8px', background: '#fee2e2', color: '#991b1b', fontSize: '0.82rem' }}>{message.text}</div>}
           <form onSubmit={submitPasswordLogin} style={{ display: 'grid', gap: '0.85rem' }}>
@@ -48,9 +50,9 @@ export default function LoginPage({ onPasswordLogin, onRfidLogin, rfidFeedback }
             <div style={{ position: 'relative' }}><UserRound size={16} style={{ position: 'absolute', left: '10px', top: '11px', color: 'var(--slate-400)' }} /><input className="form-input" style={{ paddingLeft: '34px' }} value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" required /></div>
             <label className="form-label">Password</label>
             <div style={{ position: 'relative' }}><LockKeyhole size={16} style={{ position: 'absolute', left: '10px', top: '11px', color: 'var(--slate-400)' }} /><input type="password" className="form-input" style={{ paddingLeft: '34px' }} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></div>
-            <button className="btn btn-primary" type="submit"><LogIn size={16} /> Masuk</button>
+            <button className="btn btn-primary" type="submit" style={{ padding: '0.75rem', fontSize: '0.9rem' }}><LogIn size={16} /> Masuk</button>
           </form>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', margin: '1.5rem 0 1rem', color: 'var(--slate-400)', fontSize: '0.76rem' }}><span style={{ height: '1px', background: 'var(--slate-200)', flex: 1 }} />ATAU TAP RFID<span style={{ height: '1px', background: 'var(--slate-200)', flex: 1 }} /></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', margin: '1.5rem 0 1rem', color: 'var(--slate-400)', fontSize: '0.76rem', fontWeight: 600 }}><span style={{ height: '1px', background: 'var(--slate-200)', flex: 1 }} />ATAU TAP RFID<span style={{ height: '1px', background: 'var(--slate-200)', flex: 1 }} /></div>
           <form onSubmit={submitRfidLogin} style={{ display: 'flex', gap: '0.5rem' }}>
             <input className="form-input" placeholder="UID kartu RFID" value={uid} onChange={(event) => setUid(event.target.value)} />
             <button className="btn btn-gold" type="submit" title="Masuk dengan kartu"><CreditCard size={17} /></button>
