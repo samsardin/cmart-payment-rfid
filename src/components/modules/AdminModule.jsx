@@ -927,11 +927,9 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     const acc = (state.loginAccounts || []).find(a => a.studentId === student.id || a.username === student.nis);
     const gdr = (state.guardians || []).find(g => g.id === student.guardianId || g.studentId === student.id || g.name === student.guardianName);
     
-    const rawGdrName = student.guardianName || gdr?.name || '';
-    let cleanGdrName = rawGdrName;
-    if (!cleanGdrName || cleanGdrName.toLowerCase().includes('orang tua') || cleanGdrName.toLowerCase().includes('wali') || cleanGdrName.trim() === 'Orang Tua / Wali') {
-      cleanGdrName = '';
-    }
+    const initialGdrName = student.guardianName || gdr?.name || '';
+    const initialGdrPhone = student.guardianPhone || gdr?.phone || '';
+    const initialGdrRel = student.guardianRelationship || gdr?.relationship || 'Ayah';
 
     setStudentForm({
       name: student.name || '',
@@ -940,9 +938,9 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       gender: student.gender || 'L',
       photo: student.photo || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
       rfidUid: student.rfidUid || '',
-      guardianName: cleanGdrName,
-      guardianPhone: gdr?.phone || '',
-      guardianRelationship: gdr?.relationship || 'Ayah',
+      guardianName: initialGdrName,
+      guardianPhone: initialGdrPhone,
+      guardianRelationship: initialGdrRel,
       status: student.status || 'AKTIF',
       username: acc?.username || student.nis,
       password: acc?.password || `${student.nis}123`
@@ -1006,6 +1004,8 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         gender: studentForm.gender || 'L',
         guardianId: targetGuardianId,
         guardianName: (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) ? inputGdrName : '',
+        guardianPhone: inputGdrPhone,
+        guardianRelationship: inputGdrRel,
         savingsBalance: 0,
         canteenDepositBalance: 0,
         canteenBalanceSource: 'TABUNGAN',
@@ -1101,6 +1101,8 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
             rfidUid: studentForm.rfidUid.trim().toUpperCase(),
             guardianId: targetGdrId || s.guardianId,
             guardianName: effectiveName,
+            guardianPhone: inputGdrPhone,
+            guardianRelationship: inputGdrRel,
             status: studentForm.status
           };
         }
@@ -1962,10 +1964,10 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                           <span className="badge badge-gold" style={{ fontWeight: 800 }}>{s.class}</span>
                         </td>
                         <td>
-                          <div style={{ fontWeight: 700, color: 'var(--slate-800)', fontSize: '0.82rem' }}>{s.guardianName || 'Belum Diisi'}</div>
-                          {gdrObj && (
+                          <div style={{ fontWeight: 700, color: 'var(--slate-800)', fontSize: '0.82rem' }}>{s.guardianName || gdrObj?.name || 'Belum Diisi'}</div>
+                          {(s.guardianRelationship || s.guardianPhone || gdrObj) && (
                             <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
-                              {gdrObj.relationship || 'Wali'} • {gdrObj.phone || ''}
+                              {s.guardianRelationship || gdrObj?.relationship || 'Wali'} {(s.guardianPhone || gdrObj?.phone) ? `• ${s.guardianPhone || gdrObj?.phone}` : ''}
                             </div>
                           )}
                         </td>

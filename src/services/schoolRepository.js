@@ -25,6 +25,8 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.status) mapped.status = 'AKTIF';
     if (mapped.savings_balance === undefined || mapped.savings_balance === null) mapped.savings_balance = 0;
     if (mapped.canteen_deposit_balance === undefined || mapped.canteen_deposit_balance === null) mapped.canteen_deposit_balance = 0;
+    delete mapped.guardian_phone;
+    delete mapped.guardian_relationship;
     delete mapped.updated_at;
   }
   if (tableKey === 'guardians') {
