@@ -350,12 +350,9 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
             
             {/* MANUAL PICKUP CALL CARD (KARTU TERTINGGAL) */}
             <div className="glass-card" style={{ background: '#fffbeb', border: '1.5px solid #fde68a' }}>
-              <div style={{ fontWeight: 800, fontSize: '0.94rem', color: '#92400e', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.94rem', color: '#92400e', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                 <Megaphone size={18} style={{ color: '#d97706' }} />
                 <span>Panggil Manual (Kartu Tertinggal)</span>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: '#b45309', marginBottom: '0.75rem', lineHeight: 1.4 }}>
-                Masukkan nama siswa atau pilih kelas jika penjemput <b>tidak membawa / tertinggal kartu RFID</b>.
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
