@@ -10,7 +10,7 @@ import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/da
 import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings }) {
-  const [activeSubTab, setActiveSubTab] = useState('rfid'); // 'rfid' | 'students' | 'audit'
+  const [activeSubTab, setActiveSubTab] = useState(() => (currentRole?.id === 'SUPER_ADMIN' ? 'database' : 'rfid')); // 'rfid' | 'students' | 'audit' | 'database'
   const [searchQuery, setSearchQuery] = useState('');
   const [newCardUid, setNewCardUid] = useState(scannedCardUid || '');
   const [newCardType, setNewCardType] = useState('SISWA');
@@ -961,9 +961,14 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           </button>
           {['SUPER_ADMIN', 'ADMIN_KEUANGAN'].includes(currentRole?.id) && (
             <button
-              className={`btn ${activeSubTab === 'database' ? 'btn-gold' : 'btn-secondary'}`}
+              className="btn"
               onClick={() => setActiveSubTab('database')}
-              style={{ background: activeSubTab === 'database' ? '#be123c' : undefined, color: activeSubTab === 'database' ? '#ffffff' : undefined }}
+              style={{
+                background: activeSubTab === 'database' ? '#be123c' : '#fff1f2',
+                color: activeSubTab === 'database' ? '#ffffff' : '#be123c',
+                border: '1px solid #fecaca',
+                fontWeight: 700
+              }}
             >
               <ShieldCheck size={15} /> Pemeliharaan & Backup Database
             </button>

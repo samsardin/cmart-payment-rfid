@@ -37,13 +37,15 @@ export default function Navbar({
       case 'SUPER_ADMIN':
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { id: 'savings', label: 'Tabungan & Ledger', icon: Wallet },
+          { id: 'admin', label: 'Master Data & Database', icon: ShieldCheck },
           { id: 'role_management', label: 'Role Management', icon: Users },
         ];
       case 'ADMIN_KEUANGAN':
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'savings', label: 'Tabungan & Ledger', icon: Wallet },
-          { id: 'admin', label: 'Master Data', icon: Users },
+          { id: 'admin', label: 'Master Data & Database', icon: ShieldCheck },
         ];
       case 'KASIR_KANTIN':
         return [
