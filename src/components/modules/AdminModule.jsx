@@ -368,7 +368,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           name: assignedName,
           class: newOwnerClass.trim(),
           guardianId: '',
-          guardianName: 'Orang Tua / Wali',
+          guardianName: '',
           savingsBalance: 0,
           canteenDepositBalance: 0,
           canteenBalanceSource: 'TABUNGAN',
@@ -958,7 +958,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
               name,
               class: cls || 'Kelas Baru',
               guardianId: '',
-              guardianName: 'Orang Tua / Wali',
+              guardianName: '',
               savingsBalance: 0,
               canteenDepositBalance: 0,
               canteenBalanceSource: 'TABUNGAN',
@@ -2168,8 +2168,18 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     type="text"
                     className="form-input"
                     placeholder="Nama lengkap Ayah/Ibu/Wali..."
-                    value={studentForm.guardianName}
+                    value={studentForm.guardianName === 'Orang Tua / Wali' ? '' : studentForm.guardianName}
                     onChange={(e) => setStudentForm({ ...studentForm, guardianName: e.target.value })}
+                    onFocus={(e) => {
+                      if (e.target.value === 'Orang Tua / Wali' || studentForm.guardianName === 'Orang Tua / Wali') {
+                        setStudentForm(prev => ({ ...prev, guardianName: '' }));
+                      }
+                    }}
+                    onClick={(e) => {
+                      if (e.target.value === 'Orang Tua / Wali' || studentForm.guardianName === 'Orang Tua / Wali') {
+                        setStudentForm(prev => ({ ...prev, guardianName: '' }));
+                      }
+                    }}
                   />
                 </div>
 
