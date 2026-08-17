@@ -107,9 +107,7 @@ class AudioPickupService {
 
   // Construct Natural Speech Text for Student Pickup Announcement
   generateAnnouncementText(data) {
-    const { student, guardian, children, isRepeat } = data;
-    const gName = guardian?.name || student?.guardianName || 'Orang Tua';
-
+    const { student, children, isRepeat } = data;
     const childList = (children && children.length > 0) ? children : (student ? [student] : []);
 
     let text = '';
@@ -121,12 +119,12 @@ class AudioPickupService {
 
     if (childList.length === 1) {
       const c = childList[0];
-      text += `Diberitahukan kepada siswa ${c.name} dari kelas ${c.class}. Penjemput Anda, ${gName}, telah tiba di lokasi penjemputan. Harap segera menuju ke area penjemputan.`;
+      text += `Diberitahukan kepada siswa ${c.name} dari kelas ${c.class}. Penjemput Anda telah tiba di lokasi penjemputan. Harap segera menuju ke area penjemputan.`;
     } else if (childList.length > 1) {
       const namesWithClass = childList.map(c => `${c.name} dari kelas ${c.class}`).join(' serta ');
-      text += `Diberitahukan kepada siswa ${namesWithClass}. Penjemput Anda, ${gName}, telah tiba di lokasi penjemputan. Harap segera menuju ke area penjemputan.`;
+      text += `Diberitahukan kepada siswa ${namesWithClass}. Penjemput Anda telah tiba di lokasi penjemputan. Harap segera menuju ke area penjemputan.`;
     } else {
-      text += `Penjemput atas nama ${gName} telah tiba di lokasi penjemputan.`;
+      text += 'Penjemput Anda telah tiba di lokasi penjemputan. Harap segera menuju ke area penjemputan.';
     }
 
     return text;
