@@ -76,7 +76,20 @@ export const verifyRfidCard = (uid, cards, students, guardians) => {
   playRfidBeep('success');
 
   if (card.type === 'SISWA') {
-    const student = students.find(s => s.id === card.assignedToId || s.rfidUid?.toUpperCase() === cleanUid);
+    const student = (students || []).find(s => 
+      (s.id && s.id === card.assignedToId) || 
+      (s.rfidUid && s.rfidUid.toUpperCase() === cleanUid) ||
+      (card.assignedToName && s.name && s.name.trim().toLowerCase() === card.assignedToName.trim().toLowerCase())
+    );
+
+    if (!student) {
+      playRfidBeep('error');
+      return {
+        success: false,
+        message: `Kartu Siswa '${cleanUid}' terdaftar tetapi data siswa pemilik tidak ditemukan.`
+      };
+    }
+
     return {
       success: true,
       cardType: 'SISWA',
@@ -84,19 +97,48 @@ export const verifyRfidCard = (uid, cards, students, guardians) => {
       card
     };
   } else if (card.type === 'PENJEMPUT') {
-    const guardian = guardians.find(g => g.id === card.assignedToId || g.rfidCardUid?.toUpperCase() === cleanUid);
-    const childrenList = students.filter(s =>
-      (guardian?.id && s.guardianId === guardian.id) ||
-      (guardian?.studentId && s.id === guardian.studentId) ||
-      (guardian?.name && s.guardianName && s.guardianName.toLowerCase() === guardian.name.toLowerCase())
+    let guardian = (guardians || []).find(g =>
+      (g.id && g.id === card.assignedToId) ||
+      (g.rfidCardUid && g.rfidCardUid.toUpperCase() === cleanUid) ||
+      (card.assignedToName && g.name && g.name.trim().toLowerCase() === card.assignedToName.trim().toLowerCase())
     );
-    const primaryStudent = childrenList[0] || students.find(s => s.guardianId === guardian?.id || s.id === guardian?.studentId);
+
+    const studentDirect = (students || []).find(s => s.id === card.assignedToId || (s.rfidUid && s.rfidUid.toUpperCase() === cleanUid));
+    if (!guardian && studentDirect) {
+      guardian = (guardians || []).find(g => 
+        (g.id && g.id === studentDirect.guardianId) || 
+        (g.name && studentDirect.guardianName && g.name.trim().toLowerCase() === studentDirect.guardianName.trim().toLowerCase())
+      );
+    }
+
+    const childrenList = (students || []).filter(s => {
+      if (guardian && guardian.id && s.guardianId === guardian.id) return true;
+      if (guardian && guardian.studentId && s.id === guardian.studentId) return true;
+      if (guardian && guardian.name && s.guardianName && s.guardianName.trim().toLowerCase() === guardian.name.trim().toLowerCase()) return true;
+      if (card.assignedToId && (s.id === card.assignedToId || s.guardianId === card.assignedToId)) return true;
+      if (card.assignedToName && s.guardianName && s.guardianName.trim().toLowerCase() === card.assignedToName.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    if (childrenList.length === 0) {
+      playRfidBeep('error');
+      return {
+        success: false,
+        message: `Kartu Penjemput '${cleanUid}' terdaftar, tetapi belum ada data siswa yang terhubung.`
+      };
+    }
+
+    const primaryStudent = childrenList[0];
+
     return {
       success: true,
       cardType: 'PENJEMPUT',
-      guardian,
+      guardian: guardian || { 
+        id: card.assignedToId || 'GDR-TEMP', 
+        name: card.assignedToName || primaryStudent.guardianName || 'Orang Tua / Wali' 
+      },
       student: primaryStudent,
-      students: childrenList.length > 0 ? childrenList : (primaryStudent ? [primaryStudent] : []),
+      students: childrenList,
       card
     };
   }

@@ -285,16 +285,20 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal })
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {state.rfidCards.filter(c => c.type === 'PENJEMPUT').slice(0, 4).map(card => (
-                  <button
-                    key={card.id}
-                    className="btn btn-gold btn-sm"
-                    onClick={() => handleSimulateGateTap(card.uid)}
-                    style={{ textAlign: 'left', justifyContent: 'flex-start', padding: '0.6rem 0.8rem', fontSize: '0.8rem', fontWeight: 800 }}
-                  >
-                    ⚡ Tap {card.assignedToName} (UID: {card.uid})
-                  </button>
-                ))}
+                {state.rfidCards.filter(c => c.type === 'PENJEMPUT').map(card => {
+                  const g = state.guardians.find(g => g.id === card.assignedToId || g.rfidCardUid?.toUpperCase() === card.uid.toUpperCase());
+                  const label = g?.name || card.assignedToName || 'Orang Tua / Penjemput';
+                  return (
+                    <button
+                      key={card.id}
+                      className="btn btn-gold btn-sm"
+                      onClick={() => handleSimulateGateTap(card.uid)}
+                      style={{ textAlign: 'left', justifyContent: 'flex-start', padding: '0.6rem 0.8rem', fontSize: '0.8rem', fontWeight: 800 }}
+                    >
+                      ⚡ Tap {label} (UID: {card.uid})
+                    </button>
+                  );
+                })}
 
                 <button
                   className="btn btn-primary btn-sm"
