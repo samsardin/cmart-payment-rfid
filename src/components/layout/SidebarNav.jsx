@@ -350,18 +350,20 @@ export default function SidebarNav({
       {/* Control Panel Footer */}
       <div style={{ padding: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
         
-        {/* RFID Quick Scanner Trigger */}
-        <button
-          onClick={() => {
-            onOpenRfidModal();
-            setIsMobileDrawerOpen(false);
-          }}
-          className="btn btn-gold btn-sm"
-          style={{ width: '100%', justifyContent: 'center', padding: '0.55rem', borderRadius: '10px', fontWeight: 700 }}
-        >
-          <Radio size={16} className="pulse-rfid" />
-          <span>Scan Kartu RFID</span>
-        </button>
+        {/* RFID Quick Scanner Trigger (Hidden for ADMIN_PENJEMPUTAN role) */}
+        {roleId !== 'ADMIN_PENJEMPUTAN' && (
+          <button
+            onClick={() => {
+              onOpenRfidModal();
+              setIsMobileDrawerOpen(false);
+            }}
+            className="btn btn-gold btn-sm"
+            style={{ width: '100%', justifyContent: 'center', padding: '0.55rem', borderRadius: '10px', fontWeight: 700 }}
+          >
+            <Radio size={16} className="pulse-rfid" />
+            <span>Scan Kartu RFID</span>
+          </button>
+        )}
 
         {/* Export Excel Button (Visible on Savings tab) */}
         {activeTab === 'savings' && onExportLedger && (
