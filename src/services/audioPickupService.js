@@ -212,6 +212,17 @@ class AudioPickupService {
   updateSettings(newSettings) {
     this.settings = { ...this.settings, ...newSettings };
   }
+
+  resetToDefault() {
+    this.settings = {
+      volume: 1.0,
+      rate: 0.92,
+      pitch: 1.0,
+      enableChime: true,
+      voiceName: null
+    };
+    this.loadVoices();
+  }
 }
 
 export const audioPickupService = new AudioPickupService();

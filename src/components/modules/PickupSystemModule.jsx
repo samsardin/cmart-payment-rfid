@@ -62,6 +62,15 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
   const [pitch, setPitch] = useState(1.0);
   const [enableChime, setEnableChime] = useState(true);
 
+  // Reset Audio Settings to Factory Defaults
+  const handleResetAudioSettings = () => {
+    setVolume(1.0);
+    setRate(0.92);
+    setPitch(1.0);
+    setEnableChime(true);
+    audioPickupService.resetToDefault();
+  };
+
   // Auto Refresh Clock for Display Mode
   const [currentTime, setCurrentTime] = useState(new Date());
   const lastProcessedKeyRef = useRef(null);
@@ -967,14 +976,26 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
                 </button>
               </div>
 
-              <button
-                type="button"
-                className="btn btn-gold"
-                onClick={() => setShowSettingsModal(false)}
-                style={{ width: '100%', fontWeight: 800, marginTop: '0.25rem' }}
-              >
-                Simpan & Tutup
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleResetAudioSettings}
+                  style={{ flex: 1, fontWeight: 700, fontSize: '0.78rem', color: '#b45309', borderColor: '#fde68a', background: '#fffbeb' }}
+                  title="Kembalikan semua pengaturan suara ke standar awal (Volume 100%, Rate 0.92x, Pitch 1.0, Bel Chime Aktif)"
+                >
+                  <RotateCcw size={14} /> Reset ke Default Awal
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => setShowSettingsModal(false)}
+                  style={{ flex: 1, fontWeight: 800, fontSize: '0.78rem' }}
+                >
+                  Simpan & Tutup
+                </button>
+              </div>
 
             </div>
 
