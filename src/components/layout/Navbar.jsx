@@ -80,95 +80,39 @@ export default function Navbar({
       <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '0.75rem 1.25rem' }}>
         
         {/* Top Header Bar */}
-        <div className="flex-between" style={{ flexWrap: 'wrap', gap: '0.75rem', paddingBottom: '0.6rem' }}>
+        <div className="flex-between" style={{ flexWrap: 'wrap', gap: '0.6rem', paddingBottom: '0.5rem' }}>
           
           {/* Logo & Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <div style={{
               background: 'white',
-              padding: '0.3rem 0.45rem',
-              borderRadius: 'var(--radius-sm)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              padding: '0.25rem 0.4rem',
+              borderRadius: '10px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)'
             }}>
-              <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '96px', height: 'auto' }} />
+              <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '88px', height: 'auto' }} />
             </div>
             <div>
-              <h1 style={{ color: 'white', fontSize: '1.2rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                C-Mart Payment <span className="badge badge-gold" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>v1.0 PRD</span>
+              <h1 style={{ color: 'white', fontSize: '1.15rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+                C-Mart Payment <span className="badge badge-gold" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>v1.0 PRD</span>
               </h1>
-              <p style={{ fontSize: '0.75rem', color: '#a7f3d0', opacity: 0.9 }}>
-                Sistem Terintegrasi Tabungan & Kantin RFID
+              <p style={{ fontSize: '0.72rem', color: '#a7f3d0', opacity: 0.95, margin: 0 }}>
+                Sistem Tabungan & Kantin RFID
               </p>
             </div>
           </div>
 
-          {/* Controls: Role Switcher & RFID Simulator Trigger */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {/* Controls Container - Responsive Modern Layout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             
-            {/* Online / Offline & Cloud Sync Status Badge */}
-            <div
-              style={{
-                background: !isSupabaseConfigured
-                  ? 'rgba(245, 158, 11, 0.28)'
-                  : isOnline
-                    ? (isSyncingCloud ? 'rgba(245, 158, 11, 0.22)' : 'rgba(16, 185, 129, 0.22)')
-                    : 'rgba(239, 68, 68, 0.28)',
-                border: !isSupabaseConfigured
-                  ? '1px solid #f59e0b'
-                  : isOnline
-                    ? (isSyncingCloud ? '1px solid #f59e0b' : '1px solid #34d399')
-                    : '1px solid #f87171',
-                padding: '0.35rem 0.65rem',
-                borderRadius: 'var(--radius-sm)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                color: 'white',
-                backdropFilter: 'blur(8px)'
-              }}
-              title={
-                !isSupabaseConfigured
-                  ? 'PERHATIAN: Environment variables Supabase belum dikonfigurasi di Vercel (Project Settings > Environment Variables). Data saat ini tersimpan lokal di browser.'
-                  : isOnline
-                    ? (isSyncingCloud ? 'Mengunggah data ke Supabase Cloud...' : 'Terhubung & Tersinkron ke Supabase Cloud')
-                    : 'Mode Offline: Transaksi tersimpan lokal'
-              }
-            >
-              {!isSupabaseConfigured ? (
-                <>
-                  <WifiOff size={13} style={{ color: '#fbbf24' }} />
-                  <span>Mode Lokal (Tanpa Supabase)</span>
-                </>
-              ) : isOnline ? (
-                isSyncingCloud ? (
-                  <>
-                    <RefreshCw size={13} className="spin-icon" style={{ color: '#fbbf24' }} />
-                    <span>Syncing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Wifi size={13} style={{ color: '#34d399' }} />
-                    <span>Supabase Connected</span>
-                  </>
-                )
-              ) : (
-                <>
-                  <WifiOff size={13} style={{ color: '#f87171' }} />
-                  <span>Offline (Lokal)</span>
-                </>
-              )}
-            </div>
-
             {/* RFID Terminal Button */}
             <button
               onClick={onOpenRfidModal}
               className="btn btn-gold btn-sm"
-              style={{ fontWeight: 700, letterSpacing: '0.01em' }}
+              style={{ fontWeight: 700, padding: '0.38rem 0.85rem', fontSize: '0.78rem', borderRadius: '10px' }}
             >
-              <Radio size={16} className="pulse-rfid" />
-              Scan Kartu RFID
+              <Radio size={14} className="pulse-rfid" />
+              <span>Scan Kartu RFID</span>
             </button>
 
             {/* Export Excel Button in Navbar menu bar */}
@@ -181,71 +125,157 @@ export default function Navbar({
                   color: 'white',
                   border: '1px solid rgba(255, 255, 255, 0.35)',
                   backdropFilter: 'blur(8px)',
-                  fontWeight: 700
+                  fontWeight: 700,
+                  padding: '0.38rem 0.75rem',
+                  fontSize: '0.78rem',
+                  borderRadius: '10px'
                 }}
                 title="Export Rekap Excel (.xlsx) Mutasi Ledger Tabungan"
               >
-                <FileSpreadsheet size={15} /> Export Rekap Excel (.xlsx)
+                <FileSpreadsheet size={14} /> <span>Export Excel</span>
               </button>
             )}
 
-            {/* Role Switcher */}
-            <div style={{ background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(8px)', padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <RefreshCw size={14} color="#a7f3d0" />
-              <span style={{ fontSize: '0.75rem', color: '#d1fae5' }}>Peran:</span>
-              <select
-                value={currentRole.id}
-                disabled={!allowRoleSwitch}
-                onChange={(e) => {
-                  const roleObj = ROLES[e.target.value];
-                  setCurrentRole(roleObj);
-                  const newTabs = getRoleTabs(roleObj.id);
-                  if (newTabs.length > 0) {
-                    setActiveTab(newTabs[0].id);
-                  }
-                }}
+            {/* Unified Status, Role, & Notification Glass Bar */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                background: 'rgba(255, 255, 255, 0.12)',
+                backdropFilter: 'blur(10px)',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.22)',
+                flexWrap: 'wrap'
+              }}
+            >
+              {/* Online / Offline & Cloud Sync Status Badge */}
+              <div
                 style={{
-                  background: 'transparent',
-                  color: 'white',
-                  border: 'none',
-                  outline: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.82rem',
-                  cursor: allowRoleSwitch ? 'pointer' : 'default'
-                }}
-              >
-                {Object.values(ROLES).map(r => (
-                  <option key={r.id} value={r.id} style={{ background: '#0f172a', color: 'white' }}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Notification Badge */}
-            <div style={{ position: 'relative', background: 'rgba(255, 255, 255, 0.1)', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer' }}>
-              <Bell size={18} color="white" />
-              {notificationCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-2px',
-                  right: '-2px',
-                  background: '#ef4444',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: '16px',
-                  height: '16px',
-                  fontSize: '10px',
-                  fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {notificationCount}
-                </span>
-              )}
+                  gap: '0.35rem',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: 'white',
+                  padding: '0.2rem 0.45rem',
+                  borderRadius: '8px',
+                  background: !isSupabaseConfigured
+                    ? 'rgba(245, 158, 11, 0.3)'
+                    : isOnline
+                      ? (isSyncingCloud ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)')
+                      : 'rgba(239, 68, 68, 0.3)'
+                }}
+                title={
+                  !isSupabaseConfigured
+                    ? 'Mode Lokal (Tanpa Supabase)'
+                    : isOnline
+                      ? (isSyncingCloud ? 'Syncing...' : 'Terhubung ke Supabase Cloud')
+                      : 'Mode Offline'
+                }
+              >
+                {!isSupabaseConfigured ? (
+                  <>
+                    <WifiOff size={12} style={{ color: '#fbbf24' }} />
+                    <span>Lokal</span>
+                  </>
+                ) : isOnline ? (
+                  isSyncingCloud ? (
+                    <>
+                      <RefreshCw size={12} className="spin-icon" style={{ color: '#fbbf24' }} />
+                      <span>Syncing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wifi size={12} style={{ color: '#34d399' }} />
+                      <span>Connected</span>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <WifiOff size={12} style={{ color: '#f87171' }} />
+                    <span>Offline</span>
+                  </>
+                )}
+              </div>
+
+              <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.2)' }} />
+
+              {/* Role Switcher Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <RefreshCw size={12} color="#a7f3d0" />
+                <span style={{ fontSize: '0.72rem', color: '#d1fae5' }}>Peran:</span>
+                <select
+                  value={currentRole.id}
+                  disabled={!allowRoleSwitch}
+                  onChange={(e) => {
+                    const roleObj = ROLES[e.target.value];
+                    setCurrentRole(roleObj);
+                    const newTabs = getRoleTabs(roleObj.id);
+                    if (newTabs.length > 0) {
+                      setActiveTab(newTabs[0].id);
+                    }
+                  }}
+                  style={{
+                    background: 'transparent',
+                    color: 'white',
+                    border: 'none',
+                    outline: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.78rem',
+                    cursor: allowRoleSwitch ? 'pointer' : 'default',
+                    paddingRight: '4px'
+                  }}
+                >
+                  {Object.values(ROLES).map(r => (
+                    <option key={r.id} value={r.id} style={{ background: '#0f172a', color: 'white' }}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.2)' }} />
+
+              {/* Notification Badge */}
+              <div style={{ position: 'relative', padding: '0.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <Bell size={16} color="white" />
+                {notificationCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-3px',
+                    right: '-4px',
+                    background: '#ef4444',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '15px',
+                    height: '15px',
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {notificationCount}
+                  </span>
+                )}
+              </div>
             </div>
-            <button onClick={onLogout} className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.14)', color: 'white', borderColor: 'rgba(255,255,255,0.25)' }}>
+
+            {/* Logout Button */}
+            <button
+              onClick={onLogout}
+              className="btn btn-secondary btn-sm"
+              style={{
+                background: 'rgba(255,255,255,0.14)',
+                color: 'white',
+                borderColor: 'rgba(255,255,255,0.25)',
+                padding: '0.38rem 0.75rem',
+                fontSize: '0.78rem',
+                borderRadius: '10px'
+              }}
+            >
               Keluar
             </button>
 
