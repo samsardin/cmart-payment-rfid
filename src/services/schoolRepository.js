@@ -3,8 +3,8 @@ import { getLocalIsoTimestamp, getLocalTodayDateString } from './dateUtils';
 import { LOGIN_ACCOUNTS } from '../data/mockData';
 
 const tableMappings = [
-  ['students', 'students'],
   ['guardians', 'guardians'],
+  ['students', 'students'],
   ['rfidCards', 'rfid_cards'],
   ['ledger', 'ledger'],
   ['auditLogs', 'audit_logs'],
@@ -150,6 +150,13 @@ export async function loadSchoolState() {
 }
 
 export async function saveSchoolState(state) {
+  // Always update LocalStorage immediately for instant local persistence
+  try {
+    localStorage.setItem('SCHOOL_RFID_APP_STATE_V2', JSON.stringify(state));
+  } catch (lsErr) {
+    console.warn('Warning updating localStorage:', lsErr);
+  }
+
   if (!supabase) return;
 
   for (const [stateKey, tableName] of tableMappings) {
@@ -167,22 +174,21 @@ export async function saveSchoolState(state) {
       continue;
     }
 
-    const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
-    const { error } = await supabase.from(tableName).upsert(dbRows);
-    if (error) {
-      console.error(`Error saving ${stateKey} to Supabase table ${tableName}:`, error);
-      throw error;
-    }
-
-    // Purge obsolete rows in Supabase so deleted items in state are purged cleanly
     try {
-      const activeIds = rows.map(r => r.id).filter(Boolean);
-      if (activeIds.length > 0) {
-        const formattedIds = activeIds.join(',');
-        await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
+      const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
+      const { error } = await supabase.from(tableName).upsert(dbRows);
+      if (error) {
+        console.error(`Error saving ${stateKey} to Supabase table ${tableName}:`, error);
+      } else {
+        // Purge obsolete rows in Supabase
+        const activeIds = rows.map(r => r.id).filter(Boolean);
+        if (activeIds.length > 0) {
+          const formattedIds = activeIds.join(',');
+          await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
+        }
       }
-    } catch (purgeErr) {
-      console.warn(`Non-fatal warning purging obsolete rows in ${tableName}:`, purgeErr);
+    } catch (tableErr) {
+      console.warn(`Error processing table ${tableName} save:`, tableErr);
     }
   }
 }

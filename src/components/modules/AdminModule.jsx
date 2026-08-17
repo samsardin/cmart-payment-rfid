@@ -1120,15 +1120,13 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       setFeedback({ type: 'success', text: `Data siswa "${studentForm.name}" & data orang tua (No WA: ${inputGdrPhone || '-'}, Relasi: ${inputGdrRel}) BERHASIL disimpan!` });
     }
 
-    if (newState) {
-      try {
-        await saveSchoolState(newState);
-      } catch (err) {
-        console.warn('Warning syncing saved student to Supabase:', err);
-      }
-    }
-
     setStudentModalType(null);
+
+    if (newState) {
+      saveSchoolState(newState).catch(err => {
+        console.warn('Background sync error saving student:', err);
+      });
+    }
   };
 
   const handleDeleteStudentSingle = (studentId, studentName) => {
