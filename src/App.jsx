@@ -77,6 +77,13 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const savedState = JSON.parse(saved);
+        const savedAccounts = Array.isArray(savedState.loginAccounts) ? savedState.loginAccounts : [];
+        const savedUsernames = new Set(savedAccounts.map(a => a.username));
+        const mergedLoginAccounts = [
+          ...savedAccounts,
+          ...LOGIN_ACCOUNTS.filter(defaultAcc => !savedUsernames.has(defaultAcc.username))
+        ];
+
         const cleanState = {
           ...savedState,
           students: Array.isArray(savedState.students) ? savedState.students : (isSupabaseConfigured ? [] : INITIAL_STUDENTS),
@@ -84,7 +91,7 @@ export default function App() {
           rfidCards: Array.isArray(savedState.rfidCards) ? savedState.rfidCards : (isSupabaseConfigured ? [] : INITIAL_RFID_CARDS),
           ledger: Array.isArray(savedState.ledger) ? savedState.ledger : (isSupabaseConfigured ? [] : INITIAL_LEDGER),
           auditLogs: Array.isArray(savedState.auditLogs) ? savedState.auditLogs : (isSupabaseConfigured ? [] : INITIAL_AUDIT_LOGS),
-          loginAccounts: Array.isArray(savedState.loginAccounts) ? savedState.loginAccounts : LOGIN_ACCOUNTS
+          loginAccounts: mergedLoginAccounts
         };
 
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleanState));
@@ -283,7 +290,15 @@ export default function App() {
   }, [state, cloudStateLoaded, isOnline]);
 
   const handlePasswordLogin = (username, password) => {
-    const account = (state.loginAccounts || LOGIN_ACCOUNTS).find((item) => item.username === username.trim().toLowerCase() && item.password === password);
+    const cleanUsername = username.trim().toLowerCase();
+    const existingAccounts = state.loginAccounts || [];
+    const existingUsernames = new Set(existingAccounts.map(a => a.username));
+    const allAccounts = [
+      ...existingAccounts,
+      ...LOGIN_ACCOUNTS.filter(defaultAcc => !existingUsernames.has(defaultAcc.username))
+    ];
+
+    const account = allAccounts.find((item) => item.username === cleanUsername && item.password === password);
     if (!account) return { success: false, text: 'Username atau password tidak sesuai.' };
     setCurrentRole(ROLES[account.roleId]);
     setActiveTab(
