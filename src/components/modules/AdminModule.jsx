@@ -579,6 +579,10 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     setEditingStudent(student);
     const acc = (state.loginAccounts || []).find(a => a.studentId === student.id || a.username === student.nis);
     const gdr = (state.guardians || []).find(g => g.id === student.guardianId || g.studentId === student.id || g.name === student.guardianName);
+    
+    const rawGdrName = student.guardianName || gdr?.name || '';
+    const cleanGdrName = (rawGdrName && rawGdrName.toLowerCase().includes('orang tua')) ? '' : rawGdrName;
+
     setStudentForm({
       name: student.name || '',
       nis: student.nis || '',
@@ -586,7 +590,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       gender: student.gender || 'L',
       photo: student.photo || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
       rfidUid: student.rfidUid || '',
-      guardianName: student.guardianName || gdr?.name || '',
+      guardianName: cleanGdrName,
       guardianPhone: gdr?.phone || '',
       guardianRelationship: gdr?.relationship || 'Ayah',
       status: student.status || 'AKTIF',
@@ -2168,15 +2172,19 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     type="text"
                     className="form-input"
                     placeholder="Nama lengkap Ayah/Ibu/Wali..."
-                    value={studentForm.guardianName === 'Orang Tua / Wali' ? '' : studentForm.guardianName}
+                    value={
+                      (!studentForm.guardianName || studentForm.guardianName.toLowerCase().includes('orang tua'))
+                        ? ''
+                        : studentForm.guardianName
+                    }
                     onChange={(e) => setStudentForm({ ...studentForm, guardianName: e.target.value })}
                     onFocus={(e) => {
-                      if (e.target.value === 'Orang Tua / Wali' || studentForm.guardianName === 'Orang Tua / Wali') {
+                      if (!e.target.value || e.target.value.toLowerCase().includes('orang tua') || (studentForm.guardianName && studentForm.guardianName.toLowerCase().includes('orang tua'))) {
                         setStudentForm(prev => ({ ...prev, guardianName: '' }));
                       }
                     }}
                     onClick={(e) => {
-                      if (e.target.value === 'Orang Tua / Wali' || studentForm.guardianName === 'Orang Tua / Wali') {
+                      if (!e.target.value || e.target.value.toLowerCase().includes('orang tua') || (studentForm.guardianName && studentForm.guardianName.toLowerCase().includes('orang tua'))) {
                         setStudentForm(prev => ({ ...prev, guardianName: '' }));
                       }
                     }}
