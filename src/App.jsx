@@ -292,14 +292,15 @@ export default function App() {
       setLoginRfidFeedback(feedback);
       return feedback;
     }
-    const roleId = result.cardType === 'SISWA' ? 'SISWA' : 'ORANG_TUA';
+    const isSiswaCard = result.cardType === 'SISWA';
+    const roleId = isSiswaCard ? 'SISWA' : 'ORANG_TUA';
     setCurrentRole(ROLES[roleId]);
     setActiveTab('parent_portal');
     setScannedCardResult(result);
     setAuthenticatedSession({
       roleId,
-      studentId: result.student.id,
-      guardianId: result.guardian?.id || result.student?.guardianId
+      studentId: result.student?.id,
+      guardianId: isSiswaCard ? null : (result.guardian?.id || result.student?.guardianId)
     });
     setLoginRfidFeedback(null);
     return { success: true };

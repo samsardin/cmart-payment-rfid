@@ -8,24 +8,32 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
   const [passwordFeedback, setPasswordFeedback] = useState(null);
 
   const initialStudent = state.students.find((item) => item.id === authenticatedSession?.studentId);
-  const guardian = state.guardians.find((item) =>
-    item.id === authenticatedSession?.guardianId ||
-    item.id === initialStudent?.guardianId ||
-    (initialStudent?.guardianName && item.name?.toLowerCase() === initialStudent.guardianName?.toLowerCase())
-  );
+  const isStudentRole = authenticatedSession?.roleId === 'SISWA';
 
-  const children = state.students.filter((item) =>
-    (guardian && (
-      item.guardianId === guardian.id ||
-      item.id === guardian.studentId ||
-      (item.guardianName && guardian.name && item.guardianName.toLowerCase() === guardian.name.toLowerCase())
-    )) ||
-    item.id === authenticatedSession?.studentId
-  );
+  const guardian = isStudentRole
+    ? null
+    : state.guardians.find((item) =>
+        item.id === authenticatedSession?.guardianId ||
+        item.id === initialStudent?.guardianId ||
+        (initialStudent?.guardianName && item.name?.toLowerCase() === initialStudent.guardianName?.toLowerCase())
+      );
+
+  const children = isStudentRole
+    ? (initialStudent ? [initialStudent] : [])
+    : state.students.filter((item) =>
+        (guardian && (
+          item.guardianId === guardian.id ||
+          item.id === guardian.studentId ||
+          (item.guardianName && guardian.name && item.guardianName.toLowerCase() === guardian.name.toLowerCase())
+        )) ||
+        item.id === authenticatedSession?.studentId
+      );
 
   const [selectedChildId, setSelectedChildId] = useState(() => initialStudent?.id || children[0]?.id);
 
-  const student = children.find(c => c.id === selectedChildId) || children[0] || initialStudent;
+  const student = isStudentRole
+    ? initialStudent
+    : (children.find(c => c.id === selectedChildId) || children[0] || initialStudent);
   const isPasswordMenu = view === 'account';
 
   const submitPasswordChange = (event) => {
