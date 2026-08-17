@@ -17,13 +17,17 @@ const toDatabaseRow = (row, tableKey) => {
 
   const nowIso = getLocalIsoTimestamp();
 
-  // Guarantee mandatory database column constraints
+  // Guarantee mandatory database column constraints per table schema
   if (tableKey === 'students') {
     if (!mapped.gender) mapped.gender = 'L';
     if (!mapped.canteen_balance_source) mapped.canteen_balance_source = 'TABUNGAN';
     if (!mapped.status) mapped.status = 'AKTIF';
     if (mapped.savings_balance === undefined || mapped.savings_balance === null) mapped.savings_balance = 0;
     if (mapped.canteen_deposit_balance === undefined || mapped.canteen_deposit_balance === null) mapped.canteen_deposit_balance = 0;
+    delete mapped.updated_at;
+  }
+  if (tableKey === 'guardians') {
+    delete mapped.updated_at;
   }
   if (tableKey === 'rfidCards') {
     if (!mapped.id) mapped.id = `CARD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -32,12 +36,14 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.issued_at) mapped.issued_at = mapped.issued_date || getLocalTodayDateString();
     if (!mapped.status) mapped.status = 'ACTIVE';
     delete mapped.issued_date;
+    delete mapped.updated_at;
   }
   if (tableKey === 'ledger') {
     if (!mapped.timestamp) mapped.timestamp = nowIso;
     if (!mapped.student_name) mapped.student_name = 'Siswa';
     if (!mapped.actor) mapped.actor = 'Admin Keuangan';
     if (!mapped.description) mapped.description = 'Transaksi Ledger';
+    delete mapped.updated_at;
   }
   if (tableKey === 'auditLogs') {
     if (!mapped.timestamp) mapped.timestamp = nowIso;
@@ -45,15 +51,14 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.action) mapped.action = 'LOG';
     if (!mapped.entity) mapped.entity = 'system';
     if (!mapped.details) mapped.details = 'Audit Log Event';
+    delete mapped.updated_at;
   }
   if (tableKey === 'loginAccounts') {
     if (!mapped.username) mapped.username = mapped.id || 'user';
     if (!mapped.role_id && mapped.role) mapped.role_id = mapped.role;
     if (!mapped.role_id) mapped.role_id = 'KASIR_KANTIN';
+    if (!mapped.updated_at) mapped.updated_at = nowIso;
   }
-
-  // Guarantee updated_at is NEVER null/undefined for Supabase table constraints
-  if (!mapped.updated_at) mapped.updated_at = nowIso;
 
   return mapped;
 };
