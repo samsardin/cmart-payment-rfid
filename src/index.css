@@ -591,3 +591,117 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
+/* ==========================================================================
+   COMPREHENSIVE RESPONSIVE DESIGN SYSTEM (PC, LAPTOP, TABLET, SMARTPHONE)
+   ========================================================================== */
+
+/* Touch Scroll Smoothness for Mobile Tables & Horizontally Scrollable Menus */
+.table-container, nav {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* Responsive Container Adjustments */
+main {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+/* Tablet & Medium Screens (<= 1024px) */
+@media (max-width: 1024px) {
+  main {
+    padding: 1rem;
+  }
+
+  .glass-card {
+    padding: 1.2rem;
+  }
+
+  /* Grid columns adapt smoothly */
+  div[style*="gridTemplateColumns"] {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  }
+}
+
+/* Smartphone & Small Tablet Screens (<= 768px) */
+@media (max-width: 768px) {
+  main {
+    padding: 0.75rem 0.6rem;
+  }
+
+  /* Glass Cards compact padding */
+  .glass-card {
+    padding: 1rem !important;
+    border-radius: 16px !important;
+  }
+
+  /* Inputs and Buttons touch-friendly size */
+  .btn, .form-input, select, input[type="text"], input[type="number"], input[type="password"] {
+    min-height: 44px;
+    font-size: 0.88rem !important;
+  }
+
+  /* Stack flex containers on small screens */
+  .flex-between {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+  }
+
+  /* Subtab buttons wrapping & full touch width */
+  div[style*="display: flex"][style*="gap: 0.4rem"] {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.4rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Table responsiveness & touch scroll */
+  .custom-table {
+    font-size: 0.78rem;
+  }
+
+  .custom-table th, .custom-table td {
+    padding: 0.6rem 0.65rem;
+    white-space: nowrap;
+  }
+
+  /* Modal responsiveness */
+  div[style*="position: fixed"][style*="zIndex: 9999"] > div,
+  div[style*="position: fixed"][style*="z-index: 9999"] > div {
+    max-width: 95vw !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    padding: 1.25rem !important;
+    margin: 0.5rem !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* Ultra Small Mobile Screens (<= 480px) */
+@media (max-width: 480px) {
+  /* Header text and badges */
+  h1, h2 {
+    font-size: 1.1rem !important;
+  }
+  
+  h3 {
+    font-size: 1rem !important;
+  }
+
+  /* Quick action buttons stretch cleanly */
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Balance cards stack full width on small phones */
+  div[style*="minWidth: 170px"],
+  div[style*="minWidth: 200px"] {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+}
+
