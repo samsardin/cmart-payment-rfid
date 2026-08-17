@@ -426,7 +426,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
             </div>
 
             {/* Gate Scanner Status & Big RFID Radar Logo Box */}
-            <div className="glass-card" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', border: '1.5px solid #a7f3d0', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+            <div className="glass-card pickup-rfid-card" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', border: '1.5px solid #a7f3d0', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
               <div style={{
                 position: 'relative',
                 display: 'inline-flex',

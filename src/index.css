@@ -944,6 +944,16 @@ main {
     box-sizing: border-box !important;
   }
 
+  .pickup-rfid-card {
+    width: 100% !important;
+    padding: 1.5rem 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
   .pickup-filter-buttons {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
