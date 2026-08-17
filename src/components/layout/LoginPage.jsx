@@ -42,8 +42,7 @@ export default function LoginPage({ onPasswordLogin, onRfidLogin, rfidFeedback }
         </div>
 
         <div style={{ padding: '3rem 2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', color: 'var(--slate-900)', fontWeight: 800 }}>Masuk ke Aplikasi</h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--slate-500)', marginTop: '0.3rem', marginBottom: '1.25rem' }}>Gunakan username dan password sesuai peran Anda.</p>
+          <h2 style={{ fontSize: '1.5rem', color: 'var(--slate-900)', fontWeight: 900, letterSpacing: '0.05em', marginBottom: '1.25rem' }}>LOGIN</h2>
           {message && <div style={{ marginBottom: '1rem', padding: '0.7rem', borderRadius: '8px', background: '#fee2e2', color: '#991b1b', fontSize: '0.82rem' }}>{message.text}</div>}
           <form onSubmit={submitPasswordLogin} style={{ display: 'grid', gap: '0.85rem' }}>
             <label className="form-label">Username</label>
@@ -57,7 +56,6 @@ export default function LoginPage({ onPasswordLogin, onRfidLogin, rfidFeedback }
             <input className="form-input" placeholder="UID kartu RFID" value={uid} onChange={(event) => setUid(event.target.value)} />
             <button className="btn btn-gold" type="submit" title="Masuk dengan kartu"><CreditCard size={17} /></button>
           </form>
-          <p style={{ marginTop: '0.65rem', fontSize: '0.75rem', color: 'var(--slate-500)' }}>Reader RFID USB juga dapat digunakan langsung pada halaman ini.</p>
         </div>
       </section>
     </main>
