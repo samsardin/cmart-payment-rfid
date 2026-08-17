@@ -75,36 +75,32 @@ const toAppRow = (row) => Object.fromEntries(
     .map(([key, value]) => [key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()), value])
 );
 
-export async function ensureDefaultAccountsInSupabase() {
-  if (!supabase) return;
+export async function forceUpsertSystemAccountsToSupabase() {
+  if (!supabase) return { success: false, text: 'Koneksi Supabase belum aktif.' };
+
   try {
-    const { data, error } = await supabase.from('login_accounts').select('username');
+    const systemRows = LOGIN_ACCOUNTS.map(acc => ({
+      id: acc.id,
+      username: acc.username,
+      password: acc.password,
+      role_id: acc.roleId
+    }));
+
+    const { error } = await supabase.from('login_accounts').upsert(systemRows);
     if (error) {
-      console.warn('Error querying login_accounts from Supabase:', error);
-      return;
+      console.error('Failed to force upsert system accounts to Supabase:', error);
+      return { success: false, text: `Error Supabase: ${error.message}` };
     }
 
-    const existingUsernames = new Set((data || []).map(r => (r.username || '').toLowerCase()));
-    const missingDefaults = LOGIN_ACCOUNTS.filter(d => !existingUsernames.has(d.username.toLowerCase()));
-
-    if (missingDefaults.length > 0) {
-      const dbRows = missingDefaults.map(acc => ({
-        id: acc.id,
-        username: acc.username,
-        password: acc.password,
-        role_id: acc.roleId
-      }));
-
-      const { error: upsertErr } = await supabase.from('login_accounts').upsert(dbRows);
-      if (upsertErr) {
-        console.error('Failed to upsert default accounts to Supabase login_accounts:', upsertErr);
-      } else {
-        console.log('Successfully upserted default accounts to Supabase login_accounts:', dbRows);
-      }
-    }
+    return { success: true, text: 'Akun penjemputan (penjemputan123) & seluruh akun sistem BERHASIL ditulis langsung ke database Supabase Cloud!' };
   } catch (err) {
-    console.error('Failed to ensure default accounts in Supabase:', err);
+    console.error('Error force upserting system accounts:', err);
+    return { success: false, text: `Gagal: ${err.message}` };
   }
+}
+
+export async function ensureDefaultAccountsInSupabase() {
+  await forceUpsertSystemAccountsToSupabase();
 }
 
 export async function loadSchoolState() {

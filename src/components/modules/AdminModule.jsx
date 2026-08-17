@@ -7,7 +7,7 @@ import {
 import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
-import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson } from '../../services/schoolRepository';
+import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings, externalSubTab, onSubTabChange }) {
   const [internalSubTab, setInternalSubTab] = useState(() => (currentRole?.id === 'SUPER_ADMIN' ? 'database' : 'rfid'));
@@ -127,6 +127,23 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       });
     } catch (err) {
       alert(`GAGAL MEMULIHKAN DATABASE: ${err.message}`);
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
+
+  const handleForceSyncSupabaseAccounts = async () => {
+    setIsProcessingAction(true);
+    setFeedback(null);
+    try {
+      const res = await forceUpsertSystemAccountsToSupabase();
+      if (res.success) {
+        setFeedback({ type: 'success', text: res.text });
+      } else {
+        setFeedback({ type: 'error', text: res.text });
+      }
+    } catch (err) {
+      setFeedback({ type: 'error', text: `Gagal sinkronisasi Supabase: ${err.message}` });
     } finally {
       setIsProcessingAction(false);
     }
@@ -1834,6 +1851,43 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 disabled={isProcessingAction}
               >
                 <Trash2 size={18} /> Reset Seluruh Data Operasional
+              </button>
+            </div>
+
+            {/* Panel 3: Force Sync Akun Penjemputan ke Supabase */}
+            <div className="glass-card" style={{ padding: '1.5rem', background: '#f0fdf4', border: '1.5px solid #bbf7d0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#166534', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Zap size={18} style={{ color: '#16a34a' }} />
+                  3. Sinkronkan Akun Penjemputan ke Supabase
+                </h4>
+                <p style={{ fontSize: '0.8rem', color: '#15803d', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  Tulis ulang & paksa kirim baris akun <b>`penjemputan` (`penjemputan123`)</b> langsung ke dalam tabel <b>`login_accounts`</b> pada database Supabase Cloud.
+                </p>
+
+                <div style={{ background: '#dcfce7', padding: '0.85rem', borderRadius: '10px', border: '1px solid #86efac', marginBottom: '1.2rem', fontSize: '0.78rem', color: '#14532d' }}>
+                  <b>⚡ Tindakan Langsung (Direct Write):</b>
+                  <div style={{ marginTop: '0.3rem', fontFamily: 'monospace', fontWeight: 700 }}>
+                    id: ACC-ADMIN-004<br />
+                    username: penjemputan<br />
+                    password: penjemputan123<br />
+                    role_id: ADMIN_PENJEMPUTAN
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleForceSyncSupabaseAccounts}
+                className="btn btn-emerald"
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  padding: '0.75rem',
+                  fontWeight: 800
+                }}
+                disabled={isProcessingAction}
+              >
+                <Zap size={18} /> {isProcessingAction ? 'Mengirim ke Supabase...' : '⚡ Paksa Tulis Akun Penjemputan ke Supabase'}
               </button>
             </div>
 
