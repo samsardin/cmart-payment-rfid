@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   ShoppingBag, CreditCard, Radio, AlertTriangle, CheckCircle, RefreshCw, 
   Calculator, DollarSign, UserCheck, Search, ArrowRight, Receipt, ShieldCheck, Zap, X
