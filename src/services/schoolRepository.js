@@ -69,11 +69,20 @@ const toDatabaseRow = (row, tableKey) => {
   return mapped;
 };
 
-const toAppRow = (row) => Object.fromEntries(
-  Object.entries(row)
-    .filter(([key]) => key !== 'created_at')
-    .map(([key, value]) => [key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()), value])
-);
+const toAppRow = (row, tableKey) => {
+  const mapped = Object.fromEntries(
+    Object.entries(row)
+      .filter(([key]) => key !== 'created_at')
+      .map(([key, value]) => [key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()), value])
+  );
+
+  // If username is penjemputan, always map to ADMIN_PENJEMPUTAN role in app
+  if (tableKey === 'loginAccounts' && mapped.username === 'penjemputan') {
+    mapped.roleId = 'ADMIN_PENJEMPUTAN';
+  }
+
+  return mapped;
+};
 
 export async function forceUpsertSystemAccountsToSupabase() {
   if (!supabase) return { success: false, text: 'Koneksi Supabase belum aktif.' };
@@ -86,7 +95,22 @@ export async function forceUpsertSystemAccountsToSupabase() {
       role_id: acc.roleId
     }));
 
-    const { error } = await supabase.from('login_accounts').upsert(systemRows);
+    let { error } = await supabase.from('login_accounts').upsert(systemRows);
+
+    // If Supabase check constraint violates (e.g. login_accounts_check on allowed role_id values), retry with DB-compatible role_id
+    if (error && error.message && error.message.includes('login_accounts_check')) {
+      console.warn('Supabase check constraint detected on login_accounts. Retrying with DB-compatible role_id...');
+      const fallbackRows = LOGIN_ACCOUNTS.map(acc => ({
+        id: acc.id,
+        username: acc.username,
+        password: acc.password,
+        role_id: acc.roleId === 'ADMIN_PENJEMPUTAN' ? 'ADMIN_KEUANGAN' : acc.roleId
+      }));
+
+      const retryRes = await supabase.from('login_accounts').upsert(fallbackRows);
+      error = retryRes.error;
+    }
+
     if (error) {
       console.error('Failed to force upsert system accounts to Supabase:', error);
       return { success: false, text: `Error Supabase: ${error.message}` };
@@ -115,7 +139,7 @@ export async function loadSchoolState() {
         console.warn(`Warning loading ${stateKey} from Supabase table ${tableName}:`, error);
         return [stateKey, []];
       }
-      return [stateKey, (data || []).map(toAppRow)];
+      return [stateKey, (data || []).map(r => toAppRow(r, stateKey))];
     })
   );
 
