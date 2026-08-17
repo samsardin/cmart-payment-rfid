@@ -58,40 +58,111 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
 
       {!isPasswordMenu && student && (
         <>
-          {/* Top Profile Card */}
-          <div className="glass-card flex-between" style={{ flexWrap: 'wrap', gap: '1rem', borderLeft: '4px solid var(--primary-600)' }}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <img
-                src={student.photo}
-                alt={student.name}
-                style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-500)' }}
-              />
+          {/* Top Profile Card - Modern Luxury Fintech Banner */}
+          <div
+            className="glass-card"
+            style={{
+              padding: '1.4rem 1.75rem',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 60%, #ecfdf5 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              boxShadow: '0 10px 30px -5px rgba(6, 95, 70, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1.5rem'
+            }}
+          >
+            {/* Student Info Left Section */}
+            <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <img
+                  src={student.photo}
+                  alt={student.name}
+                  style={{
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '3px solid #10b981',
+                    boxShadow: '0 6px 16px rgba(16, 185, 129, 0.25)'
+                  }}
+                />
+                <span style={{
+                  position: 'absolute',
+                  bottom: '2px',
+                  right: '2px',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  background: '#10b981',
+                  border: '2px solid #ffffff',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }} title="Status Siswa Aktif" />
+              </div>
+
               <div>
-                <h3 style={{ fontSize: '1.25rem', color: 'var(--slate-900)' }}>{student.name}</h3>
-                <div style={{ fontSize: '0.84rem', color: 'var(--slate-600)' }}>
-                  Kelas: <b>{student.class}</b> | NIS: <b>{student.nis}</b>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--slate-900)', letterSpacing: '-0.02em', margin: 0 }}>
+                    {student.name}
+                  </h3>
+                  <span className="badge badge-emerald" style={{ fontSize: '0.7rem', padding: '2px 8px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                    <GraduationCap size={12} /> Kelas {student.class}
+                  </span>
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)' }}>
-                  Orang Tua / Wali: <b>{guardian?.name || student.guardianName}</b> ({guardian?.phone})
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', fontSize: '0.84rem', color: 'var(--slate-600)' }}>
+                  <div>NIS: <b style={{ color: 'var(--slate-800)', fontFamily: 'monospace' }}>{student.nis}</b></div>
+                  <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--slate-300)' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--slate-600)' }}>
+                    <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />
+                    Wali: <b style={{ color: 'var(--slate-800)' }}>{guardian?.name || student.guardianName || 'Orang Tua / Wali'}</b>
+                    {guardian?.phone && <span style={{ color: 'var(--slate-400)', fontSize: '0.78rem' }}>({guardian.phone})</span>}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Quick Balances */}
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ background: 'var(--primary-50)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--primary-200)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--primary-800)', fontWeight: 600 }}>Saldo Tabungan Utama</div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--primary-900)' }}>
+            {/* Quick Balances Right Section */}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              
+              {/* Saldo Tabungan Utama Card */}
+              <div style={{
+                background: '#ffffff',
+                padding: '0.9rem 1.4rem',
+                borderRadius: '16px',
+                border: '1.5px solid #a7f3d0',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)',
+                minWidth: '170px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#065f46', fontWeight: 700, marginBottom: '0.25rem' }}>
+                  <Wallet size={15} style={{ color: '#059669' }} />
+                  <span>Saldo Tabungan</span>
+                </div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#064e3b', letterSpacing: '-0.02em' }}>
                   Rp {student.savingsBalance.toLocaleString('id-ID')}
                 </div>
               </div>
 
-              <div style={{ background: 'var(--accent-gold-100)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid #fde68a' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--accent-gold-700)', fontWeight: 600 }}>Saldo Deposit Kantin</div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--accent-gold-700)' }}>
+              {/* Saldo Deposit Kantin Card */}
+              <div style={{
+                background: '#ffffff',
+                padding: '0.9rem 1.4rem',
+                borderRadius: '16px',
+                border: '1.5px solid #fde68a',
+                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.08)',
+                minWidth: '170px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#92400e', fontWeight: 700, marginBottom: '0.25rem' }}>
+                  <ShoppingBag size={15} style={{ color: '#d97706' }} />
+                  <span>Deposit Kantin</span>
+                </div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#78350f', letterSpacing: '-0.02em' }}>
                   Rp {student.canteenDepositBalance.toLocaleString('id-ID')}
                 </div>
               </div>
+
             </div>
           </div>
 
