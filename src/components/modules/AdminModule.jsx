@@ -581,7 +581,10 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     const gdr = (state.guardians || []).find(g => g.id === student.guardianId || g.studentId === student.id || g.name === student.guardianName);
     
     const rawGdrName = student.guardianName || gdr?.name || '';
-    const cleanGdrName = (rawGdrName && rawGdrName.toLowerCase().includes('orang tua')) ? '' : rawGdrName;
+    let cleanGdrName = rawGdrName;
+    if (!cleanGdrName || cleanGdrName.toLowerCase().includes('orang tua') || cleanGdrName.toLowerCase().includes('wali') || cleanGdrName.trim() === 'Orang Tua / Wali') {
+      cleanGdrName = '';
+    }
 
     setStudentForm({
       name: student.name || '',
@@ -2172,20 +2175,39 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     type="text"
                     className="form-input"
                     placeholder="Nama lengkap Ayah/Ibu/Wali..."
-                    value={studentForm.guardianName || ''}
+                    value={
+                      (studentForm.guardianName && (
+                        studentForm.guardianName.toLowerCase().includes('orang tua') ||
+                        studentForm.guardianName.toLowerCase().includes('wali') ||
+                        studentForm.guardianName.trim() === 'Orang Tua / Wali'
+                      ))
+                        ? ''
+                        : (studentForm.guardianName || '')
+                    }
                     onChange={(e) => {
-                      const text = e.target.value;
+                      let text = e.target.value;
+                      if (text.toLowerCase().includes('orang tua') || text.toLowerCase().includes('wali')) {
+                        text = text.replace(/orang\s*tua\s*\/?\s*wali/gi, '').replace(/orang\s*tua/gi, '').replace(/wali/gi, '').trim();
+                      }
                       setStudentForm(prev => ({ ...prev, guardianName: text }));
                     }}
                     onFocus={(e) => {
-                      if (e.target.value.toLowerCase().includes('orang tua') || (studentForm.guardianName && studentForm.guardianName.toLowerCase().includes('orang tua'))) {
+                      const cur = e.target.value || studentForm.guardianName || '';
+                      if (cur.toLowerCase().includes('orang tua') || cur.toLowerCase().includes('wali') || cur.trim() === 'Orang Tua / Wali') {
                         setStudentForm(prev => ({ ...prev, guardianName: '' }));
                       } else {
                         e.target.select();
                       }
                     }}
                     onClick={(e) => {
-                      if (e.target.value.toLowerCase().includes('orang tua') || (studentForm.guardianName && studentForm.guardianName.toLowerCase().includes('orang tua'))) {
+                      const cur = e.target.value || studentForm.guardianName || '';
+                      if (cur.toLowerCase().includes('orang tua') || cur.toLowerCase().includes('wali') || cur.trim() === 'Orang Tua / Wali') {
+                        setStudentForm(prev => ({ ...prev, guardianName: '' }));
+                      }
+                    }}
+                    onMouseDown={(e) => {
+                      const cur = e.target.value || studentForm.guardianName || '';
+                      if (cur.toLowerCase().includes('orang tua') || cur.toLowerCase().includes('wali') || cur.trim() === 'Orang Tua / Wali') {
                         setStudentForm(prev => ({ ...prev, guardianName: '' }));
                       }
                     }}
