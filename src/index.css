@@ -750,3 +750,68 @@ main {
   }
 }
 
+/* ==========================================================================
+   CANTEEN POS MODULE RESPONSIVE STYLES (MOBILE & TABLET FIX)
+   ========================================================================== */
+
+/* Laptop & PC Screen (>= 1024px) */
+@media (min-width: 1024px) {
+  .canteen-pos-grid {
+    grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.25fr) minmax(280px, 1fr) !important;
+  }
+  .canteen-preset-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* Tablet Screens (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .canteen-pos-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  /* Make column 3 (Nota / Struk Digital) span full width across 2 columns on tablet */
+  .canteen-pos-grid > div:nth-child(3) {
+    grid-column: 1 / -1 !important;
+  }
+  .canteen-preset-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* Mobile & Smartphone Screens (<= 767px) */
+@media (max-width: 767px) {
+  .canteen-pos-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .canteen-header-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 1rem !important;
+    gap: 0.85rem !important;
+  }
+
+  .canteen-header-bar button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .canteen-preset-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.4rem !important;
+  }
+
+  .canteen-preset-grid button {
+    font-size: 0.74rem !important;
+    padding: 0.45rem 0.2rem !important;
+  }
+}
+
+/* Small Smartphone Screens (<= 480px) */
+@media (max-width: 480px) {
+  .canteen-preset-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+

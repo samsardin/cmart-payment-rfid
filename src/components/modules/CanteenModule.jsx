@@ -189,7 +189,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       
       {/* Header Terminal Kasir Modern */}
-      <div style={{
+      <div className="canteen-header-bar" style={{
         background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
         borderRadius: '18px',
         padding: '1.25rem 1.5rem',
@@ -216,7 +216,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
             <ShoppingBag size={24} color="white" />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#ffffff', letterSpacing: '-0.02em' }}>
                 Terminal Kasir Kantin Digital
               </h2>
@@ -258,7 +258,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
       </div>
 
       {/* Main 3-Column POS Grid Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) minmax(340px, 1.25fr) minmax(280px, 1fr)', gap: '1.25rem', alignItems: 'stretch' }}>
+      <div className="canteen-pos-grid" style={{ display: 'grid', gap: '1.25rem', alignItems: 'stretch' }}>
         
         {/* ======================================================== */}
         {/* KOLOM 1: PROFIL SISWA & TANGKAPAN RFID */}
@@ -611,7 +611,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
                 <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--slate-500)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Tombol Nominal Cepat (+):
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                <div className="canteen-preset-grid" style={{ display: 'grid', gap: '0.5rem' }}>
                   {PRESET_NOMINALS.map(val => (
                     <button
                       key={val}
