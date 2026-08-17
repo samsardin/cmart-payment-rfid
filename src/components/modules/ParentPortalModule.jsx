@@ -7,8 +7,25 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordFeedback, setPasswordFeedback] = useState(null);
 
-  const student = state.students.find((item) => item.id === authenticatedSession?.studentId);
-  const guardian = state.guardians.find((item) => item.id === authenticatedSession?.guardianId || item.id === student?.guardianId);
+  const initialStudent = state.students.find((item) => item.id === authenticatedSession?.studentId);
+  const guardian = state.guardians.find((item) =>
+    item.id === authenticatedSession?.guardianId ||
+    item.id === initialStudent?.guardianId ||
+    (initialStudent?.guardianName && item.name?.toLowerCase() === initialStudent.guardianName?.toLowerCase())
+  );
+
+  const children = state.students.filter((item) =>
+    (guardian && (
+      item.guardianId === guardian.id ||
+      item.id === guardian.studentId ||
+      (item.guardianName && guardian.name && item.guardianName.toLowerCase() === guardian.name.toLowerCase())
+    )) ||
+    item.id === authenticatedSession?.studentId
+  );
+
+  const [selectedChildId, setSelectedChildId] = useState(() => initialStudent?.id || children[0]?.id);
+
+  const student = children.find(c => c.id === selectedChildId) || children[0] || initialStudent;
   const isPasswordMenu = view === 'account';
 
   const submitPasswordChange = (event) => {
@@ -31,6 +48,68 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+      {/* Multi-Child Selector Banner for Parents */}
+      {!isPasswordMenu && children.length > 1 && (
+        <div
+          className="glass-card"
+          style={{
+            padding: '1rem 1.25rem',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, #022c22 0%, #047857 100%)',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            boxShadow: '0 8px 24px rgba(4, 120, 87, 0.2)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Users size={22} style={{ color: '#34d399' }} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '0.98rem' }}>
+                Akun Wali / Penjemput: {guardian?.name || 'Orang Tua / Wali'} ({children.length} Anak Terhubung)
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#a7f3d0' }}>
+                Klik pada nama anak di bawah ini untuk melihat data tabungan, deposit kantin, dan mutasi ledger masing-masing.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+            {children.map((ch) => {
+              const isSelected = ch.id === student?.id;
+              return (
+                <button
+                  key={ch.id}
+                  type="button"
+                  onClick={() => setSelectedChildId(ch.id)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '12px',
+                    border: isSelected ? '2px solid #34d399' : '1px solid rgba(255,255,255,0.2)',
+                    background: isSelected ? '#ffffff' : 'rgba(255,255,255,0.15)',
+                    color: isSelected ? '#064e3b' : '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '0.84rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <img src={ch.photo} alt={ch.name} style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <span>{ch.name} (Kelas {ch.class})</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
 
 

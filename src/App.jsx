@@ -296,7 +296,11 @@ export default function App() {
     setCurrentRole(ROLES[roleId]);
     setActiveTab('parent_portal');
     setScannedCardResult(result);
-    setAuthenticatedSession({ roleId, studentId: result.student.id });
+    setAuthenticatedSession({
+      roleId,
+      studentId: result.student.id,
+      guardianId: result.guardian?.id || result.student?.guardianId
+    });
     setLoginRfidFeedback(null);
     return { success: true };
   };
