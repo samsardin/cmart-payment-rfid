@@ -47,15 +47,21 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
     };
   }, [state.students, state.ledger]);
 
+  // Derived current active student directly from state.students single source of truth
+  const currentActiveStudent = useMemo(() => {
+    if (!activeStudent?.id) return null;
+    return state.students.find(s => s.id === activeStudent.id) || activeStudent;
+  }, [state.students, activeStudent]);
+
   // Keep activeStudent synced with latest state.students
   useEffect(() => {
     if (activeStudent?.id) {
       const fresh = state.students.find(s => s.id === activeStudent.id);
-      if (fresh) {
+      if (fresh && (fresh.savingsBalance !== activeStudent.savingsBalance || fresh.canteenDepositBalance !== activeStudent.canteenDepositBalance)) {
         setActiveStudent({ ...fresh });
       }
     }
-  }, [state.students]);
+  }, [state.students, activeStudent?.id]);
 
   // Auto-focus nominal input field cleanly after student card is identified
   useEffect(() => {
@@ -84,11 +90,12 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
     setDescription('');
 
     if (scannedCardResult.success && scannedCardResult.student) {
-      setActiveStudent(scannedCardResult.student);
+      const freshStudent = state.students.find(s => s.id === scannedCardResult.student.id) || scannedCardResult.student;
+      setActiveStudent(freshStudent);
       setUnregisteredUid(null);
       setFeedback({
         type: 'success',
-        text: `Siswa Teridentifikasi via RFID: ${scannedCardResult.student.name} (${scannedCardResult.student.class})`
+        text: `Siswa Teridentifikasi via RFID: ${freshStudent.name} (${freshStudent.class})`
       });
     } else if (scannedCardResult.isUnregistered && scannedCardResult.uid) {
       setActiveStudent(null);
@@ -106,7 +113,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
         text: scannedCardResult.message || 'Kartu RFID tidak valid atau tidak dapat digunakan.'
       });
     }
-  }, [scannedCardResult, state.students]);
+  }, [scannedCardResult]);
 
   // Handle manual RFID scan simulation inside component
   const handleScanCard = (uid) => {
@@ -402,7 +409,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
           </form>
         </div>
 
-      ) : activeStudent ? (
+      ) : currentActiveStudent ? (
         
         /* Identified Student Top-Up & Transaction Form */
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
@@ -428,20 +435,20 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
                   </span>
                 </div>
                 <span className="badge" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', fontSize: '0.7rem' }}>
-                  {activeStudent.class}
+                  {currentActiveStudent.class}
                 </span>
               </div>
 
               <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center', marginBottom: '1.2rem' }}>
                 <img
-                  src={activeStudent.photo}
-                  alt={activeStudent.name}
+                  src={currentActiveStudent.photo}
+                  alt={currentActiveStudent.name}
                   style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid #34d399', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}
                 />
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'white', letterSpacing: '-0.01em' }}>{activeStudent.name}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#d1fae5' }}>NIS: {activeStudent.nis} | Kartu Terdaftar</div>
-                  <div style={{ fontSize: '0.72rem', color: '#a7f3d0', fontFamily: 'monospace' }}>UID: {activeStudent.rfidUid}</div>
+                  <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'white', letterSpacing: '-0.01em' }}>{currentActiveStudent.name}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#d1fae5' }}>NIS: {currentActiveStudent.nis} | Kartu Terdaftar</div>
+                  <div style={{ fontSize: '0.72rem', color: '#a7f3d0', fontFamily: 'monospace' }}>UID: {currentActiveStudent.rfidUid}</div>
                 </div>
               </div>
 
@@ -449,13 +456,13 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
                 <div>
                   <div style={{ fontSize: '0.7rem', color: '#a7f3d0', textTransform: 'uppercase', fontWeight: 600 }}>Saldo Tabungan Utama</div>
                   <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#34d399' }}>
-                    Rp {(Number(activeStudent.savingsBalance) || 0).toLocaleString('id-ID')}
+                    Rp {(Number(currentActiveStudent.savingsBalance) || 0).toLocaleString('id-ID')}
                   </div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.7rem', color: '#fde68a', textTransform: 'uppercase', fontWeight: 600 }}>Saldo Deposit Kantin</div>
                   <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#fbbf24' }}>
-                    Rp {(Number(activeStudent.canteenDepositBalance) || 0).toLocaleString('id-ID')}
+                    Rp {(Number(currentActiveStudent.canteenDepositBalance) || 0).toLocaleString('id-ID')}
                   </div>
                 </div>
               </div>
@@ -567,7 +574,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
               <div>
                 <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <BookOpen size={20} style={{ color: 'var(--primary-700)' }} />
-                  Buku Rekap & Mutasi: {activeStudent.name}
+                  Buku Rekap & Mutasi: {currentActiveStudent.name}
                 </h3>
                 <p style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.1rem' }}>
                   Rincian saldo & riwayat transaksi lengkap untuk Akun Tabungan dan Deposit Kantin.
@@ -615,7 +622,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
                   <span className="badge badge-emerald" style={{ fontSize: '0.65rem' }}>{studentSavingsSummary.count} Tx</span>
                 </div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#064e3b', marginBottom: '0.4rem' }}>
-                  Rp {activeStudent.savingsBalance.toLocaleString('id-ID')}
+                  Rp {(Number(currentActiveStudent.savingsBalance) || 0).toLocaleString('id-ID')}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#047857', borderTop: '1px dashed #a7f3d0', paddingTop: '0.35rem' }}>
                   <span>Setoran (+): <b>Rp {studentSavingsSummary.credit.toLocaleString('id-ID')}</b></span>
@@ -632,7 +639,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
                   <span className="badge badge-gold" style={{ fontSize: '0.65rem' }}>{studentDepositSummary.count} Tx</span>
                 </div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#92400e', marginBottom: '0.4rem' }}>
-                  Rp {activeStudent.canteenDepositBalance.toLocaleString('id-ID')}
+                  Rp {(Number(currentActiveStudent.canteenDepositBalance) || 0).toLocaleString('id-ID')}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#b45309', borderTop: '1px dashed #fde68a', paddingTop: '0.35rem' }}>
                   <span>Top-Up (+): <b>Rp {studentDepositSummary.credit.toLocaleString('id-ID')}</b></span>

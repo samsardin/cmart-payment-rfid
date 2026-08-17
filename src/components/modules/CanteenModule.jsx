@@ -79,15 +79,21 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
     }
   }, [scannedCardResult]);
 
+  // Derived current active student directly from state.students single source of truth
+  const currentActiveStudent = useMemo(() => {
+    if (!activeStudent?.id) return null;
+    return state.students.find(s => s.id === activeStudent.id) || activeStudent;
+  }, [state.students, activeStudent]);
+
   // Keep activeStudent synced with latest state.students
   useEffect(() => {
     if (activeStudent?.id) {
       const fresh = state.students.find(s => s.id === activeStudent.id);
-      if (fresh) {
+      if (fresh && (fresh.savingsBalance !== activeStudent.savingsBalance || fresh.canteenDepositBalance !== activeStudent.canteenDepositBalance)) {
         setActiveStudent({ ...fresh });
       }
     }
-  }, [state.students]);
+  }, [state.students, activeStudent?.id]);
 
   // Process Canteen Payment
   const handleProcessPayment = (e) => {
