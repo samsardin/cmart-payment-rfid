@@ -950,7 +950,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     setStudentModalType('EDIT');
   };
 
-  const handleSaveStudentSubmit = (e) => {
+  const handleSaveStudentSubmit = async (e) => {
     e.preventDefault();
     if (!studentForm.name.trim() || !studentForm.nis.trim() || !studentForm.class.trim()) {
       setFeedback({ type: 'error', text: 'Nama, NIS, dan Kelas wajib diisi!' });
@@ -960,32 +960,36 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     const targetUsername = (studentForm.username || studentForm.nis).trim().toLowerCase();
     const targetPassword = (studentForm.password || `${studentForm.nis}123`).trim();
 
+    const inputGdrName = studentForm.guardianName.trim();
+    const inputGdrPhone = studentForm.guardianPhone.trim();
+    const inputGdrRel = studentForm.guardianRelationship || 'Ayah';
+
+    let updatedGuardians = [...(state.guardians || [])];
+    let newState = null;
+
     if (studentModalType === 'ADD') {
       const newStudentId = `STD-${Date.now()}`;
       let targetGuardianId = '';
 
-      let updatedGuardians = [...(state.guardians || [])];
-      const inputGdrName = studentForm.guardianName.trim();
-      const inputGdrPhone = studentForm.guardianPhone.trim();
-
-      if (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) {
-        // Auto-match existing guardian by phone or name
+      if (inputGdrName || inputGdrPhone) {
+        const effectiveName = (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) ? inputGdrName : `Wali dari ${studentForm.name.trim()}`;
         const existingGdr = updatedGuardians.find(g =>
           (inputGdrPhone && g.phone && g.phone.trim() === inputGdrPhone) ||
-          (g.name && g.name.trim().toLowerCase() === inputGdrName.toLowerCase())
+          (g.name && g.name.trim().toLowerCase() === effectiveName.toLowerCase())
         );
 
         if (existingGdr) {
           targetGuardianId = existingGdr.id;
-          if (inputGdrPhone) existingGdr.phone = inputGdrPhone;
-          if (studentForm.guardianRelationship) existingGdr.relationship = studentForm.guardianRelationship;
+          existingGdr.name = effectiveName;
+          existingGdr.phone = inputGdrPhone;
+          existingGdr.relationship = inputGdrRel;
         } else {
           targetGuardianId = `GDR-${Date.now()}`;
           const newGuardianObj = {
             id: targetGuardianId,
-            name: inputGdrName,
+            name: effectiveName,
             phone: inputGdrPhone,
-            relationship: studentForm.guardianRelationship || 'Orang Tua',
+            relationship: inputGdrRel,
             studentId: newStudentId,
             rfidCardUid: '',
             address: ''
@@ -1018,14 +1022,16 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         studentId: newStudentId
       };
 
-      setState(prev => ({
-        ...prev,
-        students: [newStudentObj, ...prev.students],
+      newState = {
+        ...state,
+        students: [newStudentObj, ...(state.students || [])],
         guardians: updatedGuardians,
-        loginAccounts: [...(prev.loginAccounts || []), newAccountObj]
-      }));
+        loginAccounts: [...(state.loginAccounts || []), newAccountObj]
+      };
 
-      setFeedback({ type: 'success', text: `Siswa baru "${newStudentObj.name}" & foto profil berhasil disimpan!` });
+      setState(newState);
+      setFeedback({ type: 'success', text: `Siswa baru "${newStudentObj.name}" & data orang tua berhasil disimpan!` });
+
     } else if (studentModalType === 'EDIT' && editingStudent) {
       const targetStudentId = editingStudent.id;
       const existingAccIdx = (state.loginAccounts || []).findIndex(a => a.studentId === targetStudentId || a.username === editingStudent.nis);
@@ -1049,33 +1055,33 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         });
       }
 
-      let updatedGuardians = [...(state.guardians || [])];
       let targetGdrId = editingStudent.guardianId;
-      const inputGdrName = studentForm.guardianName.trim();
-      const inputGdrPhone = studentForm.guardianPhone.trim();
+      const effectiveName = (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua'))
+        ? inputGdrName
+        : (editingStudent.guardianName || '');
 
-      if (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) {
+      if (targetGdrId || effectiveName || inputGdrPhone) {
         const gIdx = updatedGuardians.findIndex(g =>
-          g.id === editingStudent.guardianId ||
+          (targetGdrId && g.id === targetGdrId) ||
           (inputGdrPhone && g.phone && g.phone.trim() === inputGdrPhone) ||
-          (g.name && g.name.trim().toLowerCase() === inputGdrName.toLowerCase())
+          (effectiveName && g.name && g.name.trim().toLowerCase() === effectiveName.toLowerCase())
         );
 
         if (gIdx >= 0) {
           targetGdrId = updatedGuardians[gIdx].id;
           updatedGuardians[gIdx] = {
             ...updatedGuardians[gIdx],
-            name: inputGdrName,
-            phone: inputGdrPhone || updatedGuardians[gIdx].phone,
-            relationship: studentForm.guardianRelationship || updatedGuardians[gIdx].relationship
+            name: effectiveName || updatedGuardians[gIdx].name || 'Orang Tua / Wali',
+            phone: inputGdrPhone,
+            relationship: inputGdrRel
           };
-        } else {
+        } else if (effectiveName || inputGdrPhone) {
           targetGdrId = `GDR-${Date.now()}`;
           updatedGuardians.push({
             id: targetGdrId,
-            name: inputGdrName,
+            name: effectiveName || `Wali ${studentForm.name.trim()}`,
             phone: inputGdrPhone,
-            relationship: studentForm.guardianRelationship || 'Orang Tua',
+            relationship: inputGdrRel,
             studentId: targetStudentId,
             rfidCardUid: '',
             address: ''
@@ -1083,30 +1089,41 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         }
       }
 
-      setState(prev => ({
-        ...prev,
-        students: prev.students.map(s => {
-          if (s.id === editingStudent.id) {
-            return {
-              ...s,
-              name: studentForm.name.trim(),
-              nis: studentForm.nis.trim(),
-              class: studentForm.class.trim(),
-              gender: studentForm.gender || 'L',
-              photo: studentForm.photo || s.photo,
-              rfidUid: studentForm.rfidUid.trim().toUpperCase(),
-              guardianId: targetGdrId || s.guardianId,
-              guardianName: (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) ? inputGdrName : '',
-              status: studentForm.status
-            };
-          }
-          return s;
-        }),
+      const updatedStudents = (state.students || []).map(s => {
+        if (s.id === editingStudent.id) {
+          return {
+            ...s,
+            name: studentForm.name.trim(),
+            nis: studentForm.nis.trim(),
+            class: studentForm.class.trim(),
+            gender: studentForm.gender || 'L',
+            photo: studentForm.photo || s.photo,
+            rfidUid: studentForm.rfidUid.trim().toUpperCase(),
+            guardianId: targetGdrId || s.guardianId,
+            guardianName: effectiveName,
+            status: studentForm.status
+          };
+        }
+        return s;
+      });
+
+      newState = {
+        ...state,
+        students: updatedStudents,
         guardians: updatedGuardians,
         loginAccounts: updatedAccounts
-      }));
+      };
 
-      setFeedback({ type: 'success', text: `Data siswa "${studentForm.name}" berhasil diperbarui!` });
+      setState(newState);
+      setFeedback({ type: 'success', text: `Data siswa "${studentForm.name}" & data orang tua (No WA: ${inputGdrPhone || '-'}, Relasi: ${inputGdrRel}) BERHASIL disimpan!` });
+    }
+
+    if (newState) {
+      try {
+        await saveSchoolState(newState);
+      } catch (err) {
+        console.warn('Warning syncing saved student to Supabase:', err);
+      }
     }
 
     setStudentModalType(null);
