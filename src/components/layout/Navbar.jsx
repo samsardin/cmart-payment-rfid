@@ -91,24 +91,46 @@ export default function Navbar({
         <div className="flex-between" style={{ flexWrap: 'wrap', gap: '0.6rem', paddingBottom: '0.5rem' }}>
           
           {/* Logo & Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{
-              background: 'white',
-              padding: '0.25rem 0.4rem',
-              borderRadius: '10px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.18)'
-            }}>
-              <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '88px', height: 'auto' }} />
+          {currentRole !== 'ADMIN_PENJEMPUTAN' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{
+                background: 'white',
+                padding: '0.25rem 0.4rem',
+                borderRadius: '10px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.18)'
+              }}>
+                <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '88px', height: 'auto' }} />
+              </div>
+              <div>
+                <h1 style={{ color: 'white', fontSize: '1.15rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+                  C-Mart Payment <span className="badge badge-gold" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>v1.0 PRD</span>
+                </h1>
+                <p style={{ fontSize: '0.72rem', color: '#a7f3d0', opacity: 0.95, margin: 0 }}>
+                  Sistem Tabungan & Kantin RFID
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 style={{ color: 'white', fontSize: '1.15rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
-                C-Mart Payment <span className="badge badge-gold" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>v1.0 PRD</span>
-              </h1>
-              <p style={{ fontSize: '0.72rem', color: '#a7f3d0', opacity: 0.95, margin: 0 }}>
-                Sistem Tabungan & Kantin RFID
-              </p>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#ffffff',
+                padding: '0.45rem',
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              }}>
+                <Volume2 size={24} />
+              </div>
+              <div>
+                <h1 style={{ color: 'white', fontSize: '1.15rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+                  Sistem Penjemputan Siswa <span className="badge badge-gold" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>Audio MP3</span>
+                </h1>
+                <p style={{ fontSize: '0.72rem', color: '#a7f3d0', opacity: 0.95, margin: 0 }}>
+                  Modul Penjemputan & Voice Call RFID
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Controls Container - Responsive Modern Layout */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>

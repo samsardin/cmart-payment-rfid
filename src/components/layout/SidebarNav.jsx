@@ -143,19 +143,41 @@ export default function SidebarNav({
       
       {/* Brand Header */}
       <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-          <div style={{ background: 'white', padding: '0.25rem 0.45rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-            <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '84px', height: 'auto' }} />
+        {currentRole !== 'ADMIN_PENJEMPUTAN' ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <div style={{ background: 'white', padding: '0.25rem 0.45rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+              <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '84px', height: 'auto' }} />
+            </div>
+            <div>
+              <h1 style={{ color: 'white', fontSize: '1.1rem', letterSpacing: '-0.02em', margin: 0 }}>
+                C-Mart <span className="badge badge-gold" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>v1.0</span>
+              </h1>
+              <p style={{ fontSize: '0.72rem', color: '#a7f3d0', opacity: 0.9, margin: 0 }}>
+                Sistem Tabungan & Kantin RFID
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 style={{ color: 'white', fontSize: '1.1rem', letterSpacing: '-0.02em', margin: 0 }}>
-              C-Mart <span className="badge badge-gold" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>v1.0</span>
-            </h1>
-            <p style={{ fontSize: '0.72rem', color: '#a7f3d0', opacity: 0.9, margin: 0 }}>
-              Sistem Tabungan & Kantin RFID
-            </p>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: '#ffffff',
+              padding: '0.45rem',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+            }}>
+              <Volume2 size={24} />
+            </div>
+            <div>
+              <h1 style={{ color: 'white', fontSize: '1.05rem', letterSpacing: '-0.02em', margin: 0 }}>
+                Sistem Penjemputan <span className="badge badge-gold" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>Audio MP3</span>
+              </h1>
+              <p style={{ fontSize: '0.72rem', color: '#a7f3d0', opacity: 0.9, margin: 0 }}>
+                Modul Penjemputan Siswa RFID
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Supabase Status Pill */}
         <div style={{
@@ -471,10 +493,17 @@ export default function SidebarNav({
             {isMobileDrawerOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <img src={cmartLogo} alt="C-Mart Logo" style={{ width: '70px', height: 'auto' }} />
-            <span style={{ fontWeight: 800, fontSize: '1rem', color: 'white' }}>C-Mart</span>
-          </div>
+          {currentRole !== 'ADMIN_PENJEMPUTAN' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <img src={cmartLogo} alt="C-Mart Logo" style={{ width: '70px', height: 'auto' }} />
+              <span style={{ fontWeight: 800, fontSize: '1rem', color: 'white' }}>C-Mart</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Volume2 size={20} style={{ color: '#10b981' }} />
+              <span style={{ fontWeight: 800, fontSize: '0.92rem', color: 'white' }}>Penjemputan Siswa</span>
+            </div>
+          )}
         </div>
 
         {/* Right: Quick Action Scan RFID + Bell */}
