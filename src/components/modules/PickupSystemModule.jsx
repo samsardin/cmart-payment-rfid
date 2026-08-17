@@ -425,53 +425,28 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
               )}
             </div>
 
-            {/* Gate Scanner Status & Simulator Box */}
-            <div className="glass-card" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', border: '1.5px solid #a7f3d0' }}>
-              <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#065f46', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Radio size={20} className="pulse-rfid" style={{ color: '#059669' }} />
-                <span>Reader RFID USB: SIAP / AKTIF</span>
+            {/* Gate Scanner Status & Big RFID Radar Logo Box */}
+            <div className="glass-card" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', border: '1.5px solid #a7f3d0', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+              <div style={{
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#ffffff',
+                width: '88px',
+                height: '88px',
+                borderRadius: '50%',
+                boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
+                marginBottom: '0.75rem'
+              }}>
+                <Radio size={48} className="pulse-rfid" style={{ color: '#ffffff' }} />
               </div>
-
-              <div style={{ background: '#ffffff', padding: '0.75rem 0.9rem', borderRadius: '12px', border: '1px solid #6ee7b7', marginBottom: '0.85rem' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#047857', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <CheckCircle2 size={16} style={{ color: '#10b981' }} />
-                  <span>Langsung Tempelkan Kartu RFID USB</span>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--slate-600)', marginTop: '0.2rem' }}>
-                  Setiap kali kartu di-tap pada scanner fisik USB, audio pemanggilan & bel chime akan <b>otomatis berbunyi instan</b>.
-                </div>
+              <div style={{ fontWeight: 900, fontSize: '1rem', color: '#065f46', letterSpacing: '-0.01em' }}>
+                Reader RFID USB Active
               </div>
-
-              {/* Collapsible / Manual Test Buttons Section */}
-              <div style={{ borderTop: '1px dashed #a7f3d0', paddingTop: '0.75rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#065f46', marginBottom: '0.5rem' }}>
-                  🛠️ Uji Coba Manual Software (Klik Tombol):
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                  {state.rfidCards.filter(c => c.type === 'PENJEMPUT').map(card => {
-                    const g = state.guardians.find(g => g.id === card.assignedToId || g.rfidCardUid?.toUpperCase() === card.uid.toUpperCase());
-                    const label = g?.name || card.assignedToName || 'Orang Tua / Penjemput';
-                    return (
-                      <button
-                        key={card.id}
-                        className="btn btn-gold btn-sm"
-                        onClick={() => handleSimulateGateTap(card.uid)}
-                        style={{ textAlign: 'left', justifyContent: 'flex-start', padding: '0.5rem 0.75rem', fontSize: '0.78rem', fontWeight: 800 }}
-                      >
-                        ⚡ Simulasikan Tap: {label} ({card.uid})
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={onOpenRfidModal}
-                    style={{ marginTop: '0.25rem', fontWeight: 700, fontSize: '0.78rem' }}
-                  >
-                    <Radio size={14} /> Input UID RFID Manual
-                  </button>
-                </div>
+              <div style={{ fontSize: '0.78rem', color: '#047857', marginTop: '2px', fontWeight: 600 }}>
+                Ready to Scan Card
               </div>
             </div>
 
