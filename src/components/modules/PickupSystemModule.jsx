@@ -476,7 +476,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
             </div>
 
             {/* Stats Summary Box */}
-            <div className="glass-card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+            <div className="glass-card pickup-stats-grid">
               <div style={{ background: '#fffbeb', padding: '0.85rem', borderRadius: '12px', border: '1px solid #fde68a' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#b45309' }}>Siswa Dipanggil</div>
                 <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#92400e' }}>
@@ -495,7 +495,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
           </div>
 
           {/* Right Column: Live Pickup Logs & Queue Management Table */}
-          <div className="glass-card">
+          <div className="glass-card" style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
             
             <div className="flex-between" style={{ marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div>
@@ -508,7 +508,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
               </div>
 
               {/* Status Filter Buttons */}
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <div className="pickup-filter-buttons">
                 <button
                   className={`btn btn-sm ${statusFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setStatusFilter('ALL')}
@@ -519,7 +519,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
                   className={`btn btn-sm ${statusFilter === 'DIPANGGIL' ? 'btn-gold' : 'btn-secondary'}`}
                   onClick={() => setStatusFilter('DIPANGGIL')}
                 >
-                  Sedang Dipanggil ({pickupLogs.filter(p => p.status === 'DIPANGGIL').length})
+                  Dipanggil ({pickupLogs.filter(p => p.status === 'DIPANGGIL').length})
                 </button>
                 <button
                   className={`btn btn-sm ${statusFilter === 'SUDAH_DIJEMPUT' ? 'btn-emerald' : 'btn-secondary'}`}
@@ -531,7 +531,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
             </div>
 
             {/* Search & Class Filter */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div className="pickup-filter-bar">
               <div style={{ position: 'relative' }}>
                 <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
                 <input
@@ -557,8 +557,8 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
               </select>
             </div>
 
-            {/* Table of Pickup Logs */}
-            <div className="table-container" style={{ maxHeight: '480px', overflowY: 'auto' }}>
+            {/* Table of Pickup Logs for Desktop & Laptop */}
+            <div className="table-container pickup-desktop-table" style={{ maxHeight: '480px', overflowY: 'auto' }}>
               <table className="custom-table">
                 <thead>
                   <tr>
@@ -657,6 +657,99 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Cards List for Smartphones (<= 640px) */}
+            <div className="pickup-mobile-cards" style={{ maxHeight: '520px', overflowY: 'auto' }}>
+              {filteredLogs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--slate-400)', background: 'var(--slate-50)', borderRadius: '12px' }}>
+                  <Volume2 size={32} style={{ color: 'var(--slate-300)', marginBottom: '0.5rem' }} />
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700 }}>Belum Ada Aktivitas Penjemputan</div>
+                  <div style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>Gunakan tombol Panggil Manual atau Tap Kartu RFID.</div>
+                </div>
+              ) : (
+                filteredLogs.map(item => (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: item.status === 'DIPANGGIL' ? '#fefce8' : '#ffffff',
+                      border: item.status === 'DIPANGGIL' ? '1.5px solid #fde68a' : '1px solid var(--slate-200)',
+                      borderRadius: '12px',
+                      padding: '0.85rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.6rem',
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    {/* Header: Student Info & Status */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <img src={item.studentPhoto} alt={item.studentName} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--slate-300)' }} />
+                        <div>
+                          <div style={{ fontWeight: 800, color: 'var(--slate-900)', fontSize: '0.9rem' }}>{item.studentName}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <span className="badge badge-emerald" style={{ padding: '1px 5px', fontSize: '0.65rem' }}>{item.className}</span>
+                            <span>NIS: {item.nis}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {item.status === 'DIPANGGIL' ? (
+                        <span className="badge badge-gold" style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 6px' }}>
+                          <Volume2 size={11} className="pulse-rfid" /> Dipanggil ({item.calledCount || 1}x)
+                        </span>
+                      ) : (
+                        <span className="badge badge-emerald" style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 6px' }}>
+                          <CheckCircle2 size={11} /> Selesai
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Body: Guardian & Timestamp */}
+                    <div style={{ background: 'rgba(248, 250, 252, 0.8)', padding: '0.5rem 0.65rem', borderRadius: '8px', fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, color: 'var(--slate-800)' }}>👤 {item.guardianName} ({item.guardianRelationship || 'Penjemput'})</div>
+                        {item.guardianPhone && <div style={{ fontSize: '0.68rem', color: 'var(--slate-500)' }}>📞 {item.guardianPhone}</div>}
+                      </div>
+
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--slate-700)' }}>
+                          🕒 {new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        {item.rfidUid === 'KARTU_TERTINGGAL' || item.isManualEntry ? (
+                          <span className="badge badge-gold" style={{ fontSize: '0.62rem', padding: '1px 4px' }}>⚠️ Kartu Tertinggal</span>
+                        ) : (
+                          <span style={{ fontSize: '0.68rem', color: 'var(--slate-400)', fontFamily: 'monospace' }}>{item.rfidUid}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    {item.status === 'DIPANGGIL' && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginTop: '0.2rem' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleRepeatCall(item)}
+                          style={{ color: '#d97706', borderColor: '#fde68a', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem' }}
+                        >
+                          <RotateCcw size={13} /> Panggil Ulang
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-emerald btn-sm"
+                          onClick={() => handleCompletePickup(item.id)}
+                          style={{ justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem' }}
+                        >
+                          <CheckCircle2 size={13} /> Selesai Pulang
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
 
           </div>
