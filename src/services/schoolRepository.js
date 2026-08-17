@@ -15,6 +15,8 @@ const toDatabaseRow = (row, tableKey) => {
     Object.entries(row).map(([key, value]) => [key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), value])
   );
 
+  const nowIso = getLocalIsoTimestamp();
+
   // Guarantee mandatory database column constraints
   if (tableKey === 'students') {
     if (!mapped.gender) mapped.gender = 'L';
@@ -32,13 +34,13 @@ const toDatabaseRow = (row, tableKey) => {
     delete mapped.issued_date;
   }
   if (tableKey === 'ledger') {
-    if (!mapped.timestamp) mapped.timestamp = getLocalIsoTimestamp();
+    if (!mapped.timestamp) mapped.timestamp = nowIso;
     if (!mapped.student_name) mapped.student_name = 'Siswa';
     if (!mapped.actor) mapped.actor = 'Admin Keuangan';
     if (!mapped.description) mapped.description = 'Transaksi Ledger';
   }
   if (tableKey === 'auditLogs') {
-    if (!mapped.timestamp) mapped.timestamp = getLocalIsoTimestamp();
+    if (!mapped.timestamp) mapped.timestamp = nowIso;
     if (!mapped.actor) mapped.actor = 'System';
     if (!mapped.action) mapped.action = 'LOG';
     if (!mapped.entity) mapped.entity = 'system';
@@ -49,6 +51,10 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.role_id && mapped.role) mapped.role_id = mapped.role;
     if (!mapped.role_id) mapped.role_id = 'KASIR_KANTIN';
   }
+
+  // Guarantee updated_at is NEVER null/undefined for Supabase table constraints
+  if (!mapped.updated_at) mapped.updated_at = nowIso;
+
   return mapped;
 };
 

@@ -121,7 +121,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         text: `Pemulihan Database TERENKRIPSI BERHASIL! (Siswa: ${restoredState.students.length}, Kartu: ${restoredState.rfidCards.length}, Transaksi: ${restoredState.ledger.length})`
       });
     } catch (err) {
-      alert(`GAGAL DEKRIPSI: ${err.message}`);
+      alert(`GAGAL MEMULIHKAN DATABASE: ${err.message}`);
     } finally {
       setIsProcessingAction(false);
     }
