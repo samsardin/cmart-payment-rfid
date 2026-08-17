@@ -68,7 +68,7 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
 }
 
 export default function App() {
-  // Load state from LocalStorage or fallback to Mock Data
+  // Load state from LocalStorage or fallback to Mock Data / Empty State
   const [state, setState] = useState(() => {
     try {
       localStorage.removeItem(LEGACY_LOCAL_STORAGE_KEY);
@@ -77,11 +77,11 @@ export default function App() {
         const savedState = JSON.parse(saved);
         const cleanState = {
           ...savedState,
-          students: Array.isArray(savedState.students) ? savedState.students : INITIAL_STUDENTS,
-          guardians: Array.isArray(savedState.guardians) ? savedState.guardians : INITIAL_GUARDIANS,
-          rfidCards: Array.isArray(savedState.rfidCards) ? savedState.rfidCards : INITIAL_RFID_CARDS,
-          ledger: Array.isArray(savedState.ledger) ? savedState.ledger : INITIAL_LEDGER,
-          auditLogs: Array.isArray(savedState.auditLogs) ? savedState.auditLogs : INITIAL_AUDIT_LOGS,
+          students: Array.isArray(savedState.students) ? savedState.students : (isSupabaseConfigured ? [] : INITIAL_STUDENTS),
+          guardians: Array.isArray(savedState.guardians) ? savedState.guardians : (isSupabaseConfigured ? [] : INITIAL_GUARDIANS),
+          rfidCards: Array.isArray(savedState.rfidCards) ? savedState.rfidCards : (isSupabaseConfigured ? [] : INITIAL_RFID_CARDS),
+          ledger: Array.isArray(savedState.ledger) ? savedState.ledger : (isSupabaseConfigured ? [] : INITIAL_LEDGER),
+          auditLogs: Array.isArray(savedState.auditLogs) ? savedState.auditLogs : (isSupabaseConfigured ? [] : INITIAL_AUDIT_LOGS),
           loginAccounts: Array.isArray(savedState.loginAccounts) ? savedState.loginAccounts : LOGIN_ACCOUNTS
         };
 
@@ -91,6 +91,18 @@ export default function App() {
     } catch (e) {
       console.warn('Failed to load state from localStorage', e);
     }
+
+    if (isSupabaseConfigured) {
+      return {
+        students: [],
+        guardians: [],
+        rfidCards: [],
+        ledger: [],
+        auditLogs: [],
+        loginAccounts: LOGIN_ACCOUNTS,
+      };
+    }
+
     return {
       students: INITIAL_STUDENTS,
       guardians: INITIAL_GUARDIANS,
@@ -145,29 +157,55 @@ export default function App() {
   // Ref tracking the baseline JSON signature of state synced with Supabase Cloud
   const lastSyncedStateRef = useRef(null);
 
-  // Load the shared database state once Supabase has been configured.
-  useEffect(() => {
+  const syncWithCloudDatabase = () => {
     if (!isSupabaseConfigured) return;
-
-    let isMounted = true;
     loadSchoolState()
       .then((cloudState) => {
-        if (isMounted && cloudState && Object.keys(cloudState).length > 0) {
-          setState((currentState) => {
-            const merged = mergeLocalDataIntoCloud(cloudState, currentState);
-            // Establish the initial cloud sync baseline to prevent immediate stale write-backs
-            lastSyncedStateRef.current = JSON.stringify(merged);
-            return merged;
-          });
+        if (cloudState) {
+          const freshCloudState = {
+            students: cloudState.students || [],
+            guardians: cloudState.guardians || [],
+            rfidCards: cloudState.rfidCards || [],
+            ledger: cloudState.ledger || [],
+            auditLogs: cloudState.auditLogs || [],
+            loginAccounts: (cloudState.loginAccounts && cloudState.loginAccounts.length > 0)
+              ? cloudState.loginAccounts
+              : LOGIN_ACCOUNTS
+          };
+
+          lastSyncedStateRef.current = JSON.stringify(freshCloudState);
+          try {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(freshCloudState));
+          } catch (e) {}
+
+          setState(freshCloudState);
         }
       })
       .catch((error) => console.error('Failed to load Supabase data:', error))
       .finally(() => {
-        if (isMounted) setCloudStateLoaded(true);
+        setCloudStateLoaded(true);
       });
+  };
+
+  // Initial Cloud Fetch
+  useEffect(() => {
+    syncWithCloudDatabase();
+  }, []);
+
+  // Auto-sync refresh listener when smartphone/browser regains focus or visibility
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible' && isSupabaseConfigured) {
+        syncWithCloudDatabase();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
 
     return () => {
-      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, []);
 
