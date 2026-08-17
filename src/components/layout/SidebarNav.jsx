@@ -91,14 +91,12 @@ export default function SidebarNav({
               { id: 'database', label: '🛡️ Pemeliharaan Database', icon: Database }
             ]
           },
-          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2, submenus: pickupSubmenus },
           { id: 'role_management', label: 'Role Management', icon: Users }
         ];
 
       case 'ADMIN_KEUANGAN':
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2, submenus: pickupSubmenus },
           { 
             id: 'savings', 
             label: 'Tabungan & Ledger', 
@@ -124,8 +122,7 @@ export default function SidebarNav({
 
       case 'KASIR_KANTIN':
         return [
-          { id: 'canteen', label: 'Terminal Kasir Kantin', icon: ShoppingBag },
-          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2, submenus: pickupSubmenus }
+          { id: 'canteen', label: 'Terminal Kasir Kantin', icon: ShoppingBag }
         ];
 
       case 'ORANG_TUA':
