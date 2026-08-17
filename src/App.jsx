@@ -286,7 +286,12 @@ export default function App() {
     const account = (state.loginAccounts || LOGIN_ACCOUNTS).find((item) => item.username === username.trim().toLowerCase() && item.password === password);
     if (!account) return { success: false, text: 'Username atau password tidak sesuai.' };
     setCurrentRole(ROLES[account.roleId]);
-    setActiveTab(account.roleId === 'ORANG_TUA' || account.roleId === 'SISWA' ? 'parent_portal' : account.roleId === 'KASIR_KANTIN' ? 'canteen' : account.roleId === 'ADMIN_KEUANGAN' ? 'dashboard' : 'dashboard');
+    setActiveTab(
+      account.roleId === 'ADMIN_PENJEMPUTAN' ? 'pickup' :
+      account.roleId === 'ORANG_TUA' || account.roleId === 'SISWA' ? 'parent_portal' :
+      account.roleId === 'KASIR_KANTIN' ? 'canteen' :
+      'dashboard'
+    );
     setAuthenticatedSession({ roleId: account.roleId, accountId: account.id, studentId: account.studentId, guardianId: account.guardianId });
     return { success: true };
   };

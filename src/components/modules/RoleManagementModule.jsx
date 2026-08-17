@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import {
   Users, UserPlus, UserCheck, Edit3, Trash2, KeyRound, ShieldCheck,
-  Plus, Search, CheckCircle2, XCircle, Store, Wallet, Lock, X
+  Plus, Search, CheckCircle2, XCircle, Store, Wallet, Lock, X, Volume2
 } from 'lucide-react';
 
 export default function RoleManagementModule({ state, setState }) {
-  // Sub-tabs: 'STUDENTS' | 'FINANCE_ADMIN' | 'CASHIER'
+  // Sub-tabs: 'STUDENTS' | 'FINANCE_ADMIN' | 'PICKUP_ADMIN' | 'CASHIER'
   const [activeSubTab, setActiveSubTab] = useState('STUDENTS');
   const [searchQuery, setSearchQuery] = useState('');
   const [feedback, setFeedback] = useState(null);
@@ -25,7 +25,7 @@ export default function RoleManagementModule({ state, setState }) {
     canteenDepositBalance: 0
   });
 
-  // User Account Form State (Admin Keuangan / Kasir Kantin)
+  // User Account Form State (Admin Keuangan / Admin Penjemputan / Kasir Kantin)
   const [accountForm, setAccountForm] = useState({
     username: '',
     name: '',
@@ -49,6 +49,15 @@ export default function RoleManagementModule({ state, setState }) {
     const q = searchQuery.toLowerCase();
     return (state.loginAccounts || []).filter(a =>
       a.roleId === 'ADMIN_KEUANGAN' &&
+      ((a.username || '').toLowerCase().includes(q) || (a.name || '').toLowerCase().includes(q))
+    );
+  }, [state.loginAccounts, searchQuery]);
+
+  // Filtered Pickup Admins
+  const pickupAdmins = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return (state.loginAccounts || []).filter(a =>
+      a.roleId === 'ADMIN_PENJEMPUTAN' &&
       ((a.username || '').toLowerCase().includes(q) || (a.name || '').toLowerCase().includes(q))
     );
   }, [state.loginAccounts, searchQuery]);
@@ -337,6 +346,22 @@ export default function RoleManagementModule({ state, setState }) {
 
             <button
               type="button"
+              className={`btn btn-sm ${activeSubTab === 'PICKUP_ADMIN' ? 'btn-primary' : ''}`}
+              onClick={() => { setActiveSubTab('PICKUP_ADMIN'); setSearchQuery(''); }}
+              style={{
+                fontSize: '0.82rem',
+                padding: '0.4rem 0.85rem',
+                background: activeSubTab === 'PICKUP_ADMIN' ? undefined : 'transparent',
+                color: activeSubTab === 'PICKUP_ADMIN' ? undefined : 'var(--slate-700)',
+                boxShadow: activeSubTab === 'PICKUP_ADMIN' ? undefined : 'none',
+                fontWeight: activeSubTab === 'PICKUP_ADMIN' ? 800 : 600
+              }}
+            >
+              <Volume2 size={16} /> Admin Penjemputan ({pickupAdmins.length})
+            </button>
+
+            <button
+              type="button"
               className={`btn btn-sm ${activeSubTab === 'CASHIER' ? 'btn-primary' : ''}`}
               onClick={() => { setActiveSubTab('CASHIER'); setSearchQuery(''); }}
               style={{
@@ -362,6 +387,12 @@ export default function RoleManagementModule({ state, setState }) {
           {activeSubTab === 'FINANCE_ADMIN' && (
             <button className="btn btn-primary btn-sm" onClick={() => handleOpenAddAccount('ADMIN_KEUANGAN')} style={{ fontWeight: 700 }}>
               <UserPlus size={16} /> Tambah Admin Keuangan
+            </button>
+          )}
+
+          {activeSubTab === 'PICKUP_ADMIN' && (
+            <button className="btn btn-gold btn-sm" onClick={() => handleOpenAddAccount('ADMIN_PENJEMPUTAN')} style={{ fontWeight: 700 }}>
+              <UserPlus size={16} /> Tambah Admin Penjemputan
             </button>
           )}
 
@@ -550,7 +581,69 @@ export default function RoleManagementModule({ state, setState }) {
         )}
 
         {/* ------------------------------------------------------------- */}
-        {/* SUB TAB 3: KASIR KANTIN TABLE */}
+        {/* SUB TAB 3: ADMIN PENJEMPUTAN TABLE */}
+        {/* ------------------------------------------------------------- */}
+        {activeSubTab === 'PICKUP_ADMIN' && (
+          <div className="table-container" style={{ maxHeight: '520px', overflowY: 'auto' }}>
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>ID Akun</th>
+                  <th>Username Login</th>
+                  <th>Nama Petugas Pos</th>
+                  <th>Peran (Role)</th>
+                  <th>Password (Demo)</th>
+                  <th style={{ textAlign: 'center' }}>Aksi CRUD</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pickupAdmins.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--slate-400)' }}>
+                      Belum ada akun Admin Penjemputan.
+                    </td>
+                  </tr>
+                ) : (
+                  pickupAdmins.map(acc => (
+                    <tr key={acc.id}>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.78rem' }}>{acc.id}</td>
+                      <td style={{ fontWeight: 800, color: 'var(--primary-800)' }}>@{acc.username}</td>
+                      <td style={{ fontWeight: 700 }}>{acc.name || acc.username}</td>
+                      <td>
+                        <span className="badge badge-gold">Admin Penjemputan</span>
+                      </td>
+                      <td style={{ fontFamily: 'monospace', color: 'var(--slate-500)' }}>{acc.password}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleOpenEditAccount(acc)}
+                            title="Edit Account"
+                          >
+                            <Edit3 size={14} /> Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleDeleteAccount(acc.id, acc.username)}
+                            style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                            title="Hapus Akun"
+                          >
+                            <Trash2 size={14} /> Hapus
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* SUB TAB 4: KASIR KANTIN TABLE */}
         {/* ------------------------------------------------------------- */}
         {activeSubTab === 'CASHIER' && (
           <div className="table-container" style={{ maxHeight: '520px', overflowY: 'auto' }}>

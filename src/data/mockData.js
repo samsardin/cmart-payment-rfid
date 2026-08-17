@@ -3,6 +3,7 @@
 export const ROLES = {
   SUPER_ADMIN: { id: 'SUPER_ADMIN', name: 'Super Admin', badge: 'badge-purple' },
   ADMIN_KEUANGAN: { id: 'ADMIN_KEUANGAN', name: 'Admin Keuangan', badge: 'badge-emerald' },
+  ADMIN_PENJEMPUTAN: { id: 'ADMIN_PENJEMPUTAN', name: 'Admin Penjemputan', badge: 'badge-gold' },
   KASIR_KANTIN: { id: 'KASIR_KANTIN', name: 'Kasir Kantin', badge: 'badge-gold' },
   ORANG_TUA: { id: 'ORANG_TUA', name: 'Orang Tua / Wali', badge: 'badge-gold' },
   SISWA: { id: 'SISWA', name: 'Siswa Digital', badge: 'badge-gray' },
@@ -12,6 +13,7 @@ export const ROLES = {
 export const LOGIN_ACCOUNTS = [
   { id: 'ACC-ADMIN-001', username: 'superadmin', password: 'admin123', roleId: 'SUPER_ADMIN' },
   { id: 'ACC-ADMIN-002', username: 'keuangan', password: 'keuangan123', roleId: 'ADMIN_KEUANGAN' },
+  { id: 'ACC-ADMIN-004', username: 'penjemputan', password: 'penjemputan123', roleId: 'ADMIN_PENJEMPUTAN' },
   { id: 'ACC-ADMIN-003', username: 'kasir', password: 'kasir123', roleId: 'KASIR_KANTIN' },
   { id: 'ACC-GDR-001', username: 'ahmad', password: 'ahmad123', roleId: 'ORANG_TUA', guardianId: 'GDR-001', studentId: 'STD-101' },
   { id: 'ACC-GDR-002', username: 'ratna', password: 'ratna123', roleId: 'ORANG_TUA', guardianId: 'GDR-002', studentId: 'STD-102' },
