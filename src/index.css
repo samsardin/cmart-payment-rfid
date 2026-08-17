@@ -745,5 +745,8 @@ main {
     margin-left: 0 !important;
     width: 100% !important;
   }
+  .login-rfid-info-box {
+    display: none !important;
+  }
 }
 
