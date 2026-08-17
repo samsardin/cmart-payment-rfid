@@ -294,26 +294,49 @@ export default function FinanceDashboardModule({ state }) {
             </p>
           </div>
 
-          {/* Time Range Filter Buttons */}
-          <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--slate-100)', padding: '4px', borderRadius: '12px', border: '1px solid var(--slate-200)' }}>
+          {/* Time Range Filter Buttons - Responsive Segmented Pill Control */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.35rem',
+              background: '#f1f5f9',
+              padding: '6px',
+              borderRadius: '14px',
+              border: '1px solid #e2e8f0',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
+            }}
+          >
             {[
-              { id: 'TODAY', label: 'Harian (Hari Ini)' },
-              { id: 'WEEKLY', label: 'Pekanan (7 Hari)' },
+              { id: 'TODAY', label: 'Hari Ini' },
+              { id: 'WEEKLY', label: '7 Hari' },
               { id: 'MONTHLY', label: 'Bulanan' },
               { id: 'ALL', label: 'Semua Waktu' }
             ].map(item => (
               <button
                 key={item.id}
                 type="button"
-                className={`btn btn-sm ${timeRange === item.id ? 'btn-primary' : ''}`}
                 onClick={() => setTimeRange(item.id)}
                 style={{
+                  flex: '1 1 auto',
+                  minWidth: '70px',
+                  padding: '0.45rem 0.75rem',
                   fontSize: '0.78rem',
-                  padding: '0.35rem 0.75rem',
-                  background: timeRange === item.id ? undefined : 'transparent',
-                  color: timeRange === item.id ? undefined : 'var(--slate-700)',
-                  boxShadow: timeRange === item.id ? undefined : 'none',
-                  fontWeight: timeRange === item.id ? 800 : 600
+                  fontWeight: timeRange === item.id ? 800 : 600,
+                  borderRadius: '10px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease',
+                  background: timeRange === item.id
+                    ? 'linear-gradient(135deg, #047857 0%, #10b981 100%)'
+                    : 'transparent',
+                  color: timeRange === item.id ? '#ffffff' : 'var(--slate-600)',
+                  boxShadow: timeRange === item.id
+                    ? '0 3px 10px rgba(4, 120, 87, 0.25)'
+                    : 'none'
                 }}
               >
                 {item.label}
