@@ -32,23 +32,7 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      <div className="glass-card flex-between" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fef3c7 100%)' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-            <Users size={24} style={{ color: 'var(--accent-gold-700)' }} />
-            <h2 style={{ fontSize: '1.35rem', color: 'var(--slate-900)' }}>{isPasswordMenu ? 'Akun & Password' : 'Portal Siswa & Orang Tua'}</h2>
-          </div>
-          <p style={{ fontSize: '0.84rem', color: 'var(--slate-600)' }}>
-            {isPasswordMenu ? 'Kelola keamanan akun login Anda.' : 'Profil, saldo, dan riwayat transaksi akun Anda.'}
-          </p>
-        </div>
 
-        {!isPasswordMenu && <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button className="btn btn-gold btn-sm" onClick={onOpenRfidModal}>
-            <Radio size={15} /> Tap Kartu RFID
-          </button>
-        </div>}
-      </div>
 
       {isPasswordMenu && (
         <div className="glass-card" style={{ width: 'min(520px, 100%)', alignSelf: 'center' }}>
