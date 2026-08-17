@@ -964,7 +964,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           >
             <Activity size={15} /> Audit Log ({state.auditLogs.length})
           </button>
-          {['SUPER_ADMIN', 'ADMIN_KEUANGAN'].includes(currentRole?.id) && (
+          {currentRole?.id === 'SUPER_ADMIN' && (
             <button
               className="btn"
               onClick={() => setActiveSubTab('database')}
@@ -1564,7 +1564,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       )}
 
       {/* Subtab 4: Pemeliharaan Database & System Safety */}
-      {activeSubTab === 'database' && (
+      {activeSubTab === 'database' && currentRole?.id === 'SUPER_ADMIN' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
           {/* Header Card */}

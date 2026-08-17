@@ -45,7 +45,7 @@ export default function Navbar({
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'savings', label: 'Tabungan & Ledger', icon: Wallet },
-          { id: 'admin', label: 'Master Data & Database', icon: ShieldCheck },
+          { id: 'admin', label: 'Master Data', icon: Users },
         ];
       case 'KASIR_KANTIN':
         return [
