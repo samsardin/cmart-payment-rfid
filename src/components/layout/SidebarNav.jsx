@@ -106,7 +106,8 @@ export default function SidebarNav({
 
       case 'KASIR_KANTIN':
         return [
-          { id: 'canteen', label: 'Terminal Kasir Kantin', icon: ShoppingBag }
+          { id: 'canteen', label: 'Terminal Kasir Kantin', icon: ShoppingBag },
+          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2 }
         ];
 
       case 'ORANG_TUA':
