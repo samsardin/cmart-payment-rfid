@@ -27,15 +27,15 @@ export default function LoginPage({ onPasswordLogin, onRfidLogin, rfidFeedback }
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '1.25rem', background: 'var(--bg-gradient)' }}>
       <section style={{ width: 'min(920px, 100%)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', background: '#ffffff', overflow: 'hidden', borderRadius: '24px', boxShadow: '0 20px 60px -15px rgba(15, 23, 42, 0.12)', border: '1px solid var(--slate-200)' }}>
-        <div style={{ padding: '3rem 2.5rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', color: 'var(--slate-800)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', borderRight: '1px solid var(--slate-200)' }}>
-          <div style={{ display: 'inline-flex', padding: '0.65rem 0.85rem', borderRadius: '16px', background: '#ffffff', marginBottom: '1.5rem', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', border: '1px solid var(--slate-200)' }}>
+        <div style={{ padding: '3rem 2.5rem', background: 'linear-gradient(155deg, #022c22, #047857)', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', padding: '0.65rem 0.85rem', borderRadius: '16px', background: '#ffffff', marginBottom: '1.5rem', boxShadow: '0 12px 30px rgba(0,0,0,0.2)' }}>
             <img src={cmartLogo} alt="C-Mart Cendikia Mart" style={{ display: 'block', width: '180px', maxWidth: '100%', height: 'auto' }} />
           </div>
-          <h1 style={{ color: 'var(--slate-900)', fontSize: '1.6rem', lineHeight: 1.2, fontWeight: 800 }}>C-Mart Payment</h1>
-          <p style={{ color: 'var(--slate-600)', marginTop: '0.5rem', fontSize: '0.88rem', lineHeight: 1.6 }}>Sistem Pembayaran CMart berbasis kartu RFID melalui Deposit atau Tabungan</p>
-          <div style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: '12px', background: '#ffffff', border: '1px solid var(--slate-200)', fontSize: '0.84rem', color: 'var(--slate-700)', lineHeight: 1.6, textAlign: 'left' }}>
-            <b style={{ color: 'var(--primary-800)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-              <CreditCard size={16} style={{ color: 'var(--primary-600)' }} /> Login Kartu RFID
+          <h1 style={{ color: '#ffffff', fontSize: '1.65rem', lineHeight: 1.2, fontWeight: 800 }}>C-Mart Payment</h1>
+          <p style={{ color: '#d1fae5', marginTop: '0.5rem', fontSize: '0.88rem', lineHeight: 1.6 }}>Sistem Pembayaran CMart berbasis kartu RFID melalui Deposit atau Tabungan</p>
+          <div style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.2)', fontSize: '0.84rem', color: '#ecfdf5', lineHeight: 1.6, textAlign: 'left' }}>
+            <b style={{ color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
+              <CreditCard size={16} style={{ color: '#34d399' }} /> Login Kartu RFID
             </b>
             Siswa dan orang tua/wali dapat tap kartu RFID di halaman ini untuk masuk langsung ke portal masing-masing.
           </div>
