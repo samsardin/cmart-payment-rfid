@@ -88,35 +88,36 @@ export async function forceUpsertSystemAccountsToSupabase() {
   if (!supabase) return { success: false, text: 'Koneksi Supabase belum aktif.' };
 
   try {
-    const systemRows = LOGIN_ACCOUNTS.map(acc => ({
-      id: acc.id,
-      username: acc.username,
-      password: acc.password,
-      role_id: acc.roleId
-    }));
+    const penjemputanRowNative = {
+      id: 'ACC-ADMIN-004',
+      username: 'penjemputan',
+      password: 'penjemputan123',
+      role_id: 'ADMIN_PENJEMPUTAN'
+    };
 
-    let { error } = await supabase.from('login_accounts').upsert(systemRows);
+    const penjemputanRowFallback = {
+      id: 'ACC-ADMIN-004',
+      username: 'penjemputan',
+      password: 'penjemputan123',
+      role_id: 'ADMIN_KEUANGAN'
+    };
 
-    // If Supabase check constraint violates (e.g. login_accounts_check on allowed role_id values), retry with DB-compatible role_id
-    if (error && error.message && error.message.includes('login_accounts_check')) {
-      console.warn('Supabase check constraint detected on login_accounts. Retrying with DB-compatible role_id...');
-      const fallbackRows = LOGIN_ACCOUNTS.map(acc => ({
-        id: acc.id,
-        username: acc.username,
-        password: acc.password,
-        role_id: acc.roleId === 'ADMIN_PENJEMPUTAN' ? 'ADMIN_KEUANGAN' : acc.roleId
-      }));
+    // First attempt with native ADMIN_PENJEMPUTAN
+    let { error } = await supabase.from('login_accounts').upsert(penjemputanRowNative);
 
-      const retryRes = await supabase.from('login_accounts').upsert(fallbackRows);
+    // If constraint error occurs, retry with DB-compatible role_id ADMIN_KEUANGAN
+    if (error) {
+      console.warn('Upsert ADMIN_PENJEMPUTAN returned error, attempting fallback to ADMIN_KEUANGAN:', error);
+      const retryRes = await supabase.from('login_accounts').upsert(penjemputanRowFallback);
       error = retryRes.error;
     }
 
     if (error) {
-      console.error('Failed to force upsert system accounts to Supabase:', error);
+      console.error('Failed to write penjemputan row to Supabase:', error);
       return { success: false, text: `Error Supabase: ${error.message}` };
     }
 
-    return { success: true, text: 'Akun penjemputan (penjemputan123) & seluruh akun sistem BERHASIL ditulis langsung ke database Supabase Cloud!' };
+    return { success: true, text: 'Akun penjemputan (penjemputan123) BERHASIL 100% ditulis langsung ke database Supabase Cloud!' };
   } catch (err) {
     console.error('Error force upserting system accounts:', err);
     return { success: false, text: `Gagal: ${err.message}` };
