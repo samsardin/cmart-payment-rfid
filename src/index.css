@@ -888,8 +888,12 @@ main {
   gap: 1.25rem;
 }
 
-/* Tablet Screens (768px - 1023px) */
+/* Tablet & Mobile Screens (<= 1023px) */
 @media (max-width: 1023px) {
+  .pickup-header-card {
+    display: none !important;
+  }
+
   .pickup-operator-grid {
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
