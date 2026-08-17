@@ -8,6 +8,7 @@ import CanteenModule from './components/modules/CanteenModule';
 import ParentPortalModule from './components/modules/ParentPortalModule';
 import AdminModule from './components/modules/AdminModule';
 import RoleManagementModule from './components/modules/RoleManagementModule';
+import PickupSystemModule from './components/modules/PickupSystemModule';
 import LoginPage from './components/layout/LoginPage';
 
 import { useRfidWedge } from './services/useRfidWedge';
@@ -447,6 +448,14 @@ export default function App() {
             <RoleManagementModule
               state={state}
               setState={setState}
+            />
+          )}
+
+          {activeTab === 'pickup' && (
+            <PickupSystemModule
+              state={state}
+              setState={setState}
+              onOpenRfidModal={() => setIsRfidModalOpen(true)}
             />
           )}
 

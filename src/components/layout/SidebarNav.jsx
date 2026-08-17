@@ -20,7 +20,8 @@ import {
   Database,
   ChevronRight,
   ChevronDown,
-  LogOut
+  LogOut,
+  Volume2
 } from 'lucide-react';
 import { ROLES } from '../../data/mockData';
 import cmartLogo from '../../assets/cmart-logo.png';
@@ -77,12 +78,14 @@ export default function SidebarNav({
               { id: 'database', label: '🛡️ Pemeliharaan Database', icon: Database }
             ]
           },
+          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2 },
           { id: 'role_management', label: 'Role Management', icon: Users }
         ];
 
       case 'ADMIN_KEUANGAN':
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { id: 'pickup', label: 'Penjemputan Audio MP3', icon: Volume2 },
           { 
             id: 'savings', 
             label: 'Tabungan & Ledger', 
