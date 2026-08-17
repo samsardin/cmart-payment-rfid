@@ -615,22 +615,36 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
     if (studentModalType === 'ADD') {
       const newStudentId = `STD-${Date.now()}`;
-      let newGuardianId = `GDR-${Date.now()}`;
+      let targetGuardianId = '';
 
       let updatedGuardians = [...(state.guardians || [])];
-      if (studentForm.guardianName.trim()) {
-        const newGuardianObj = {
-          id: newGuardianId,
-          name: studentForm.guardianName.trim(),
-          phone: studentForm.guardianPhone.trim(),
-          relationship: studentForm.guardianRelationship || 'Orang Tua',
-          studentId: newStudentId,
-          rfidCardUid: '',
-          address: ''
-        };
-        updatedGuardians.push(newGuardianObj);
-      } else {
-        newGuardianId = '';
+      const inputGdrName = studentForm.guardianName.trim();
+      const inputGdrPhone = studentForm.guardianPhone.trim();
+
+      if (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) {
+        // Auto-match existing guardian by phone or name
+        const existingGdr = updatedGuardians.find(g =>
+          (inputGdrPhone && g.phone && g.phone.trim() === inputGdrPhone) ||
+          (g.name && g.name.trim().toLowerCase() === inputGdrName.toLowerCase())
+        );
+
+        if (existingGdr) {
+          targetGuardianId = existingGdr.id;
+          if (inputGdrPhone) existingGdr.phone = inputGdrPhone;
+          if (studentForm.guardianRelationship) existingGdr.relationship = studentForm.guardianRelationship;
+        } else {
+          targetGuardianId = `GDR-${Date.now()}`;
+          const newGuardianObj = {
+            id: targetGuardianId,
+            name: inputGdrName,
+            phone: inputGdrPhone,
+            relationship: studentForm.guardianRelationship || 'Orang Tua',
+            studentId: newStudentId,
+            rfidCardUid: '',
+            address: ''
+          };
+          updatedGuardians.push(newGuardianObj);
+        }
       }
 
       const newStudentObj = {
@@ -639,8 +653,8 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         name: studentForm.name.trim(),
         class: studentForm.class.trim(),
         gender: studentForm.gender || 'L',
-        guardianId: newGuardianId,
-        guardianName: (studentForm.guardianName.trim() && !studentForm.guardianName.toLowerCase().includes('orang tua')) ? studentForm.guardianName.trim() : '',
+        guardianId: targetGuardianId,
+        guardianName: (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) ? inputGdrName : '',
         savingsBalance: 0,
         canteenDepositBalance: 0,
         canteenBalanceSource: 'TABUNGAN',
@@ -689,20 +703,31 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       }
 
       let updatedGuardians = [...(state.guardians || [])];
-      const gIdx = updatedGuardians.findIndex(g => g.id === editingStudent.guardianId || g.studentId === targetStudentId);
-      if (studentForm.guardianName.trim() && !studentForm.guardianName.toLowerCase().includes('orang tua')) {
+      let targetGdrId = editingStudent.guardianId;
+      const inputGdrName = studentForm.guardianName.trim();
+      const inputGdrPhone = studentForm.guardianPhone.trim();
+
+      if (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) {
+        const gIdx = updatedGuardians.findIndex(g =>
+          g.id === editingStudent.guardianId ||
+          (inputGdrPhone && g.phone && g.phone.trim() === inputGdrPhone) ||
+          (g.name && g.name.trim().toLowerCase() === inputGdrName.toLowerCase())
+        );
+
         if (gIdx >= 0) {
+          targetGdrId = updatedGuardians[gIdx].id;
           updatedGuardians[gIdx] = {
             ...updatedGuardians[gIdx],
-            name: studentForm.guardianName.trim(),
-            phone: studentForm.guardianPhone.trim() || updatedGuardians[gIdx].phone,
+            name: inputGdrName,
+            phone: inputGdrPhone || updatedGuardians[gIdx].phone,
             relationship: studentForm.guardianRelationship || updatedGuardians[gIdx].relationship
           };
         } else {
+          targetGdrId = `GDR-${Date.now()}`;
           updatedGuardians.push({
-            id: `GDR-${Date.now()}`,
-            name: studentForm.guardianName.trim(),
-            phone: studentForm.guardianPhone.trim(),
+            id: targetGdrId,
+            name: inputGdrName,
+            phone: inputGdrPhone,
             relationship: studentForm.guardianRelationship || 'Orang Tua',
             studentId: targetStudentId,
             rfidCardUid: '',
@@ -723,7 +748,8 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
               gender: studentForm.gender || 'L',
               photo: studentForm.photo || s.photo,
               rfidUid: studentForm.rfidUid.trim().toUpperCase(),
-              guardianName: (studentForm.guardianName.trim() && !studentForm.guardianName.toLowerCase().includes('orang tua')) ? studentForm.guardianName.trim() : '',
+              guardianId: targetGdrId || s.guardianId,
+              guardianName: (inputGdrName && !inputGdrName.toLowerCase().includes('orang tua')) ? inputGdrName : '',
               status: studentForm.status
             };
           }
