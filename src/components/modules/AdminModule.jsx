@@ -7,7 +7,7 @@ import {
 import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
-import { resetOperationalDatabase, backupDatabaseJson, restoreDatabaseFromJson } from '../../services/schoolRepository';
+import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings }) {
   const [activeSubTab, setActiveSubTab] = useState('rfid'); // 'rfid' | 'students' | 'audit'
@@ -29,15 +29,27 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   // Database Backup, Restore, and Reset State
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
+  const [backupPassword, setBackupPassword] = useState('');
+  const [restorePasswordInput, setRestorePasswordInput] = useState('');
+  const [isDecryptModalOpen, setIsDecryptModalOpen] = useState(false);
+  const [rawRestoreFileStr, setRawRestoreFileStr] = useState('');
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const restoreFileInputRef = useRef(null);
 
-  const handleBackupDatabase = () => {
+  const handleBackupDatabase = async (usePassword = false) => {
+    setIsProcessingAction(true);
     try {
-      backupDatabaseJson(state);
-      setFeedback({ type: 'success', text: 'File cadangan (backup database) berhasil diunduh dalam format JSON.' });
+      const pwd = usePassword ? backupPassword.trim() : '';
+      await backupDatabaseEncrypted(state, pwd);
+      setFeedback({
+        type: 'success',
+        text: pwd ? 'File backup terenkripsi AES-256 (.enc) berhasil diunduh!' : 'File cadangan (backup database .json) berhasil diunduh.'
+      });
+      setBackupPassword('');
     } catch (err) {
       setFeedback({ type: 'error', text: `Gagal mencadangkan database: ${err.message}` });
+    } finally {
+      setIsProcessingAction(false);
     }
   };
 
@@ -45,37 +57,74 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!window.confirm(`PERINGATAN: Memulihkan database dari file '${file.name}' akan memperbarui seluruh tabel sekolah. Lanjutkan?`)) {
-      if (restoreFileInputRef.current) restoreFileInputRef.current.value = '';
-      return;
-    }
-
     setIsProcessingAction(true);
     setFeedback(null);
 
     const reader = new FileReader();
     reader.onload = async (event) => {
+      const fileStr = event.target.result;
+      setRawRestoreFileStr(fileStr);
+
       try {
-        const parsed = JSON.parse(event.target.result);
-        const restoredState = await restoreDatabaseFromJson(parsed, state);
+        const parsedObj = JSON.parse(fileStr);
+        if (parsedObj && parsedObj.encrypted) {
+          setIsDecryptModalOpen(true);
+          setRestorePasswordInput('');
+          setIsProcessingAction(false);
+          return;
+        }
+
+        // Plain unencrypted JSON restore
+        if (!window.confirm(`PERINGATAN: Memulihkan database dari file '${file.name}' akan memperbarui seluruh tabel sekolah. Lanjutkan?`)) {
+          if (restoreFileInputRef.current) restoreFileInputRef.current.value = '';
+          setIsProcessingAction(false);
+          return;
+        }
+
+        const restoredState = await restoreDatabaseFromJson(parsedObj, state);
         setState(restoredState);
         setFeedback({
           type: 'success',
           text: `Pemulihan Database BERHASIL! (Siswa: ${restoredState.students.length}, Kartu: ${restoredState.rfidCards.length}, Transaksi: ${restoredState.ledger.length})`
         });
       } catch (err) {
-        setFeedback({ type: 'error', text: `Gagal memulihkan database: ${err.message}` });
+        setFeedback({ type: 'error', text: `Gagal membaca/memulihkan file backup: ${err.message}` });
       } finally {
         setIsProcessingAction(false);
         if (restoreFileInputRef.current) restoreFileInputRef.current.value = '';
       }
     };
     reader.onerror = () => {
-      setFeedback({ type: 'error', text: 'Gagal membaca file JSON backup.' });
+      setFeedback({ type: 'error', text: 'Gagal membaca file backup.' });
       setIsProcessingAction(false);
       if (restoreFileInputRef.current) restoreFileInputRef.current.value = '';
     };
     reader.readAsText(file);
+  };
+
+  const handleExecuteDecryptAndRestore = async () => {
+    if (!restorePasswordInput.trim()) {
+      alert('Masukkan password dekripsi file backup!');
+      return;
+    }
+
+    setIsProcessingAction(true);
+    try {
+      const parsedPayload = await decryptAndParseBackup(rawRestoreFileStr, restorePasswordInput.trim());
+      const restoredState = await restoreDatabaseFromJson(parsedPayload, state);
+      setState(restoredState);
+      setIsDecryptModalOpen(false);
+      setRestorePasswordInput('');
+      setRawRestoreFileStr('');
+      setFeedback({
+        type: 'success',
+        text: `Pemulihan Database TERENKRIPSI BERHASIL! (Siswa: ${restoredState.students.length}, Kartu: ${restoredState.rfidCards.length}, Transaksi: ${restoredState.ledger.length})`
+      });
+    } catch (err) {
+      alert(`GAGAL DEKRIPSI: ${err.message}`);
+    } finally {
+      setIsProcessingAction(false);
+    }
   };
 
   const handleExecuteResetOperational = async () => {
@@ -1522,44 +1571,77 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           {/* Grid 2 Column: Backup & Restore vs Reset Total */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
             
-            {/* Panel 1: Backup & Restore */}
+            {/* Panel 1: Backup & Restore (Plain & AES-256 Encrypted) */}
             <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--slate-800)' }}>
-                  <Download size={18} style={{ color: 'var(--primary-600)' }} />
-                  1. Backup & Restore Database (.json)
+                  <ShieldCheck size={18} style={{ color: 'var(--primary-600)' }} />
+                  1. Backup & Restore Database (Plain JSON / Encrypted AES-256)
                 </h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--slate-600)', marginBottom: '1.2rem', lineHeight: 1.5 }}>
-                  Unduh seluruh data tabel sekolah (Siswa, Kartu RFID, Mutasi Tabungan, Audit Log & Akun Login) dalam 1 file JSON cadangan untuk disimpan secara aman.
+                <p style={{ fontSize: '0.8rem', color: 'var(--slate-600)', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  Unduh data tabel sekolah. Gunakan **Password Enkripsi AES-256** untuk menjamin file cadangan disandi 100% aman dan tidak dapat dibuka/dibaca tanpa kata sandi.
                 </p>
 
-                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '1.2rem', fontSize: '0.78rem', color: '#475569' }}>
+                <div style={{ background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.78rem', color: '#475569' }}>
                   <div style={{ fontWeight: 700, color: 'var(--slate-700)', marginBottom: '0.3rem' }}>📊 Ringkasan Data Saat Ini:</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.2rem' }}>
                     <div>• <b>Siswa:</b> {state.students?.length || 0} Data</div>
                     <div>• <b>Kartu RFID:</b> {state.rfidCards?.length || 0} Kartu</div>
                     <div>• <b>Mutasi Ledger:</b> {state.ledger?.length || 0} Transaksi</div>
                     <div>• <b>Audit Log:</b> {state.auditLogs?.length || 0} Log</div>
-                    <div>• <b>Akun Role:</b> {state.loginAccounts?.length || 0} Akun</div>
+                  </div>
+                </div>
+
+                {/* Password Encryption Option Box */}
+                <div style={{ background: '#eff6ff', padding: '0.85rem', borderRadius: '10px', border: '1px solid #bfdbfe', marginBottom: '1.2rem' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e40af', display: 'block', marginBottom: '0.35rem' }}>
+                    🔒 Password Enkripsi Tambahan (Opsional):
+                  </label>
+                  <input
+                    type="password"
+                    value={backupPassword}
+                    onChange={(e) => setBackupPassword(e.target.value)}
+                    placeholder="Masukkan password enkripsi..."
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '6px',
+                      border: '1px solid #93c5fd',
+                      fontSize: '0.82rem',
+                      background: '#ffffff'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.7rem', color: '#1e3a8a', marginTop: '0.3rem' }}>
+                    * Jika diisi, file cadangan akan disandi dengan **AES-256-GCM** (`.enc`) dan hanya bisa dipulihkan dengan password ini.
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <button
-                  onClick={handleBackupDatabase}
-                  className="btn btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontWeight: 700 }}
-                  disabled={isProcessingAction}
-                >
-                  <Download size={18} /> Unduh Backup Database (.json)
-                </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => handleBackupDatabase(false)}
+                    className="btn btn-secondary"
+                    style={{ justifyContent: 'center', padding: '0.65rem', fontSize: '0.78rem', fontWeight: 700 }}
+                    disabled={isProcessingAction}
+                  >
+                    <Download size={15} /> Unduh (.json)
+                  </button>
+                  <button
+                    onClick={() => handleBackupDatabase(true)}
+                    className="btn btn-primary"
+                    style={{ justifyContent: 'center', padding: '0.65rem', fontSize: '0.78rem', fontWeight: 700 }}
+                    disabled={isProcessingAction || !backupPassword.trim()}
+                  >
+                    <Lock size={15} /> Backup Terenkripsi (.enc)
+                  </button>
+                </div>
 
                 <div style={{ position: 'relative' }}>
                   <input
                     type="file"
                     ref={restoreFileInputRef}
-                    accept=".json"
+                    accept=".json,.enc"
                     onChange={handleRestoreFileChange}
                     style={{ display: 'none' }}
                   />
@@ -1569,7 +1651,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontWeight: 700 }}
                     disabled={isProcessingAction}
                   >
-                    <Upload size={18} /> {isProcessingAction ? 'Memulihkan...' : 'Restore Database dari File (.json)'}
+                    <Upload size={18} /> {isProcessingAction ? 'Memulihkan...' : 'Restore Database (.json / .enc)'}
                   </button>
                 </div>
               </div>
@@ -1700,6 +1782,84 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 }}
               >
                 {isProcessingAction ? 'Memproses Reset...' : 'Ya, Hapus & Reset Sekarang'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dialog Dekripsi File Backup Terenkripsi */}
+      {isDecryptModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '440px',
+            width: '100%',
+            padding: '1.75rem',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)',
+            border: '2px solid #3b82f6'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#1d4ed8' }}>
+              <Lock size={28} />
+              <h3 style={{ margin: 0, fontSize: '1.15rem' }}>File Backup Terenkripsi AES-256</h3>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5, marginBottom: '1rem' }}>
+              File backup ini dilindungi dengan **Sandi Enkripsi AES-256**. Masukkan password yang digunakan saat mengunduh file ini untuk melanjutkan restore.
+            </p>
+
+            <div className="form-group" style={{ marginBottom: '1.2rem' }}>
+              <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e3a8a' }}>
+                Password Dekripsi File:
+              </label>
+              <input
+                type="password"
+                value={restorePasswordInput}
+                onChange={(e) => setRestorePasswordInput(e.target.value)}
+                placeholder="Masukkan password dekripsi..."
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  border: '1.5px solid #93c5fd',
+                  fontSize: '0.9rem'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setIsDecryptModalOpen(false);
+                  setRestorePasswordInput('');
+                  setRawRestoreFileStr('');
+                }}
+                disabled={isProcessingAction}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleExecuteDecryptAndRestore}
+                disabled={isProcessingAction || !restorePasswordInput.trim()}
+                style={{ fontWeight: 700 }}
+              >
+                {isProcessingAction ? 'Mendekripsi...' : 'Dekripsi & Restore Sekarang'}
               </button>
             </div>
           </div>

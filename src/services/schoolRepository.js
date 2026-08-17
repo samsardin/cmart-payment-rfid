@@ -156,10 +156,57 @@ export async function resetOperationalDatabase(currentState) {
   return newState;
 }
 
+// Web Crypto API helpers for AES-256-GCM Password Encryption
+function strToBuffer(str) {
+  return new TextEncoder().encode(str);
+}
+function bufferToStr(buf) {
+  return new TextDecoder().decode(buf);
+}
+function bufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+function base64ToBuffer(base64) {
+  const binaryStr = atob(base64);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+async function deriveKeyFromPassword(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await window.crypto.subtle.importKey(
+    'raw',
+    enc.encode(password),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+  return window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
 /**
- * Trigger JSON file download backup of all database tables
+ * Trigger encrypted or plain JSON file download backup of all database tables
  */
-export function backupDatabaseJson(state) {
+export async function backupDatabaseEncrypted(state, encryptionPassword = '') {
   const backupObj = {
     system: 'C-MART Payment & RFID School System',
     version: '1.0.0',
@@ -174,18 +221,93 @@ export function backupDatabaseJson(state) {
     }
   };
 
-  const jsonString = JSON.stringify(backupObj, null, 2);
-  const blob = new Blob([jsonString], { type: 'application/json' });
+  let downloadContent = '';
+  let fileExtension = 'json';
+
+  if (encryptionPassword && encryptionPassword.trim().length > 0) {
+    const salt = window.crypto.getRandomValues(new Uint8Array(16));
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKeyFromPassword(encryptionPassword.trim(), salt);
+    
+    const jsonStr = JSON.stringify(backupObj);
+    const encryptedBuf = await window.crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      strToBuffer(jsonStr)
+    );
+
+    const encryptedContainer = {
+      system: 'C-MART Payment & RFID School System',
+      encrypted: true,
+      algorithm: 'AES-256-GCM',
+      kdf: 'PBKDF2-SHA256-100K',
+      exportedAt: getLocalIsoTimestamp(),
+      salt: bufferToBase64(salt),
+      iv: bufferToBase64(iv),
+      ciphertext: bufferToBase64(encryptedBuf)
+    };
+
+    downloadContent = JSON.stringify(encryptedContainer, null, 2);
+    fileExtension = 'enc';
+  } else {
+    downloadContent = JSON.stringify(backupObj, null, 2);
+  }
+
+  const blob = new Blob([downloadContent], { type: fileExtension === 'enc' ? 'application/octet-stream' : 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   const dateStr = getLocalTodayDateString();
   const timeStr = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
   link.href = url;
-  link.download = `backup_database_sekolah_${dateStr}_${timeStr}.json`;
+  link.download = `backup_database_sekolah_${dateStr}_${timeStr}.${fileExtension}`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Decrypt & Parse backup file string (handles plain JSON or AES-256 encrypted payload)
+ */
+export async function decryptAndParseBackup(fileContentStr, password = '') {
+  let parsedJson;
+  try {
+    parsedJson = JSON.parse(fileContentStr);
+  } catch (err) {
+    throw new Error('File cadangan tidak valid (bukan format JSON / ENC yang sah).');
+  }
+
+  // Check if payload is encrypted
+  if (parsedJson && parsedJson.encrypted) {
+    if (!password || password.trim().length === 0) {
+      throw new Error('FILE TERENKRIPSI AES-256! Masukkan Password Dekripsi untuk membuka file ini.');
+    }
+
+    try {
+      const salt = new Uint8Array(base64ToBuffer(parsedJson.salt));
+      const iv = new Uint8Array(base64ToBuffer(parsedJson.iv));
+      const encryptedBuf = base64ToBuffer(parsedJson.ciphertext);
+      const key = await deriveKeyFromPassword(password.trim(), salt);
+
+      const decryptedBuf = await window.crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        encryptedBuf
+      );
+
+      const decryptedStr = bufferToStr(decryptedBuf);
+      return JSON.parse(decryptedStr);
+    } catch (decryptErr) {
+      throw new Error('PASSWORD SALAH atau FILE TELAH DIMANIPULASI! Dekripsi AES-256 gagal.');
+    }
+  }
+
+  // Non-encrypted JSON
+  return parsedJson;
+}
+
+export function backupDatabaseJson(state) {
+  return backupDatabaseEncrypted(state, '');
 }
 
 /**
