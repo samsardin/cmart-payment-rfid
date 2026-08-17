@@ -7,6 +7,7 @@ import {
 import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
+import { resetOperationalDatabase, backupDatabaseJson, restoreDatabaseFromJson } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings }) {
   const [activeSubTab, setActiveSubTab] = useState('rfid'); // 'rfid' | 'students' | 'audit'
@@ -24,6 +25,83 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   const [lastScannedUid, setLastScannedUid] = useState(scannedCardUid || null);
   const [ownerSearchQuery, setOwnerSearchQuery] = useState('');
   const [isOwnerDropdownOpen, setIsOwnerDropdownOpen] = useState(false);
+
+  // Database Backup, Restore, and Reset State
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
+  const restoreFileInputRef = useRef(null);
+
+  const handleBackupDatabase = () => {
+    try {
+      backupDatabaseJson(state);
+      setFeedback({ type: 'success', text: 'File cadangan (backup database) berhasil diunduh dalam format JSON.' });
+    } catch (err) {
+      setFeedback({ type: 'error', text: `Gagal mencadangkan database: ${err.message}` });
+    }
+  };
+
+  const handleRestoreFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm(`PERINGATAN: Memulihkan database dari file '${file.name}' akan memperbarui seluruh tabel sekolah. Lanjutkan?`)) {
+      if (restoreFileInputRef.current) restoreFileInputRef.current.value = '';
+      return;
+    }
+
+    setIsProcessingAction(true);
+    setFeedback(null);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        const restoredState = await restoreDatabaseFromJson(parsed, state);
+        setState(restoredState);
+        setFeedback({
+          type: 'success',
+          text: `Pemulihan Database BERHASIL! (Siswa: ${restoredState.students.length}, Kartu: ${restoredState.rfidCards.length}, Transaksi: ${restoredState.ledger.length})`
+        });
+      } catch (err) {
+        setFeedback({ type: 'error', text: `Gagal memulihkan database: ${err.message}` });
+      } finally {
+        setIsProcessingAction(false);
+        if (restoreFileInputRef.current) restoreFileInputRef.current.value = '';
+      }
+    };
+    reader.onerror = () => {
+      setFeedback({ type: 'error', text: 'Gagal membaca file JSON backup.' });
+      setIsProcessingAction(false);
+      if (restoreFileInputRef.current) restoreFileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  const handleExecuteResetOperational = async () => {
+    if (resetConfirmText.trim() !== 'RESET DATA SEKOLAH') {
+      alert("Teks konfirmasi salah! Ketik 'RESET DATA SEKOLAH' dengan huruf kapital sesuai petunjuk.");
+      return;
+    }
+
+    setIsProcessingAction(true);
+    setFeedback(null);
+
+    try {
+      const emptyState = await resetOperationalDatabase(state);
+      setState(emptyState);
+      setIsResetModalOpen(false);
+      setResetConfirmText('');
+      setFeedback({
+        type: 'success',
+        text: 'DATABASE OPERASIONAL BERHASIL DIRESET! Seluruh data Siswa, Kartu RFID, Ledger, dan Log Audit telah dibersihkan. Akun Role Management tetap aman.'
+      });
+    } catch (err) {
+      setFeedback({ type: 'error', text: `Gagal melakukan reset database: ${err.message}` });
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
 
   // Filtered owner search list for RFID registration
   const searchedOwnersList = useMemo(() => {
@@ -832,6 +910,15 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           >
             <Activity size={15} /> Audit Log ({state.auditLogs.length})
           </button>
+          {['SUPER_ADMIN', 'ADMIN_KEUANGAN'].includes(currentRole?.id) && (
+            <button
+              className={`btn ${activeSubTab === 'database' ? 'btn-gold' : 'btn-secondary'}`}
+              onClick={() => setActiveSubTab('database')}
+              style={{ background: activeSubTab === 'database' ? '#be123c' : undefined, color: activeSubTab === 'database' ? '#ffffff' : undefined }}
+            >
+              <ShieldCheck size={15} /> Pemeliharaan & Backup Database
+            </button>
+          )}
         </div>
       </div>
 
@@ -1413,6 +1500,208 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Subtab 4: Pemeliharaan Database & System Safety */}
+      {activeSubTab === 'database' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* Header Card */}
+          <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #be123c' }}>
+            <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#be123c', marginBottom: '0.4rem' }}>
+              <ShieldCheck size={22} />
+              Pemeliharaan & Keamanan Database Sekolah
+            </h3>
+            <p style={{ fontSize: '0.84rem', color: 'var(--slate-600)', margin: 0 }}>
+              Fitur khusus <b>Super Admin & Pengelola Sistem</b> untuk melakukan cadangan data (backup), pemulihan (restore), serta reset total seluruh data operasional sekolah.
+            </p>
+          </div>
+
+          {/* Grid 2 Column: Backup & Restore vs Reset Total */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
+            
+            {/* Panel 1: Backup & Restore */}
+            <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--slate-800)' }}>
+                  <Download size={18} style={{ color: 'var(--primary-600)' }} />
+                  1. Backup & Restore Database (.json)
+                </h4>
+                <p style={{ fontSize: '0.8rem', color: 'var(--slate-600)', marginBottom: '1.2rem', lineHeight: 1.5 }}>
+                  Unduh seluruh data tabel sekolah (Siswa, Kartu RFID, Mutasi Tabungan, Audit Log & Akun Login) dalam 1 file JSON cadangan untuk disimpan secara aman.
+                </p>
+
+                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '1.2rem', fontSize: '0.78rem', color: '#475569' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--slate-700)', marginBottom: '0.3rem' }}>📊 Ringkasan Data Saat Ini:</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem' }}>
+                    <div>• <b>Siswa:</b> {state.students?.length || 0} Data</div>
+                    <div>• <b>Kartu RFID:</b> {state.rfidCards?.length || 0} Kartu</div>
+                    <div>• <b>Mutasi Ledger:</b> {state.ledger?.length || 0} Transaksi</div>
+                    <div>• <b>Audit Log:</b> {state.auditLogs?.length || 0} Log</div>
+                    <div>• <b>Akun Role:</b> {state.loginAccounts?.length || 0} Akun</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <button
+                  onClick={handleBackupDatabase}
+                  className="btn btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontWeight: 700 }}
+                  disabled={isProcessingAction}
+                >
+                  <Download size={18} /> Unduh Backup Database (.json)
+                </button>
+
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="file"
+                    ref={restoreFileInputRef}
+                    accept=".json"
+                    onChange={handleRestoreFileChange}
+                    style={{ display: 'none' }}
+                  />
+                  <button
+                    onClick={() => restoreFileInputRef.current?.click()}
+                    className="btn btn-gold"
+                    style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontWeight: 700 }}
+                    disabled={isProcessingAction}
+                  >
+                    <Upload size={18} /> {isProcessingAction ? 'Memulihkan...' : 'Restore Database dari File (.json)'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Panel 2: Reset Total Operasional */}
+            <div className="glass-card" style={{ padding: '1.5rem', background: '#fff5f5', border: '1.5px solid #fecaca', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#991b1b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Trash2 size={18} style={{ color: '#dc2626' }} />
+                  2. Reset Total Data Operasional
+                </h4>
+                <p style={{ fontSize: '0.8rem', color: '#7f1d1d', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  Fitur ini akan membersihkan <b>seluruh data operasional sekolah</b> (Siswa, Kartu RFID, Mutasi Tabungan & Log Audit).
+                </p>
+
+                <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: '10px', border: '1px solid #fca5a5', marginBottom: '1.2rem', fontSize: '0.78rem', color: '#991b1b', lineHeight: 1.4 }}>
+                  <b>🛡️ Keamanan Akun Terjamin:</b>
+                  <div style={{ marginTop: '0.35rem' }}>
+                    Data <b>Akun Login (Role Management) TIDAK AKAN DIHAPUS</b>. Anda tetap dapat login dengan username & password Super Admin, Admin Keuangan, dan Kasir Kantin yang ada saat ini.
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setIsResetModalOpen(true);
+                  setResetConfirmText('');
+                }}
+                className="btn"
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  padding: '0.75rem',
+                  background: '#dc2626',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  border: 'none',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+                }}
+                disabled={isProcessingAction}
+              >
+                <Trash2 size={18} /> Reset Seluruh Data Operasional
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* Modal Dialog Konfirmasi Reset Database */}
+      {isResetModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '480px',
+            width: '100%',
+            padding: '1.75rem',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)',
+            border: '2px solid #ef4444'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#dc2626' }}>
+              <AlertCircle size={28} />
+              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Konfirmasi Reset Total Database</h3>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5, marginBottom: '1rem' }}>
+              Tindakan ini akan <b>MENGHAPUS PERMANEN</b> seluruh data Siswa, Kartu RFID, Mutasi Ledger Tabungan, dan Log Audit dari Supabase Cloud & Browser.
+              <br /><br />
+              <b>Data akun login (Role Management) tidak akan dihapus.</b>
+            </p>
+
+            <div style={{ background: '#fef2f2', padding: '0.85rem', borderRadius: '8px', border: '1px solid #fecaca', marginBottom: '1.2rem', fontSize: '0.8rem', color: '#991b1b' }}>
+              Untuk mengonfirmasi, ketik kalimat di bawah ini:
+              <div style={{ fontWeight: 800, marginTop: '0.3rem', fontFamily: 'monospace', fontSize: '0.9rem', color: '#b91c1c' }}>
+                RESET DATA SEKOLAH
+              </div>
+            </div>
+
+            <input
+              type="text"
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value)}
+              placeholder="Ketik: RESET DATA SEKOLAH"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                border: '1.5px solid #cbd5e1',
+                fontSize: '0.9rem',
+                marginBottom: '1.2rem',
+                fontFamily: 'monospace'
+              }}
+            />
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setIsResetModalOpen(false)}
+                disabled={isProcessingAction}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleExecuteResetOperational}
+                disabled={isProcessingAction || resetConfirmText.trim() !== 'RESET DATA SEKOLAH'}
+                style={{
+                  background: resetConfirmText.trim() === 'RESET DATA SEKOLAH' ? '#dc2626' : '#f87171',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  border: 'none',
+                  cursor: resetConfirmText.trim() === 'RESET DATA SEKOLAH' ? 'pointer' : 'not-allowed'
+                }}
+              >
+                {isProcessingAction ? 'Memproses Reset...' : 'Ya, Hapus & Reset Sekarang'}
+              </button>
+            </div>
           </div>
         </div>
       )}

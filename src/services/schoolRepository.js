@@ -110,3 +110,126 @@ export async function deleteRfidCard(cardId) {
   const { error } = await supabase.from('rfid_cards').delete().eq('id', cardId);
   if (error) throw error;
 }
+
+/**
+ * Reset all operational data (students, guardians, rfid_cards, ledger, audit_logs)
+ * EXCLUDES login_accounts so role management credentials remain intact.
+ */
+export async function resetOperationalDatabase(currentState) {
+  if (supabase) {
+    const operationalTables = ['students', 'guardians', 'rfid_cards', 'ledger', 'audit_logs'];
+    for (const tableName of operationalTables) {
+      try {
+        await supabase.from(tableName).delete().neq('id', '___NON_EXISTENT_ID___');
+      } catch (err) {
+        console.warn(`Warning resetting table ${tableName} in Supabase:`, err);
+      }
+    }
+  }
+
+  const newState = {
+    students: [],
+    guardians: [],
+    rfidCards: [],
+    ledger: [],
+    auditLogs: [{
+      id: `AUD-${Date.now()}`,
+      timestamp: getLocalIsoTimestamp(),
+      actor: 'Super Admin',
+      action: 'RESET_DATABASE_OPERASIONAL',
+      entity: 'system',
+      entityId: 'reset-all',
+      details: 'Pembersihan total seluruh data operasional sekolah (Siswa, Kartu RFID, Mutasi Tabungan & Audit Log) oleh Super Admin',
+      ip: '127.0.0.1'
+    }],
+    loginAccounts: currentState?.loginAccounts || []
+  };
+
+  if (supabase) {
+    try {
+      await saveSchoolState(newState);
+    } catch (saveErr) {
+      console.warn('Warning saving post-reset state to Supabase:', saveErr);
+    }
+  }
+
+  return newState;
+}
+
+/**
+ * Trigger JSON file download backup of all database tables
+ */
+export function backupDatabaseJson(state) {
+  const backupObj = {
+    system: 'C-MART Payment & RFID School System',
+    version: '1.0.0',
+    exportedAt: getLocalIsoTimestamp(),
+    data: {
+      students: state.students || [],
+      guardians: state.guardians || [],
+      rfidCards: state.rfidCards || [],
+      ledger: state.ledger || [],
+      auditLogs: state.auditLogs || [],
+      loginAccounts: state.loginAccounts || []
+    }
+  };
+
+  const jsonString = JSON.stringify(backupObj, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const dateStr = getLocalTodayDateString();
+  const timeStr = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
+  link.href = url;
+  link.download = `backup_database_sekolah_${dateStr}_${timeStr}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Restore complete database state from parsed JSON backup payload
+ */
+export async function restoreDatabaseFromJson(parsedPayload, currentState) {
+  if (!parsedPayload || !parsedPayload.data) {
+    throw new Error('Format file backup JSON tidak valid! File harus mengandung data tabel sekolah.');
+  }
+
+  const { students = [], guardians = [], rfidCards = [], ledger = [], auditLogs = [], loginAccounts = [] } = parsedPayload.data;
+
+  const restoredState = {
+    students,
+    guardians,
+    rfidCards,
+    ledger,
+    auditLogs: [
+      {
+        id: `AUD-${Date.now()}`,
+        timestamp: getLocalIsoTimestamp(),
+        actor: 'Super Admin',
+        action: 'RESTORE_DATABASE',
+        entity: 'system',
+        entityId: 'restore-json',
+        details: `Pemulihan/Restore database dari file cadangan (${parsedPayload.exportedAt || 'JSON Backup'})`,
+        ip: '127.0.0.1'
+      },
+      ...auditLogs
+    ],
+    loginAccounts: (loginAccounts && loginAccounts.length > 0) ? loginAccounts : (currentState?.loginAccounts || [])
+  };
+
+  if (supabase) {
+    const allTables = ['students', 'guardians', 'rfid_cards', 'ledger', 'audit_logs', 'login_accounts'];
+    for (const tableName of allTables) {
+      try {
+        await supabase.from(tableName).delete().neq('id', '___NON_EXISTENT_ID___');
+      } catch (err) {
+        console.warn(`Warning clearing table ${tableName} prior to restore:`, err);
+      }
+    }
+    await saveSchoolState(restoredState);
+  }
+
+  return restoredState;
+}
