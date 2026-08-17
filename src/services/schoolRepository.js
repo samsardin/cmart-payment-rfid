@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from './dateUtils';
+import { LOGIN_ACCOUNTS } from '../data/mockData';
 
 const tableMappings = [
   ['students', 'students'],
@@ -83,7 +84,27 @@ export async function loadSchoolState() {
     })
   );
 
-  return Object.fromEntries(results);
+  const stateObj = Object.fromEntries(results);
+
+  // Auto-ensure default system accounts (superadmin, keuangan, penjemputan, kasir) exist in Supabase table
+  if (stateObj.loginAccounts) {
+    const cloudUsernames = new Set((stateObj.loginAccounts || []).map(a => a.username));
+    const missingDefaults = LOGIN_ACCOUNTS.filter(d => !cloudUsernames.has(d.username));
+
+    if (missingDefaults.length > 0) {
+      stateObj.loginAccounts = [...stateObj.loginAccounts, ...missingDefaults];
+      const dbRows = missingDefaults.map(d => toDatabaseRow(d, 'loginAccounts'));
+      supabase.from('login_accounts').upsert(dbRows).then(({ error }) => {
+        if (error) {
+          console.warn('Auto-seed default system accounts to Supabase login_accounts table warning:', error);
+        } else {
+          console.log('Successfully seeded missing default accounts to Supabase login_accounts table:', missingDefaults.map(m => m.username));
+        }
+      });
+    }
+  }
+
+  return stateObj;
 }
 
 export async function saveSchoolState(state) {
