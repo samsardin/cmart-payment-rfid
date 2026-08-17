@@ -288,9 +288,6 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
               Sistem Penjemputan Audio MP3 & Voice Call
             </h2>
-            <p style={{ fontSize: '0.78rem', color: viewMode === 'DISPLAY_TV' ? '#94a3b8' : 'var(--slate-500)', margin: 0, marginTop: '2px' }}>
-              Pemanggilan suara otomatis Bahasa Indonesia dengan bel chime ding-dong & antrean teratur
-            </p>
           </div>
         </div>
 
