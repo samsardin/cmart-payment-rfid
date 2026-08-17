@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/layout/Navbar';
+import SidebarNav from './components/layout/SidebarNav';
 import RfidQuickScannerModal from './components/layout/RfidQuickScannerModal';
 import FinanceDashboardModule from './components/modules/FinanceDashboardModule';
 import SavingsModule from './components/modules/SavingsModule';
@@ -120,6 +121,8 @@ export default function App() {
   const [currentRole, setCurrentRole] = useState(ROLES.SUPER_ADMIN);
   // Active Navigation Tab
   const [activeTab, setActiveTab] = useState('savings');
+  // Active Admin SubTab
+  const [adminSubTab, setAdminSubTab] = useState('rfid');
   // RFID Quick Scanner Modal Open State
   const [isRfidModalOpen, setIsRfidModalOpen] = useState(false);
   // Scanned Unregistered Card UID for Admin auto-fill
@@ -367,12 +370,14 @@ export default function App() {
   return (
     <div className="app-container">
       
-      {/* Top Navbar */}
-      <Navbar
+      {/* Left Sidebar (Desktop) & Top Header Garis 3 Drawer (Mobile/Tablet) */}
+      <SidebarNav
         currentRole={currentRole}
         setCurrentRole={setCurrentRole}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        adminSubTab={adminSubTab}
+        setAdminSubTab={setAdminSubTab}
         onOpenRfidModal={() => setIsRfidModalOpen(true)}
         onExportLedger={handleExportLedgerCsv}
         onLogout={() => {
@@ -386,90 +391,94 @@ export default function App() {
         isSupabaseConfigured={isSupabaseConfigured}
       />
 
-      {/* Main Content Area */}
-      <main style={{ flex: 1, maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '1.5rem 1.25rem' }}>
-        
-        {/* Module Content Rendering */}
-        {activeTab === 'dashboard' && (
-          <FinanceDashboardModule state={state} />
-        )}
+      {/* Main Content & Footer Layout Wrapper */}
+      <div className="app-main-layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main style={{ flex: 1, maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '1.5rem 1.25rem' }}>
+          
+          {/* Module Content Rendering */}
+          {activeTab === 'dashboard' && (
+            <FinanceDashboardModule state={state} />
+          )}
 
-        {activeTab === 'savings' && (
-          <SavingsModule 
-            state={state} 
-            setState={setState}
-            onOpenRfidModal={() => setIsRfidModalOpen(true)}
-            scannedCardResult={scannedCardResult}
-          />
-        )}
+          {activeTab === 'savings' && (
+            <SavingsModule 
+              state={state} 
+              setState={setState}
+              onOpenRfidModal={() => setIsRfidModalOpen(true)}
+              scannedCardResult={scannedCardResult}
+            />
+          )}
 
-        {activeTab === 'canteen' && (
-          <CanteenModule
-            state={state}
-            setState={setState}
-            onOpenRfidModal={() => setIsRfidModalOpen(true)}
-            scannedCardResult={scannedCardResult}
-          />
-        )}
+          {activeTab === 'canteen' && (
+            <CanteenModule
+              state={state}
+              setState={setState}
+              onOpenRfidModal={() => setIsRfidModalOpen(true)}
+              scannedCardResult={scannedCardResult}
+            />
+          )}
 
-        {(activeTab === 'parent_portal' || activeTab === 'account') && (
-          <ParentPortalModule
-            state={state}
-            authenticatedSession={authenticatedSession}
-            onOpenRfidModal={() => setIsRfidModalOpen(true)}
-            view={activeTab}
-            onChangePassword={(currentPassword, newPassword) => {
-              const account = state.loginAccounts?.find((item) => item.id === authenticatedSession.accountId);
-              if (!account) return { success: false, text: 'Ubah password hanya tersedia setelah login dengan username dan password.' };
-              if (account.password !== currentPassword) return { success: false, text: 'Password saat ini tidak sesuai.' };
-              if (newPassword.length < 6) return { success: false, text: 'Password baru minimal 6 karakter.' };
-              setState((previous) => ({
-                ...previous,
-                loginAccounts: (previous.loginAccounts || LOGIN_ACCOUNTS).map((item) => item.id === account.id ? { ...item, password: newPassword } : item),
-              }));
-              return { success: true, text: 'Password berhasil diperbarui.' };
-            }}
-          />
-        )}
+          {(activeTab === 'parent_portal' || activeTab === 'account') && (
+            <ParentPortalModule
+              state={state}
+              authenticatedSession={authenticatedSession}
+              onOpenRfidModal={() => setIsRfidModalOpen(true)}
+              view={activeTab}
+              onChangePassword={(currentPassword, newPassword) => {
+                const account = state.loginAccounts?.find((item) => item.id === authenticatedSession.accountId);
+                if (!account) return { success: false, text: 'Ubah password hanya tersedia setelah login dengan username dan password.' };
+                if (account.password !== currentPassword) return { success: false, text: 'Password saat ini tidak sesuai.' };
+                if (newPassword.length < 6) return { success: false, text: 'Password baru minimal 6 karakter.' };
+                setState((previous) => ({
+                  ...previous,
+                  loginAccounts: (previous.loginAccounts || LOGIN_ACCOUNTS).map((item) => item.id === account.id ? { ...item, password: newPassword } : item),
+                }));
+                return { success: true, text: 'Password berhasil diperbarui.' };
+              }}
+            />
+          )}
 
-        {activeTab === 'role_management' && (
-          <RoleManagementModule
-            state={state}
-            setState={setState}
-          />
-        )}
+          {activeTab === 'role_management' && (
+            <RoleManagementModule
+              state={state}
+              setState={setState}
+            />
+          )}
 
-        {activeTab === 'admin' && (
-          <AdminModule 
-            state={state} 
-            setState={setState} 
-            scannedCardUid={scannedCardUid}
-            currentRole={currentRole}
-            onDeleteRfidCard={(cardId) => {
-              if (!['SUPER_ADMIN', 'ADMIN_KEUANGAN'].includes(currentRole.id)) return;
-              deleteRfidCard(cardId).catch((error) => console.error('Failed to delete RFID card from Supabase', error));
-            }}
-            onNavigateToSavings={(student, cardUid) => {
-              setActiveTab('savings');
-              setScannedCardResult({
-                success: true,
-                student: student,
-                uid: cardUid,
-                isUnregistered: false,
-                message: `Kartu RFID UID ${cardUid} berhasil dipetakan ke ${student.name}! Siap untuk transaksi.`
-              });
-            }}
-          />
-        )}
+          {activeTab === 'admin' && (
+            <AdminModule 
+              state={state} 
+              setState={setState} 
+              scannedCardUid={scannedCardUid}
+              currentRole={currentRole}
+              externalSubTab={adminSubTab}
+              onSubTabChange={setAdminSubTab}
+              onDeleteRfidCard={(cardId) => {
+                if (!['SUPER_ADMIN', 'ADMIN_KEUANGAN'].includes(currentRole.id)) return;
+                deleteRfidCard(cardId).catch((error) => console.error('Failed to delete RFID card from Supabase', error));
+              }}
+              onNavigateToSavings={(student, cardUid) => {
+                setActiveTab('savings');
+                setScannedCardResult({
+                  success: true,
+                  student: student,
+                  uid: cardUid,
+                  isUnregistered: false,
+                  message: `Kartu RFID UID ${cardUid} berhasil dipetakan ke ${student.name}! Siap untuk transaksi.`
+                });
+              }}
+            />
+          )}
 
-      </main>
+        </main>
 
-      {/* Footer */}
-      <footer style={{ background: '#0f172a', color: '#94a3b8', padding: '1.25rem', textAlign: 'center', fontSize: '0.8rem', borderTop: '1px solid #1e293b' }}>
-        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <b>Sistem Terintegrasi Siswa, RFID, Tabungan & Kantin</b> — Platform Digital Sekolah Responsif | Baseline PRD v1.0
-        </div>
-      </footer>
+        {/* Footer */}
+        <footer style={{ background: '#0f172a', color: '#94a3b8', padding: '1.25rem', textAlign: 'center', fontSize: '0.8rem', borderTop: '1px solid #1e293b' }}>
+          <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+            <b>Sistem Terintegrasi Siswa, RFID, Tabungan & Kantin</b> — Platform Digital Sekolah Responsif | Baseline PRD v1.0
+          </div>
+        </footer>
+      </div>
 
       {/* RFID Hardware Simulator Modal */}
       <RfidQuickScannerModal

@@ -9,8 +9,13 @@ import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson } from '../../services/schoolRepository';
 
-export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings }) {
-  const [activeSubTab, setActiveSubTab] = useState(() => (currentRole?.id === 'SUPER_ADMIN' ? 'database' : 'rfid')); // 'rfid' | 'students' | 'audit' | 'database'
+export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings, externalSubTab, onSubTabChange }) {
+  const [internalSubTab, setInternalSubTab] = useState(() => (currentRole?.id === 'SUPER_ADMIN' ? 'database' : 'rfid'));
+  const activeSubTab = externalSubTab || internalSubTab;
+  const setActiveSubTab = (val) => {
+    setInternalSubTab(val);
+    if (onSubTabChange) onSubTabChange(val);
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [newCardUid, setNewCardUid] = useState(scannedCardUid || '');
   const [newCardType, setNewCardType] = useState('SISWA');

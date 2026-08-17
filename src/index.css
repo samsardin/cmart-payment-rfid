@@ -717,3 +717,33 @@ main {
   }
 }
 
+/* ==========================================================================
+   SIDEBAR & MOBILE DRAWER RESPONSIVE RULES (PC/LAPTOP vs SMARTPHONE/TABLET)
+   ========================================================================== */
+
+@media (min-width: 1024px) {
+  .desktop-sidebar-nav {
+    display: flex !important;
+  }
+  .mobile-header-nav {
+    display: none !important;
+  }
+  .app-main-layout {
+    margin-left: 270px !important;
+    width: calc(100% - 270px) !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .desktop-sidebar-nav {
+    display: none !important;
+  }
+  .mobile-header-nav {
+    display: flex !important;
+  }
+  .app-main-layout {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
