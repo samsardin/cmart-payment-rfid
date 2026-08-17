@@ -595,6 +595,13 @@ h1, h2, h3, h4, h5, h6 {
    COMPREHENSIVE RESPONSIVE DESIGN SYSTEM (PC, LAPTOP, TABLET, SMARTPHONE)
    ========================================================================== */
 
+/* Global strict horizontal overflow prevention */
+html, body, #root, .app-container {
+  overflow-x: hidden !important;
+  width: 100%;
+  max-width: 100vw;
+}
+
 /* Touch Scroll Smoothness for Mobile Tables & Horizontally Scrollable Menus */
 .table-container, nav {
   -webkit-overflow-scrolling: touch;
@@ -629,6 +636,11 @@ main {
 @media (max-width: 768px) {
   main {
     padding: 0.75rem 0.6rem;
+  }
+
+  /* Force 1 column grid on mobile screens to prevent horizontal scroll wobble */
+  div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
   }
 
   /* Glass Cards compact padding */

@@ -412,7 +412,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
       ) : currentActiveStudent ? (
         
         /* Identified Student Top-Up & Transaction Form */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
           
           <div className="glass-card" style={{ padding: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>

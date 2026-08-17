@@ -1007,7 +1007,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
       {/* Subtab 1: RFID Cards Management */}
       {activeSubTab === 'rfid' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
 
           {/* Register Card Form */}
           <div className="glass-card" style={{ border: lastScannedUid ? '2px solid var(--accent-gold-500)' : 'var(--glass-border)' }}>
@@ -1579,7 +1579,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           </div>
 
           {/* Grid 2 Column: Backup & Restore vs Reset Total */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
             
             {/* Panel 1: Backup & Restore (Plain & AES-256 Encrypted) */}
             <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
