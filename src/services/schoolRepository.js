@@ -55,10 +55,15 @@ const toDatabaseRow = (row, tableKey) => {
     delete mapped.updated_at;
   }
   if (tableKey === 'loginAccounts') {
-    if (!mapped.username) mapped.username = mapped.id || 'user';
-    if (!mapped.role_id && mapped.role) mapped.role_id = mapped.role;
-    if (!mapped.role_id) mapped.role_id = 'KASIR_KANTIN';
-    if (!mapped.updated_at) mapped.updated_at = nowIso;
+    const cleanAccount = {
+      id: row.id,
+      username: (row.username || row.id || 'user').trim().toLowerCase(),
+      password: row.password || '123456',
+      role_id: row.roleId || row.role_id || row.role || 'KASIR_KANTIN'
+    };
+    if (row.studentId) cleanAccount.student_id = row.studentId;
+    if (row.guardianId) cleanAccount.guardian_id = row.guardianId;
+    return cleanAccount;
   }
 
   return mapped;
@@ -70,8 +75,42 @@ const toAppRow = (row) => Object.fromEntries(
     .map(([key, value]) => [key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()), value])
 );
 
+export async function ensureDefaultAccountsInSupabase() {
+  if (!supabase) return;
+  try {
+    const { data, error } = await supabase.from('login_accounts').select('username');
+    if (error) {
+      console.warn('Error querying login_accounts from Supabase:', error);
+      return;
+    }
+
+    const existingUsernames = new Set((data || []).map(r => (r.username || '').toLowerCase()));
+    const missingDefaults = LOGIN_ACCOUNTS.filter(d => !existingUsernames.has(d.username.toLowerCase()));
+
+    if (missingDefaults.length > 0) {
+      const dbRows = missingDefaults.map(acc => ({
+        id: acc.id,
+        username: acc.username,
+        password: acc.password,
+        role_id: acc.roleId
+      }));
+
+      const { error: upsertErr } = await supabase.from('login_accounts').upsert(dbRows);
+      if (upsertErr) {
+        console.error('Failed to upsert default accounts to Supabase login_accounts:', upsertErr);
+      } else {
+        console.log('Successfully upserted default accounts to Supabase login_accounts:', dbRows);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to ensure default accounts in Supabase:', err);
+  }
+}
+
 export async function loadSchoolState() {
   if (!supabase) return null;
+
+  await ensureDefaultAccountsInSupabase();
 
   const results = await Promise.all(
     tableMappings.map(async ([stateKey, tableName]) => {
@@ -84,30 +123,7 @@ export async function loadSchoolState() {
     })
   );
 
-  const stateObj = Object.fromEntries(results);
-
-  // Auto-ensure default system accounts (superadmin, keuangan, penjemputan, kasir) exist in Supabase table
-  if (stateObj.loginAccounts) {
-    const cloudUsernames = new Set((stateObj.loginAccounts || []).map(a => a.username));
-    const missingDefaults = LOGIN_ACCOUNTS.filter(d => !cloudUsernames.has(d.username));
-
-    if (missingDefaults.length > 0) {
-      stateObj.loginAccounts = [...stateObj.loginAccounts, ...missingDefaults];
-      const dbRows = missingDefaults.map(d => toDatabaseRow(d, 'loginAccounts'));
-      try {
-        const { error } = await supabase.from('login_accounts').upsert(dbRows);
-        if (error) {
-          console.warn('Auto-seed default system accounts to Supabase warning:', error);
-        } else {
-          console.log('Successfully seeded missing default accounts to Supabase login_accounts table:', missingDefaults.map(m => m.username));
-        }
-      } catch (err) {
-        console.warn('Auto-seed default accounts error:', err);
-      }
-    }
-  }
-
-  return stateObj;
+  return Object.fromEntries(results);
 }
 
 export async function saveSchoolState(state) {

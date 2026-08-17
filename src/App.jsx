@@ -14,7 +14,7 @@ import LoginPage from './components/layout/LoginPage';
 import { useRfidWedge } from './services/useRfidWedge';
 import { verifyRfidCard, playRfidBeep } from './services/rfidService';
 import { isSupabaseConfigured } from './services/supabaseClient';
-import { deleteRfidCard, loadSchoolState, saveSchoolState } from './services/schoolRepository';
+import { deleteRfidCard, loadSchoolState, saveSchoolState, ensureDefaultAccountsInSupabase } from './services/schoolRepository';
 import { exportToExcelXlsx } from './services/excelExporter';
 
 import {
@@ -175,7 +175,8 @@ export default function App() {
 
   const syncWithCloudDatabase = () => {
     if (!isSupabaseConfigured) return;
-    loadSchoolState()
+    ensureDefaultAccountsInSupabase()
+      .then(() => loadSchoolState())
       .then((cloudState) => {
         if (cloudState) {
           const cloudAccounts = cloudState.loginAccounts || [];
