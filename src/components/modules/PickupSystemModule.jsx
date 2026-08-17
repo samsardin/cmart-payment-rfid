@@ -267,11 +267,13 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* Header Toolbar & Mode Switcher */}
+      {/* Header Title Card */}
       <div
         className="glass-card pickup-header-card"
         style={{
           background: viewMode === 'DISPLAY_TV' ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : '#ffffff',
-          color: viewMode === 'DISPLAY_TV' ? '#ffffff' : 'inherit'
+          color: viewMode === 'DISPLAY_TV' ? '#ffffff' : 'inherit',
+          padding: '1rem 1.5rem'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
@@ -290,60 +292,71 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
             </h2>
           </div>
         </div>
-
-        {/* View Mode Buttons */}
-        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          
-          <button
-            className={`btn ${viewMode === 'OPERATOR' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setViewMode('OPERATOR')}
-            style={{ fontWeight: 800, fontSize: '0.84rem' }}
-          >
-            <ShieldCheck size={16} /> Mode Operator Pos Satpam
-          </button>
-
-          <button
-            className="btn btn-gold"
-            onClick={() => setShowManualPickupModal(true)}
-            style={{ fontWeight: 800, fontSize: '0.84rem' }}
-            title="Panggil siswa secara manual jika kartu penjemput tertinggal"
-          >
-            <Megaphone size={16} /> Panggil Manual (Kartu Tertinggal)
-          </button>
-
-          <button
-            className={`btn ${viewMode === 'DISPLAY_TV' ? 'btn-gold' : 'btn-secondary'}`}
-            onClick={() => setViewMode('DISPLAY_TV')}
-            style={{ fontWeight: 800, fontSize: '0.84rem' }}
-          >
-            <Tv size={16} /> Mode TV Display Ruang Tunggu
-          </button>
-
-          <button
-            className="btn btn-secondary"
-            onClick={() => setShowSettingsModal(true)}
-            title="Pengaturan Suara Audio & Volume"
-          >
-            <Sliders size={16} /> Setting Suara
-          </button>
-
-          <button
-            className="btn btn-secondary"
-            onClick={handleTestVoiceCall}
-            title="Uji Coba Suara Panggilan"
-            style={{ color: '#0284c7' }}
-          >
-            <Volume2 size={16} /> Uji Suara
-          </button>
-        </div>
       </div>
 
       {/* MODE 1: OPERATOR POS SATPAM */}
       {viewMode === 'OPERATOR' && (
         <div className="pickup-operator-grid">
           
-          {/* Left Column: Quick RFID Scan Gate & Stats */}
+          {/* Left Column: Vertical Sidebar Menu & Gate Scan & Stats */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            
+            {/* VERTICAL MODULE SIDEBAR NAVIGATION MENU */}
+            <div className="glass-card pickup-sidebar-menu" style={{ background: '#ffffff', padding: '1rem', borderRadius: '16px', border: '1px solid var(--slate-200)' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.65rem' }}>
+                Navigasi Modul Penjemputan
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                <button
+                  type="button"
+                  className={`btn ${viewMode === 'OPERATOR' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setViewMode('OPERATOR')}
+                  style={{ fontWeight: 800, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem' }}
+                >
+                  <ShieldCheck size={16} /> Mode Operator Pos Satpam
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => setShowManualPickupModal(true)}
+                  style={{ fontWeight: 800, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem' }}
+                  title="Panggil siswa secara manual jika kartu penjemput tertinggal"
+                >
+                  <Megaphone size={16} /> Panggil Manual (Kartu Tertinggal)
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn ${viewMode === 'DISPLAY_TV' ? 'btn-gold' : 'btn-secondary'}`}
+                  onClick={() => setViewMode('DISPLAY_TV')}
+                  style={{ fontWeight: 800, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem' }}
+                >
+                  <Tv size={16} /> Mode TV Display Ruang Tunggu
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowSettingsModal(true)}
+                  style={{ fontWeight: 700, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem' }}
+                  title="Pengaturan Suara Audio & Volume"
+                >
+                  <Sliders size={16} /> Setting Suara
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleTestVoiceCall}
+                  style={{ fontWeight: 700, fontSize: '0.84rem', width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.85rem', color: '#0284c7', borderColor: '#bae6fd' }}
+                  title="Uji Coba Suara Panggilan"
+                >
+                  <Volume2 size={16} /> Uji Suara
+                </button>
+              </div>
+            </div>
             
             {/* MANUAL PICKUP CALL CARD (KARTU TERTINGGAL) */}
             <div className="glass-card" style={{ background: '#fffbeb', border: '1.5px solid #fde68a' }}>
@@ -751,7 +764,16 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
               </div>
             </div>
 
-            <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-emerald btn-sm"
+                onClick={() => setViewMode('OPERATOR')}
+                style={{ fontWeight: 800, fontSize: '0.82rem' }}
+              >
+                <ShieldCheck size={16} /> Mode Operator Pos Satpam
+              </button>
+
               <div style={{ background: 'rgba(255,255,255,0.08)', padding: '0.6rem 1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)' }}>
                 <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Waktu Real-Time</div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 900, fontFamily: 'monospace', color: '#38bdf8' }}>
