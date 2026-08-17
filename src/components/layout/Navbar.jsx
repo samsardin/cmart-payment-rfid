@@ -74,7 +74,8 @@ export default function Navbar({
     }
   };
 
-  const currentTabs = getRoleTabs(currentRole.id);
+  const roleId = currentRole?.id || currentRole;
+  const currentTabs = getRoleTabs(roleId);
 
   return (
     <header style={{
@@ -91,7 +92,7 @@ export default function Navbar({
         <div className="flex-between" style={{ flexWrap: 'wrap', gap: '0.6rem', paddingBottom: '0.5rem' }}>
           
           {/* Logo & Title */}
-          {currentRole !== 'ADMIN_PENJEMPUTAN' ? (
+          {roleId !== 'ADMIN_PENJEMPUTAN' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
               <div style={{
                 background: 'white',

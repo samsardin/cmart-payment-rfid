@@ -127,7 +127,8 @@ export default function SidebarNav({
     }
   };
 
-  const navTree = getNavTree(currentRole.id);
+  const roleId = currentRole?.id || currentRole;
+  const navTree = getNavTree(roleId);
 
   const handleMenuClick = (tabId, subTabId = null) => {
     setActiveTab(tabId);
@@ -143,7 +144,7 @@ export default function SidebarNav({
       
       {/* Brand Header */}
       <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
-        {currentRole !== 'ADMIN_PENJEMPUTAN' ? (
+        {roleId !== 'ADMIN_PENJEMPUTAN' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <div style={{ background: 'white', padding: '0.25rem 0.45rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
               <img src={cmartLogo} alt="C-Mart Logo" style={{ display: 'block', width: '84px', height: 'auto' }} />
@@ -493,7 +494,7 @@ export default function SidebarNav({
             {isMobileDrawerOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
 
-          {currentRole !== 'ADMIN_PENJEMPUTAN' ? (
+          {roleId !== 'ADMIN_PENJEMPUTAN' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <img src={cmartLogo} alt="C-Mart Logo" style={{ width: '70px', height: 'auto' }} />
               <span style={{ fontWeight: 800, fontSize: '1rem', color: 'white' }}>C-Mart</span>
