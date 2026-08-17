@@ -192,6 +192,20 @@ export async function deleteRfidCard(cardId) {
   if (error) throw error;
 }
 
+export async function deleteGuardian(guardianId) {
+  if (!supabase) return;
+
+  const { error } = await supabase.from('guardians').delete().eq('id', guardianId);
+  if (error) throw error;
+}
+
+export async function deleteStudent(studentId) {
+  if (!supabase) return;
+
+  const { error } = await supabase.from('students').delete().eq('id', studentId);
+  if (error) throw error;
+}
+
 /**
  * Reset all operational data (students, guardians, rfid_cards, ledger, audit_logs)
  * AND purge non-management accounts (ORANG_TUA, SISWA).

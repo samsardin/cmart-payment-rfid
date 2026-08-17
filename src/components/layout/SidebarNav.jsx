@@ -85,7 +85,8 @@ export default function SidebarNav({
             icon: ShieldCheck,
             submenus: [
               { id: 'rfid', label: 'Master Kartu RFID', icon: CreditCard },
-              { id: 'students', label: 'Master Siswa & Wali', icon: Users },
+              { id: 'students', label: 'Master Siswa', icon: Users },
+              { id: 'guardians', label: 'Master Data Orang Tua', icon: Users },
               { id: 'import', label: 'Import Batch Excel', icon: Upload },
               { id: 'audit', label: 'Audit Log System', icon: Activity },
               { id: 'database', label: '🛡️ Pemeliharaan Database', icon: Database }
@@ -108,7 +109,8 @@ export default function SidebarNav({
             icon: Users,
             submenus: [
               { id: 'rfid', label: 'Master Kartu RFID', icon: CreditCard },
-              { id: 'students', label: 'Master Siswa & Wali', icon: Users },
+              { id: 'students', label: 'Master Siswa', icon: Users },
+              { id: 'guardians', label: 'Master Data Orang Tua', icon: Users },
               { id: 'import', label: 'Import Batch Excel', icon: Upload },
               { id: 'audit', label: 'Audit Log System', icon: Activity }
             ]

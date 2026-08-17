@@ -7,7 +7,7 @@ import {
 import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
-import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase } from '../../services/schoolRepository';
+import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, deleteGuardian, saveSchoolState } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings, externalSubTab, onSubTabChange }) {
   const [internalSubTab, setInternalSubTab] = useState(() => (currentRole?.id === 'SUPER_ADMIN' ? 'database' : 'rfid'));
@@ -30,6 +30,336 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   const [lastScannedUid, setLastScannedUid] = useState(scannedCardUid || null);
   const [ownerSearchQuery, setOwnerSearchQuery] = useState('');
   const [isOwnerDropdownOpen, setIsOwnerDropdownOpen] = useState(false);
+
+  // Guardian Master Data State & Handlers
+  const [guardianSearch, setGuardianSearch] = useState('');
+  const [showGuardianModal, setShowGuardianModal] = useState(false);
+  const [editingGuardian, setEditingGuardian] = useState(null);
+  const [guardianFormName, setGuardianFormName] = useState('');
+  const [guardianFormPhone, setGuardianFormPhone] = useState('');
+  const [guardianFormOccupation, setGuardianFormOccupation] = useState('');
+  const [guardianFormAddress, setGuardianFormAddress] = useState('');
+  const [guardianFormRelationship, setGuardianFormRelationship] = useState('Ayah Kandung');
+  const guardianFileInputRef = useRef(null);
+
+  const filteredGuardiansList = useMemo(() => {
+    const list = state.guardians || [];
+    if (!guardianSearch.trim()) return list;
+    const q = guardianSearch.trim().toLowerCase();
+    return list.filter(g =>
+      (g.name && g.name.toLowerCase().includes(q)) ||
+      (g.phone && g.phone.toLowerCase().includes(q)) ||
+      (g.occupation && g.occupation.toLowerCase().includes(q)) ||
+      (g.address && g.address.toLowerCase().includes(q)) ||
+      (g.relationship && g.relationship.toLowerCase().includes(q)) ||
+      (g.id && g.id.toLowerCase().includes(q))
+    );
+  }, [state.guardians, guardianSearch]);
+
+  const handleOpenAddGuardianModal = () => {
+    setEditingGuardian(null);
+    setGuardianFormName('');
+    setGuardianFormPhone('');
+    setGuardianFormOccupation('');
+    setGuardianFormAddress('');
+    setGuardianFormRelationship('Ayah Kandung');
+    setShowGuardianModal(true);
+  };
+
+  const handleOpenEditGuardianModal = (gdr) => {
+    setEditingGuardian(gdr);
+    setGuardianFormName(gdr.name || '');
+    setGuardianFormPhone(gdr.phone || '');
+    setGuardianFormOccupation(gdr.occupation || '');
+    setGuardianFormAddress(gdr.address || '');
+    setGuardianFormRelationship(gdr.relationship || 'Wali');
+    setShowGuardianModal(true);
+  };
+
+  const handleSaveGuardian = async (e) => {
+    e.preventDefault();
+    if (!guardianFormName.trim()) {
+      setFeedback({ type: 'error', text: 'Nama Orang Tua / Wali wajib diisi!' });
+      return;
+    }
+
+    const cleanPhone = guardianFormPhone.trim();
+    const cleanName = guardianFormName.trim();
+    const cleanOccupation = guardianFormOccupation.trim();
+    const cleanAddress = guardianFormAddress.trim();
+    const cleanRel = guardianFormRelationship.trim() || 'Wali';
+
+    let updatedGuardians = [...(state.guardians || [])];
+    let targetGdrId = editingGuardian?.id;
+
+    if (editingGuardian) {
+      updatedGuardians = updatedGuardians.map(g => {
+        if (g.id === editingGuardian.id) {
+          return {
+            ...g,
+            name: cleanName,
+            phone: cleanPhone,
+            occupation: cleanOccupation,
+            address: cleanAddress,
+            relationship: cleanRel
+          };
+        }
+        return g;
+      });
+    } else {
+      targetGdrId = `GDR-${Date.now()}`;
+      const newGdr = {
+        id: targetGdrId,
+        name: cleanName,
+        phone: cleanPhone,
+        occupation: cleanOccupation,
+        address: cleanAddress,
+        relationship: cleanRel
+      };
+      updatedGuardians.push(newGdr);
+    }
+
+    // Also update student's guardianName if linked
+    const updatedStudents = (state.students || []).map(s => {
+      if (s.guardianId === targetGdrId || (editingGuardian && s.guardianName === editingGuardian.name)) {
+        return { ...s, guardianName: cleanName, guardianId: targetGdrId };
+      }
+      return s;
+    });
+
+    const newState = {
+      ...state,
+      guardians: updatedGuardians,
+      students: updatedStudents,
+      auditLogs: [
+        {
+          id: `AUD-${Date.now()}`,
+          timestamp: getLocalIsoTimestamp(),
+          actor: currentRole?.name || 'Admin',
+          action: editingGuardian ? 'UPDATE_GUARDIAN' : 'CREATE_GUARDIAN',
+          entity: 'guardians',
+          entityId: targetGdrId,
+          details: `${editingGuardian ? 'Update' : 'Tambah'} data Orang Tua '${cleanName}' (${cleanRel})`,
+          ip: '127.0.0.1'
+        },
+        ...(state.auditLogs || [])
+      ]
+    };
+
+    setState(newState);
+    setShowGuardianModal(false);
+    setFeedback({
+      type: 'success',
+      text: `Data Orang Tua '${cleanName}' BERHASIL ${editingGuardian ? 'diperbarui' : 'ditambahkan'}!`
+    });
+
+    try {
+      await saveSchoolState(newState);
+    } catch (err) {
+      console.warn('Failed syncing guardian to Supabase:', err);
+    }
+  };
+
+  const handleDeleteGuardianSingle = async (gdrId, gdrName) => {
+    const linkedStudents = (state.students || []).filter(s => s.guardianId === gdrId || s.guardianName === gdrName);
+    const linkedMsg = linkedStudents.length > 0 ? ` (Terhubung dengan ${linkedStudents.length} siswa)` : '';
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus data Orang Tua '${gdrName}'${linkedMsg}?`)) {
+      return;
+    }
+
+    const updatedGuardians = (state.guardians || []).filter(g => g.id !== gdrId);
+    const updatedStudents = (state.students || []).map(s => {
+      if (s.guardianId === gdrId) {
+        return { ...s, guardianId: null };
+      }
+      return s;
+    });
+
+    const newState = {
+      ...state,
+      guardians: updatedGuardians,
+      students: updatedStudents,
+      auditLogs: [
+        {
+          id: `AUD-${Date.now()}`,
+          timestamp: getLocalIsoTimestamp(),
+          actor: currentRole?.name || 'Admin',
+          action: 'DELETE_GUARDIAN',
+          entity: 'guardians',
+          entityId: gdrId,
+          details: `Hapus data Orang Tua '${gdrName}' dari sistem`,
+          ip: '127.0.0.1'
+        },
+        ...(state.auditLogs || [])
+      ]
+    };
+
+    setState(newState);
+    setFeedback({ type: 'success', text: `Data Orang Tua '${gdrName}' BERHASIL dihapus.` });
+
+    try {
+      await deleteGuardian(gdrId);
+      await saveSchoolState(newState);
+    } catch (err) {
+      console.warn('Warning deleting guardian from Supabase:', err);
+    }
+  };
+
+  // Excel Export for Guardians
+  const handleExportExcelWali = () => {
+    const columns = [
+      'ID Wali',
+      'Nama Lengkap Wali',
+      'Hubungan',
+      'No. Telepon / WA',
+      'Pekerjaan',
+      'Alamat Rumah',
+      'Jumlah Anak',
+      'Daftar Anak (Siswa)'
+    ];
+
+    const dataRows = (state.guardians || []).map(g => {
+      const children = (state.students || []).filter(s => s.guardianId === g.id || s.guardianName === g.name);
+      const childNames = children.map(c => `${c.name} (${c.class})`).join(', ');
+      return [
+        g.id || '',
+        g.name || '',
+        g.relationship || 'Wali',
+        g.phone || '',
+        g.occupation || '-',
+        g.address || '-',
+        children.length,
+        childNames || '-'
+      ];
+    });
+
+    exportToExcelXlsx({
+      filename: `master_data_orang_tua_${getLocalTodayDateString()}.xlsx`,
+      sheetName: 'Master Data Orang Tua',
+      title: 'DATA MASTER ORANG TUA / WALI SISWA',
+      summaryRows: [
+        ['Tanggal Cetak', new Date().toLocaleString('id-ID')],
+        ['Total Orang Tua / Wali', (state.guardians || []).length]
+      ],
+      columns,
+      dataRows
+    });
+  };
+
+  // Excel Template Download for Guardians
+  const handleDownloadTemplateWali = () => {
+    const columns = ['Nama Wali', 'Hubungan', 'No HP WA', 'Pekerjaan', 'Alamat Rumah'];
+    const dataRows = [
+      ['Bpk. Rahmat Hidayat', 'Ayah Kandung', '081298765432', 'Wiraswasta', 'Jl. Mawar No. 12, Jakarta'],
+      ['Ibu Ratna Sari', 'Ibu Kandung', '081311223344', 'PNS', 'Jl. Anggrek No. 45, Jakarta']
+    ];
+
+    exportToExcelXlsx({
+      filename: 'template_import_orang_tua.xlsx',
+      sheetName: 'Template Orang Tua',
+      title: 'TEMPLATE IMPORT DATA ORANG TUA / WALI',
+      summaryRows: [
+        ['Petunjuk', 'Isi data orang tua sesuai kolom di bawah ini. Upload file ini di menu Master Orang Tua.']
+      ],
+      columns,
+      dataRows
+    });
+  };
+
+  // Excel File Upload for Guardians
+  const handleFileUploadWali = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const buffer = evt.target.result;
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const firstSheet = workbook.SheetNames[0];
+        const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+
+        if (!rawData || rawData.length === 0) {
+          setFeedback({ type: 'error', text: 'File Excel kosong atau format tidak sesuai.' });
+          return;
+        }
+
+        let updatedGuardians = [...(state.guardians || [])];
+        let addedCount = 0;
+        let updatedCount = 0;
+
+        rawData.forEach((row, idx) => {
+          const name = row['Nama Wali'] || row['Nama'] || row['Nama Lengkap'] || row['NAMA_WALI'];
+          if (!name) return;
+
+          const phone = String(row['No HP WA'] || row['No HP'] || row['No. Telepon'] || row['WA'] || row['Telepon'] || '').trim();
+          const occupation = String(row['Pekerjaan'] || row['Jabatan'] || '').trim();
+          const address = String(row['Alamat Rumah'] || row['Alamat'] || '').trim();
+          const relationship = String(row['Hubungan'] || row['Relasi'] || 'Wali').trim();
+
+          const existingIndex = updatedGuardians.findIndex(g => g.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+          if (existingIndex >= 0) {
+            updatedGuardians[existingIndex] = {
+              ...updatedGuardians[existingIndex],
+              name: String(name).trim(),
+              phone: phone || updatedGuardians[existingIndex].phone,
+              occupation: occupation || updatedGuardians[existingIndex].occupation,
+              address: address || updatedGuardians[existingIndex].address,
+              relationship: relationship || updatedGuardians[existingIndex].relationship
+            };
+            updatedCount++;
+          } else {
+            const newGdr = {
+              id: `GDR-${Date.now()}-${idx}`,
+              name: String(name).trim(),
+              phone,
+              occupation,
+              address,
+              relationship
+            };
+            updatedGuardians.push(newGdr);
+            addedCount++;
+          }
+        });
+
+        const newState = {
+          ...state,
+          guardians: updatedGuardians,
+          auditLogs: [
+            {
+              id: `AUD-${Date.now()}`,
+              timestamp: getLocalIsoTimestamp(),
+              actor: currentRole?.name || 'Admin',
+              action: 'IMPORT_GUARDIANS_EXCEL',
+              entity: 'guardians',
+              entityId: 'batch-import',
+              details: `Import Batch Excel Data Orang Tua: ${addedCount} baru, ${updatedCount} diperbarui`,
+              ip: '127.0.0.1'
+            },
+            ...(state.auditLogs || [])
+          ]
+        };
+
+        setState(newState);
+        setFeedback({
+          type: 'success',
+          text: `Import Data Orang Tua BERHASIL! (${addedCount} orang tua baru ditambahkan, ${updatedCount} diperbarui)`
+        });
+
+        try {
+          await saveSchoolState(newState);
+        } catch (err) {
+          console.warn('Failed saving imported guardians to Supabase:', err);
+        }
+      } catch (err) {
+        console.error('Failed reading guardian import file:', err);
+        setFeedback({ type: 'error', text: 'Gagal membaca file Excel. Pastikan format file .xlsx/.csv valid.' });
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+    e.target.value = null;
+  };
 
   // Database Backup, Restore, and Reset State
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -1089,6 +1419,12 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
             <Users size={15} /> Master Siswa ({state.students.length})
           </button>
           <button
+            className={`btn ${activeSubTab === 'guardians' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveSubTab('guardians')}
+          >
+            <Users size={15} /> Master Orang Tua ({(state.guardians || []).length})
+          </button>
+          <button
             className={`btn ${activeSubTab === 'audit' ? 'btn-gold' : 'btn-secondary'}`}
             onClick={() => setActiveSubTab('audit')}
           >
@@ -1666,6 +2002,179 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* SUBTAB: MASTER DATA ORANG TUA / WALI SISWA                    */}
+      {/* ------------------------------------------------------------- */}
+      {activeSubTab === 'guardians' && (
+        <div className="glass-card" style={{ padding: '1.25rem' }}>
+          
+          {/* Header Action Bar */}
+          <div className="flex-between" style={{ flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Users size={20} style={{ color: 'var(--primary-700)' }} />
+                Master Data Orang Tua / Wali Siswa
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.15rem' }}>
+                Pengelolaan data orang tua/wali siswa, kontak WhatsApp, pekerjaan, alamat, serta ekspor & import Excel (.xlsx).
+              </p>
+            </div>
+
+            {/* Action Buttons Row */}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={handleOpenAddGuardianModal}
+                style={{ fontWeight: 700 }}
+              >
+                <Plus size={16} /> Tambah Orang Tua Baru
+              </button>
+
+              <button
+                className="btn btn-gold btn-sm"
+                onClick={() => guardianFileInputRef.current && guardianFileInputRef.current.click()}
+                style={{ fontWeight: 700 }}
+                title="Import / update massal data orang tua dari file Excel (.xlsx)"
+              >
+                <Upload size={16} /> Import Excel (.xlsx)
+              </button>
+
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={handleExportExcelWali}
+                style={{ fontWeight: 700 }}
+                title="Ekspor seluruh data orang tua ke format Excel .xlsx"
+              >
+                <FileSpreadsheet size={16} /> Ekspor Data (.xlsx)
+              </button>
+
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleDownloadTemplateWali}
+                title="Unduh file template Excel untuk import data orang tua"
+                style={{ fontSize: '0.75rem' }}
+              >
+                <Download size={14} /> Template
+              </button>
+
+              {/* Hidden File Input for Excel Upload */}
+              <input
+                ref={guardianFileInputRef}
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                style={{ display: 'none' }}
+                onChange={handleFileUploadWali}
+              />
+            </div>
+          </div>
+
+          {/* Search Toolbar */}
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
+              <input
+                type="text"
+                className="form-input"
+                style={{ paddingLeft: '36px', borderRadius: '10px' }}
+                placeholder="Cari orang tua berdasarkan nama, no. WA, pekerjaan, atau alamat..."
+                value={guardianSearch}
+                onChange={(e) => setGuardianSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Guardian Table */}
+          <div className="table-container" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>ID / Nama Orang Tua</th>
+                  <th>Hubungan</th>
+                  <th>No. Telepon / WA</th>
+                  <th>Pekerjaan</th>
+                  <th>Alamat Rumah</th>
+                  <th>Anak Terhubung</th>
+                  <th style={{ textAlign: 'center' }}>Aksi CRUD</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredGuardiansList.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--slate-400)' }}>
+                      Tidak ada data orang tua / wali ditemukan.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredGuardiansList.map(g => {
+                    const children = (state.students || []).filter(s => s.guardianId === g.id || s.guardianName === g.name);
+                    return (
+                      <tr key={g.id}>
+                        <td>
+                          <div style={{ fontWeight: 800, color: 'var(--slate-900)' }}>{g.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)', fontFamily: 'monospace' }}>{g.id}</div>
+                        </td>
+                        <td>
+                          <span className="badge badge-gold" style={{ fontWeight: 800 }}>
+                            {g.relationship || 'Wali'}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#047857' }}>
+                          {g.phone || '-'}
+                        </td>
+                        <td style={{ fontWeight: 600, color: 'var(--slate-700)' }}>
+                          {g.occupation || '-'}
+                        </td>
+                        <td style={{ fontSize: '0.8rem', color: 'var(--slate-600)', maxWidth: '200px' }}>
+                          {g.address || '-'}
+                        </td>
+                        <td>
+                          {children.length > 0 ? (
+                            <div>
+                              <div style={{ fontWeight: 800, color: 'var(--primary-700)', fontSize: '0.82rem' }}>
+                                {children.length} Siswa
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
+                                {children.map(c => c.name).join(', ')}
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)', fontStyle: 'italic' }}>
+                              Belum Terhubung
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleOpenEditGuardianModal(g)}
+                              title="Edit Data Orang Tua"
+                            >
+                              <Edit3 size={13} /> Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleDeleteGuardianSingle(g.id, g.name)}
+                              style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                              title="Hapus Data Orang Tua"
+                            >
+                              <Trash2 size={13} /> Hapus
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
         </div>
       )}
 
@@ -2329,6 +2838,122 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                   Batal
                 </button>
               </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TAMBAH / EDIT DATA ORANG TUA / WALI */}
+      {showGuardianModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div className="glass-card" style={{ maxWidth: '500px', width: '100%', padding: '1.75rem', background: '#ffffff', borderRadius: '20px', border: '1px solid var(--slate-200)', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
+            
+            <div className="flex-between" style={{ marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                <Users size={20} style={{ color: 'var(--primary-600)' }} />
+                {editingGuardian ? 'Edit Data Orang Tua / Wali' : 'Tambah Orang Tua / Wali Baru'}
+              </h3>
+              <button onClick={() => setShowGuardianModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-500)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveGuardian} style={{ display: 'grid', gap: '1rem' }}>
+              
+              <div className="form-group">
+                <label className="form-label">Nama Lengkap Orang Tua / Wali *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  required
+                  placeholder="Contoh: Bpk. Rahmat Hidayat"
+                  value={guardianFormName}
+                  onChange={(e) => setGuardianFormName(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Hubungan dengan Siswa</label>
+                <select
+                  className="form-select"
+                  value={guardianFormRelationship}
+                  onChange={(e) => setGuardianFormRelationship(e.target.value)}
+                >
+                  <option value="Ayah Kandung">Ayah Kandung</option>
+                  <option value="Ibu Kandung">Ibu Kandung</option>
+                  <option value="Wali Siswa">Wali Siswa</option>
+                  <option value="Kakek / Nenek">Kakek / Nenek</option>
+                  <option value="Paman / Bibi">Paman / Bibi</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">No. Telepon / WhatsApp (No. WA)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Contoh: 081298765432"
+                  value={guardianFormPhone}
+                  onChange={(e) => setGuardianFormPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Pekerjaan</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Contoh: Wiraswasta, PNS, Dokter, Karyawan"
+                  value={guardianFormOccupation}
+                  onChange={(e) => setGuardianFormOccupation(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Alamat Rumah</label>
+                <textarea
+                  className="form-input"
+                  rows="2"
+                  placeholder="Contoh: Jl. Mawar No. 12 RT 01/RW 05"
+                  value={guardianFormAddress}
+                  onChange={(e) => setGuardianFormAddress(e.target.value)}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowGuardianModal(false)}
+                  style={{ flex: 1, fontWeight: 700 }}
+                >
+                  Batal
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ flex: 1, fontWeight: 800 }}
+                >
+                  {editingGuardian ? 'Simpan Perubahan' : 'Tambah Orang Tua'}
+                </button>
+              </div>
+
             </form>
 
           </div>
