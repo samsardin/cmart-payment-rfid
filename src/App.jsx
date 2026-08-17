@@ -140,6 +140,19 @@ export default function App() {
   // Scanned card result for routing modules (e.g. canteen)
   const [scannedCardResult, setScannedCardResult] = useState(null);
 
+  // Ensure non-penjemputan roles cannot access 'pickup' tab
+  useEffect(() => {
+    if (currentRole?.id !== 'ADMIN_PENJEMPUTAN' && activeTab === 'pickup') {
+      if (currentRole?.id === 'KASIR_KANTIN') {
+        setActiveTab('canteen');
+      } else if (currentRole?.id === 'ORANG_TUA' || currentRole?.id === 'SISWA') {
+        setActiveTab('parent_portal');
+      } else {
+        setActiveTab('dashboard');
+      }
+    }
+  }, [currentRole, activeTab]);
+
   // Global Keyboard Wedge Listener for Physical USB PnP RFID Readers (e.g. Hassel 13.56 MHz)
   useRfidWedge((scannedUid) => {
     const cleanUid = scannedUid.toUpperCase();
@@ -486,7 +499,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'pickup' && (
+          {activeTab === 'pickup' && currentRole?.id === 'ADMIN_PENJEMPUTAN' && (
             <PickupSystemModule
               state={state}
               setState={setState}
