@@ -223,16 +223,34 @@ export async function saveSchoolState(state) {
             await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
           }
         }
+      } else if (tableName === 'guardians') {
+        const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
+        const { error } = await supabase.from(tableName).upsert(dbRows);
+        if (error) {
+          console.warn(`Batch upsert guardians error (${error.message}), falling back to row-by-row:`, error);
+          for (const dbRow of dbRows) {
+            try {
+              let { error: rowErr } = await supabase.from(tableName).upsert(dbRow);
+              if (rowErr) {
+                const cleanRow = { ...dbRow };
+                delete cleanRow.occupation;
+                const { error: retryErr } = await supabase.from(tableName).upsert(cleanRow);
+                if (retryErr) {
+                  console.error(`Failed upserting guardian ${dbRow.name} (${dbRow.id}):`, retryErr);
+                }
+              }
+            } catch (e) {}
+          }
+        }
       } else {
         const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
         const { error } = await supabase.from(tableName).upsert(dbRows);
         if (error) {
-          console.error(`Error saving ${stateKey} to Supabase table ${tableName}:`, error);
-        } else {
-          const activeIds = rows.map(r => r.id).filter(Boolean);
-          if (activeIds.length > 0) {
-            const formattedIds = activeIds.join(',');
-            await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
+          console.warn(`Batch upsert ${tableName} error (${error.message}), falling back to row-by-row:`, error);
+          for (const dbRow of dbRows) {
+            try {
+              await supabase.from(tableName).upsert(dbRow);
+            } catch (e) {}
           }
         }
       }

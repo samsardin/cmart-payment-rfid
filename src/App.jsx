@@ -33,35 +33,33 @@ const LEGACY_LOCAL_STORAGE_KEY = 'SCHOOL_RFID_APP_STATE_V1';
 const STATE_COLLECTIONS = ['students', 'guardians', 'rfidCards', 'ledger', 'auditLogs', 'loginAccounts'];
 
 function mergeLocalDataIntoCloud(cloudState, localState) {
-  if (isSupabaseConfigured && cloudState) {
-    const cloudAccounts = cloudState.loginAccounts || [];
-    const cloudUsernames = new Set(cloudAccounts.map(a => a.username));
-    const mergedAccounts = [
-      ...cloudAccounts,
-      ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
-    ];
+  if (!cloudState) return localState || {};
 
-    return {
-      students: cloudState.students || [],
-      guardians: cloudState.guardians || [],
-      rfidCards: cloudState.rfidCards || [],
-      ledger: cloudState.ledger || [],
-      auditLogs: cloudState.auditLogs || [],
-      loginAccounts: mergedAccounts
-    };
-  }
-
-  return STATE_COLLECTIONS.reduce((mergedState, collection) => {
+  const mergedState = {};
+  STATE_COLLECTIONS.forEach(collection => {
     const cloudRows = cloudState[collection] || [];
-    const localRows = localState[collection] || [];
+    const localRows = (localState && localState[collection]) || [];
+
     const rowMap = new Map();
     cloudRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
-    localRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
-    return {
-      ...mergedState,
-      [collection]: Array.from(rowMap.values())
-    };
-  }, { ...cloudState });
+    localRows.forEach(r => {
+      if (r && r.id) {
+        const existingCloud = rowMap.get(r.id) || {};
+        rowMap.set(r.id, { ...existingCloud, ...r });
+      }
+    });
+
+    mergedState[collection] = Array.from(rowMap.values());
+  });
+
+  const cloudAccounts = mergedState.loginAccounts || [];
+  const cloudUsernames = new Set(cloudAccounts.map(a => a.username));
+  mergedState.loginAccounts = [
+    ...cloudAccounts,
+    ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
+  ];
+
+  return mergedState;
 }
 
 export default function App() {
