@@ -566,10 +566,13 @@ export async function forcePullStateFromSupabase() {
 }
 
 export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, updatedStudent = null) {
-  if (!supabase) return { success: false, text: 'Supabase belum aktif.' };
+  if (!supabase) return { success: false, error: 'Koneksi Supabase belum terkonfigurasi.' };
 
   try {
-    // 1. Save student balance FIRST so student record is guaranteed to exist
+    let studentSaved = false;
+    let ledgerSaved = false;
+
+    // 1. Save student balance FIRST so student record is guaranteed to exist in Supabase
     if (updatedStudent) {
       const dbStudent = toDatabaseRow(updatedStudent, 'students');
       let { error: stErr } = await supabase.from('students').upsert(dbStudent);
@@ -578,15 +581,19 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
         const { error: retryStErr } = await supabase.from('students').upsert({ ...dbStudent, guardian_id: null });
         if (retryStErr) {
           console.error(`Retry upsert student ${updatedStudent.name} failed:`, retryStErr);
+        } else {
+          studentSaved = true;
         }
+      } else {
+        studentSaved = true;
       }
 
       // Explicit direct UPDATE by ID to guarantee student balances are forced into Supabase
       const { error: directUpdateErr } = await supabase
         .from('students')
         .update({
-          savings_balance: dbStudent.savings_balance,
-          canteen_deposit_balance: dbStudent.canteen_deposit_balance,
+          savings_balance: Number(dbStudent.savings_balance) || 0,
+          canteen_deposit_balance: Number(dbStudent.canteen_deposit_balance) || 0,
           rfid_uid: dbStudent.rfid_uid,
           rfid_card_uid: dbStudent.rfid_card_uid
         })
@@ -594,6 +601,8 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
 
       if (directUpdateErr) {
         console.warn(`Direct update student balance ${dbStudent.id} warning:`, directUpdateErr);
+      } else {
+        studentSaved = true;
       }
     }
 
@@ -605,7 +614,7 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
         console.warn(`Direct upsert ledger TX ${newTx.id} failed (${txErr.message}), retrying clean insert:`, txErr);
         const cleanTx = {
           id: dbTx.id,
-          timestamp: dbTx.timestamp || getLocalIsoTimestamp(),
+          timestamp: dbTx.timestamp || new Date().toISOString(),
           student_id: dbTx.student_id,
           student_name: dbTx.student_name || 'Siswa',
           account_type: dbTx.account_type || 'DEPOSIT_KANTIN',
@@ -620,7 +629,12 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
         const { error: cleanErr } = await supabase.from('ledger').upsert(cleanTx);
         if (cleanErr) {
           console.error(`Clean ledger upsert failed: ${cleanErr.message}`, cleanErr);
+          return { success: false, error: `Gagal simpan ledger Supabase: ${cleanErr.message}` };
+        } else {
+          ledgerSaved = true;
         }
+      } else {
+        ledgerSaved = true;
       }
     }
 
@@ -630,7 +644,7 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
       await supabase.from('audit_logs').upsert(dbAudit);
     }
 
-    return { success: true };
+    return { success: true, studentSaved, ledgerSaved };
   } catch (err) {
     console.error('Error saving ledger transaction to Supabase:', err);
     return { success: false, error: err.message };

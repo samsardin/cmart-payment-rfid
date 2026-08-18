@@ -166,9 +166,6 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
       setState(newState);
       const updatedStudent = result.updatedStudents.find(s => s.id === targetStudent.id);
       const saveRes = await saveLedgerTransactionToSupabase(result.newTransaction, result.newAudit, updatedStudent);
-      if (saveRes && saveRes.error) {
-        console.warn('Warning saving canteen transaction to Supabase:', saveRes.error);
-      }
       saveSchoolState(newState).catch(err => console.warn('Sync error saving canteen transaction:', err));
 
       if (updatedStudent) {
@@ -192,10 +189,17 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
       // Reset nominal
       setNominal('');
 
-      setFeedback({
-        type: 'success',
-        text: `Pembayaran Rp ${paymentAmount.toLocaleString('id-ID')} BERHASIL! Sisa ${balanceSource === 'DEPOSIT' ? 'Deposit Kantin' : 'Tabungan'}: Rp ${result.newBalance.toLocaleString('id-ID')}`
-      });
+      if (saveRes && saveRes.error) {
+        setFeedback({
+          type: 'error',
+          text: `⚠️ Transaksi berhasil di layar, tetapi ada kendala simpan ke Supabase: ${saveRes.error}`
+        });
+      } else {
+        setFeedback({
+          type: 'success',
+          text: `✅ Pembayaran Rp ${paymentAmount.toLocaleString('id-ID')} BERHASIL & TERSIMPAN KE SUPABASE! Sisa ${balanceSource === 'DEPOSIT' ? 'Deposit Kantin' : 'Tabungan'}: Rp ${result.newBalance.toLocaleString('id-ID')}`
+        });
+      }
     } catch (err) {
       setFeedback({ type: 'error', text: err.message });
     } finally {
