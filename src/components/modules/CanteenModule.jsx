@@ -151,7 +151,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
       setState(newState);
       saveSchoolState(newState).catch(err => console.warn('Sync error saving canteen transaction:', err));
 
-      const updatedStudent = result.updatedStudents.find(s => s.id === activeStudent.id);
+      const updatedStudent = result.updatedStudents.find(s => s.id === targetStudent.id);
       if (updatedStudent) {
         setActiveStudent({ ...updatedStudent });
       }
@@ -159,10 +159,10 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
       // Generate Digital Receipt
       setReceipt({
         id: result.newTransaction.id,
-        studentName: activeStudent.name,
-        className: activeStudent.class,
-        nis: activeStudent.nis,
-        rfidUid: activeStudent.rfidUid,
+        studentName: targetStudent.name,
+        className: targetStudent.class,
+        nis: targetStudent.nis,
+        rfidUid: targetStudent.rfidUid,
         total: paymentAmount,
         source: accountType === 'DEPOSIT_KANTIN' ? 'Saldo Deposit Kantin' : 'Saldo Tabungan Utama',
         remainingBalance: result.newBalance,
@@ -170,9 +170,8 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
         date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
       });
 
-      // Reset nominal & update active student
+      // Reset nominal
       setNominal('');
-      if (updatedStudent) setActiveStudent(updatedStudent);
 
       setFeedback({
         type: 'success',
@@ -311,7 +310,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
               )}
             </div>
 
-            {activeStudent ? (
+            {(currentActiveStudent || activeStudent) ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 {/* Avatar & Identitas Card */}
                 <div style={{
@@ -324,8 +323,8 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
                   gap: '0.85rem'
                 }}>
                   <img
-                    src={activeStudent.photo}
-                    alt={activeStudent.name}
+                    src={(currentActiveStudent || activeStudent).photo}
+                    alt={(currentActiveStudent || activeStudent).name}
                     style={{
                       width: '60px',
                       height: '60px',
@@ -337,14 +336,14 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#78350f', truncate: true, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {activeStudent.name}
+                      {(currentActiveStudent || activeStudent).name}
                     </div>
                     <div style={{ fontSize: '0.76rem', color: '#92400e', fontWeight: 600, marginTop: '2px' }}>
-                      Kelas {activeStudent.class} • NIS: {activeStudent.nis}
+                      Kelas {(currentActiveStudent || activeStudent).class} • NIS: {(currentActiveStudent || activeStudent).nis}
                     </div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#ffffff', padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700, color: '#b45309', marginTop: '4px', border: '1px solid #fef3c7' }}>
                       <Radio size={10} style={{ color: '#d97706' }} />
-                      <span style={{ fontFamily: 'monospace' }}>{activeStudent.rfidUid}</span>
+                      <span style={{ fontFamily: 'monospace' }}>{(currentActiveStudent || activeStudent).rfidUid}</span>
                     </div>
                   </div>
                 </div>
@@ -367,7 +366,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
                         Saldo Deposit Kantin
                       </div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#b45309', marginTop: '2px' }}>
-                        Rp {activeStudent.canteenDepositBalance.toLocaleString('id-ID')}
+                        Rp {(Number((currentActiveStudent || activeStudent).canteenDepositBalance) || 0).toLocaleString('id-ID')}
                       </div>
                     </div>
                     {balanceSource === 'DEPOSIT' && (
@@ -393,7 +392,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
                         Saldo Tabungan Utama
                       </div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#047857', marginTop: '2px' }}>
-                        Rp {activeStudent.savingsBalance.toLocaleString('id-ID')}
+                        Rp {(Number((currentActiveStudent || activeStudent).savingsBalance) || 0).toLocaleString('id-ID')}
                       </div>
                     </div>
                     {balanceSource === 'TABUNGAN' && (
