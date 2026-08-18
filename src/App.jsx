@@ -35,22 +35,16 @@ const STATE_COLLECTIONS = ['students', 'guardians', 'rfidCards', 'ledger', 'audi
 function mergeLocalDataIntoCloud(cloudState, localState) {
   if (!cloudState) return localState || {};
 
-  const mergedState = {};
-  STATE_COLLECTIONS.forEach(collection => {
-    const cloudRows = cloudState[collection] || [];
-    const localRows = (localState && localState[collection]) || [];
-
-    const rowMap = new Map();
-    cloudRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
-    localRows.forEach(r => {
-      if (r && r.id) {
-        const existingCloud = rowMap.get(r.id) || {};
-        rowMap.set(r.id, { ...existingCloud, ...r });
-      }
-    });
-
-    mergedState[collection] = Array.from(rowMap.values());
-  });
+  // When Supabase Cloud is configured, Cloud DB is the authoritative source of truth.
+  // We do NOT merge obsolete local mock rows into cloud tables.
+  const mergedState = {
+    students: cloudState.students || [],
+    guardians: cloudState.guardians || [],
+    rfidCards: cloudState.rfidCards || [],
+    ledger: cloudState.ledger || [],
+    auditLogs: cloudState.auditLogs || [],
+    loginAccounts: cloudState.loginAccounts || []
+  };
 
   const cloudAccounts = mergedState.loginAccounts || [];
   const cloudUsernames = new Set(cloudAccounts.map(a => a.username));
