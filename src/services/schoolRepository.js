@@ -356,8 +356,9 @@ export async function saveSchoolState(state) {
             try {
               let { error: rowErr } = await supabase.from(tableName).upsert(dbRow);
               if (rowErr) {
-                console.warn(`Upsert student ${dbRow.name} failed (${rowErr.message}), retrying with guardian_id = null and rfid_uid = null...`);
-                const retryRow = { ...dbRow, guardian_id: null, rfid_uid: null };
+                console.warn(`Upsert student ${dbRow.name} failed (${rowErr.message}), retrying without invalid fields...`);
+                const retryRow = { ...dbRow };
+                if (!retryRow.guardian_id) retryRow.guardian_id = null;
                 const { error: retryErr } = await supabase.from(tableName).upsert(retryRow);
                 if (retryErr) {
                   console.error(`Failed upserting student ${dbRow.name} (${dbRow.id}):`, retryErr);
@@ -380,6 +381,33 @@ export async function saveSchoolState(state) {
                 const { error: retryErr } = await supabase.from(tableName).upsert(cleanRow);
                 if (retryErr) {
                   console.error(`Failed upserting guardian ${dbRow.name} (${dbRow.id}):`, retryErr);
+                }
+              }
+            } catch (e) {}
+          }
+        }
+      } else if (tableName === 'rfid_cards') {
+        const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
+        const { error } = await supabase.from(tableName).upsert(dbRows);
+        if (error) {
+          console.warn(`Batch upsert rfid_cards error (${error.message}), falling back to row-by-row:`, error);
+          for (const dbRow of dbRows) {
+            try {
+              const { error: cardErr } = await supabase.from(tableName).upsert(dbRow);
+              if (cardErr) {
+                console.warn(`Upsert rfid_card ${dbRow.uid} failed (${cardErr.message}), retrying clean schema:`, cardErr);
+                const cleanCard = {
+                  id: dbRow.id,
+                  uid: dbRow.uid,
+                  type: dbRow.type || 'SISWA',
+                  assigned_to_name: dbRow.assigned_to_name || 'Siswa',
+                  assigned_to_id: dbRow.assigned_to_id || 'STD-UNKNOWN',
+                  status: dbRow.status || 'ACTIVE',
+                  issued_at: dbRow.issued_at || getLocalTodayDateString()
+                };
+                const { error: retryCardErr } = await supabase.from(tableName).upsert(cleanCard);
+                if (retryCardErr) {
+                  console.error(`Failed upserting rfid_card ${dbRow.uid} to Supabase:`, retryCardErr);
                 }
               }
             } catch (e) {}
