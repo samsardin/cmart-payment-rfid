@@ -169,6 +169,36 @@ export default function App() {
     }
   }, [currentRole, activeTab]);
 
+  const [studentAutoLogoutSeconds, setStudentAutoLogoutSeconds] = useState(30);
+
+  const handleLogout = () => {
+    setAuthenticatedSession(null);
+    setScannedCardResult(null);
+    setLoginRfidFeedback(null);
+    setCurrentRole(ROLES.SUPER_ADMIN);
+  };
+
+  // 30-Second Kiosk Auto-Logout Timer for Student Session (Role SISWA)
+  useEffect(() => {
+    if (authenticatedSession?.roleId !== 'SISWA') return;
+
+    setStudentAutoLogoutSeconds(30);
+
+    const interval = setInterval(() => {
+      setStudentAutoLogoutSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          playRfidBeep('error');
+          handleLogout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [authenticatedSession?.roleId, authenticatedSession?.studentId]);
+
   // Global Keyboard Wedge Listener for Physical USB PnP RFID Readers (e.g. Hassel 13.56 MHz)
   useRfidWedge((scannedUid) => {
     const cleanUid = scannedUid.toUpperCase();
@@ -176,6 +206,13 @@ export default function App() {
 
     if (!authenticatedSession) {
       handleRfidLogin(cleanUid, cardResult);
+      return;
+    }
+
+    // Quick Tap Card again while logged in as SISWA -> Log out immediately!
+    if (authenticatedSession?.roleId === 'SISWA') {
+      playRfidBeep('success');
+      handleLogout();
       return;
     }
 
@@ -497,11 +534,7 @@ export default function App() {
         setPickupAction={setPickupAction}
         onOpenRfidModal={() => setIsRfidModalOpen(true)}
         onExportLedger={handleExportLedgerCsv}
-        onLogout={() => {
-          setAuthenticatedSession(null);
-          setScannedCardResult(null);
-          setLoginRfidFeedback(null);
-        }}
+        onLogout={handleLogout}
         allowRoleSwitch={authenticatedSession?.roleId === 'SUPER_ADMIN'}
         isOnline={isOnline}
         isSyncingCloud={isSyncingCloud}
@@ -619,6 +652,55 @@ export default function App() {
         onRegisterNewCard={handleRegisterNewCard}
         cashierMode={currentRole.id === 'KASIR_KANTIN'}
       />
+
+      {/* Student Kiosk Session Floating 30-Second Auto-Logout Banner */}
+      {authenticatedSession?.roleId === 'SISWA' && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            color: '#ffffff',
+            padding: '0.75rem 1.4rem',
+            borderRadius: '50px',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4), 0 0 0 2px #38bdf8',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.85rem',
+            flexWrap: 'wrap',
+            maxWidth: '92vw'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.9rem', color: '#38bdf8' }}>
+            <span style={{ fontSize: '1.1rem' }}>⏱️</span> Sesi Siswa Otomatis Keluar: <b style={{ fontSize: '1.25rem', color: studentAutoLogoutSeconds <= 5 ? '#ef4444' : '#f59e0b', fontFamily: 'monospace' }}>{studentAutoLogoutSeconds}d</b>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+            (Sentuh/tap kartu lagi untuk keluar)
+          </div>
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setStudentAutoLogoutSeconds(30)}
+              style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem', borderRadius: '15px', color: '#38bdf8', borderColor: '#0284c7' }}
+              title="Reset timer inaktivitas ke 30 detik"
+            >
+              🔄 Perpanjang (30d)
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={handleLogout}
+              style={{ background: '#ef4444', color: '#ffffff', border: 'none', fontSize: '0.72rem', fontWeight: 800, padding: '0.3rem 0.75rem', borderRadius: '15px' }}
+            >
+              🚪 Keluar (Logout)
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
