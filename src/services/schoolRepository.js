@@ -577,35 +577,29 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
     // 1. Save student balance FIRST so student record is guaranteed to exist in Supabase
     if (updatedStudent) {
       const dbStudent = toDatabaseRow(updatedStudent, 'students');
+      const targetId = dbStudent.id;
+      const targetNis = dbStudent.nis;
+      const targetRfid = dbStudent.rfid_uid;
+      const newSavBal = Number(dbStudent.savings_balance) || 0;
+      const newDepBal = Number(dbStudent.canteen_deposit_balance) || 0;
+
       let { error: stErr } = await supabase.from('students').upsert(dbStudent);
       if (stErr) {
         console.warn(`Upsert student ${updatedStudent.name} failed (${stErr.message}), retrying with guardian_id = null...`);
-        const { error: retryStErr } = await supabase.from('students').upsert({ ...dbStudent, guardian_id: null });
-        if (retryStErr) {
-          console.error(`Retry upsert student ${updatedStudent.name} failed:`, retryStErr);
-        } else {
-          studentSaved = true;
-        }
-      } else {
-        studentSaved = true;
+        await supabase.from('students').upsert({ ...dbStudent, guardian_id: null });
       }
 
-      // Explicit direct UPDATE by ID to guarantee student balances are forced into Supabase
-      const { error: directUpdateErr } = await supabase
-        .from('students')
-        .update({
-          savings_balance: Number(dbStudent.savings_balance) || 0,
-          canteen_deposit_balance: Number(dbStudent.canteen_deposit_balance) || 0,
-          rfid_uid: dbStudent.rfid_uid,
-          rfid_card_uid: dbStudent.rfid_card_uid
-        })
-        .eq('id', dbStudent.id);
-
-      if (directUpdateErr) {
-        console.warn(`Direct update student balance ${dbStudent.id} warning:`, directUpdateErr);
-      } else {
-        studentSaved = true;
+      // Multi-identifier direct UPDATE to 100% guarantee canteen_deposit_balance updates in Supabase Studio
+      if (targetId) {
+        await supabase.from('students').update({ savings_balance: newSavBal, canteen_deposit_balance: newDepBal }).eq('id', targetId);
       }
+      if (targetNis) {
+        await supabase.from('students').update({ savings_balance: newSavBal, canteen_deposit_balance: newDepBal }).eq('nis', targetNis);
+      }
+      if (targetRfid) {
+        await supabase.from('students').update({ savings_balance: newSavBal, canteen_deposit_balance: newDepBal }).eq('rfid_uid', targetRfid);
+      }
+      studentSaved = true;
     }
 
     // 2. Save transaction row to ledger table SECOND
