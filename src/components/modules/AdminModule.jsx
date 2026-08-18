@@ -600,21 +600,14 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       setNewCardUid(clean);
       setLastScannedUid(clean);
       setActiveSubTab('rfid');
-
-      // Check if card is unregistered -> default isNewOwner to true ("Buat pemilik baru")
-      const existingCard = (state.rfidCards || []).find(c => c.uid.toUpperCase() === clean);
-      if (!existingCard) {
-        setIsNewOwner(true);
-      }
     }
-  }, [scannedCardUid, state.rfidCards]);
+  }, [scannedCardUid]);
 
   // Direct simulator tap inside Admin Module
   const handleDirectTapNewCard = (uid) => {
     const clean = uid.trim().toUpperCase();
     setNewCardUid(clean);
     setLastScannedUid(clean);
-    setIsNewOwner(true);
     setActiveSubTab('rfid');
     if (uidInputRef.current) {
       uidInputRef.current.focus();
