@@ -68,10 +68,18 @@ const toDatabaseRow = (row, tableKey) => {
     delete mapped.updated_at;
   }
   if (tableKey === 'ledger') {
+    if (!mapped.id) mapped.id = `TX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     if (!mapped.timestamp) mapped.timestamp = nowIso;
-    if (!mapped.student_name) mapped.student_name = 'Siswa';
-    if (!mapped.actor) mapped.actor = 'Admin Keuangan';
-    if (!mapped.description) mapped.description = 'Transaksi Ledger';
+    if (!mapped.student_id) mapped.student_id = row.studentId || row.student_id || 'STD-UNKNOWN';
+    if (!mapped.student_name) mapped.student_name = row.studentName || row.student_name || 'Siswa';
+    if (!mapped.account_type) mapped.account_type = row.accountType || row.account_type || 'DEPOSIT_KANTIN';
+    if (!mapped.type) mapped.type = row.type || 'DEBIT';
+    if (!mapped.category) mapped.category = row.category || 'BELANJA_KANTIN_RFID';
+    mapped.amount = Number(mapped.amount) || 0;
+    mapped.balance_after = Number(mapped.balance_after) || 0;
+    if (!mapped.actor) mapped.actor = row.actor || 'Kasir Kantin RFID';
+    if (!mapped.reference) mapped.reference = row.reference || `REF-${Date.now()}`;
+    if (!mapped.description) mapped.description = row.description || 'Transaksi Ledger';
     delete mapped.updated_at;
   }
   if (tableKey === 'auditLogs') {
@@ -524,6 +532,20 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
   if (!supabase) return { success: false, text: 'Supabase belum aktif.' };
 
   try {
+    // 1. Save student balance FIRST so student record is guaranteed to exist
+    if (updatedStudent) {
+      const dbStudent = toDatabaseRow(updatedStudent, 'students');
+      let { error: stErr } = await supabase.from('students').upsert(dbStudent);
+      if (stErr) {
+        console.warn(`Upsert student ${updatedStudent.name} failed (${stErr.message}), retrying with guardian_id = null...`);
+        const { error: retryStErr } = await supabase.from('students').upsert({ ...dbStudent, guardian_id: null });
+        if (retryStErr) {
+          console.error(`Retry upsert student ${updatedStudent.name} failed:`, retryStErr);
+        }
+      }
+    }
+
+    // 2. Save transaction row to ledger table SECOND
     if (newTx) {
       const dbTx = toDatabaseRow(newTx, 'ledger');
       const { error: txErr } = await supabase.from('ledger').upsert(dbTx);
@@ -543,15 +565,14 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
           reference: dbTx.reference || `REF-${Date.now()}`,
           description: dbTx.description || 'Transaksi Kantin'
         };
-        await supabase.from('ledger').upsert(cleanTx);
+        const { error: cleanErr } = await supabase.from('ledger').upsert(cleanTx);
+        if (cleanErr) {
+          console.error(`Clean ledger upsert failed: ${cleanErr.message}`, cleanErr);
+        }
       }
     }
 
-    if (updatedStudent) {
-      const dbStudent = toDatabaseRow(updatedStudent, 'students');
-      await supabase.from('students').upsert(dbStudent);
-    }
-
+    // 3. Save audit log THIRD
     if (newAudit) {
       const dbAudit = toDatabaseRow(newAudit, 'auditLogs');
       await supabase.from('audit_logs').upsert(dbAudit);

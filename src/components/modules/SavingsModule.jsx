@@ -223,7 +223,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
   };
 
   // Submit Ledger Top Up / Transaction
-  const handleTransactionSubmit = (e) => {
+  const handleTransactionSubmit = async (e) => {
     e.preventDefault();
     setFeedback(null);
 
@@ -265,7 +265,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
         setActiveStudent({ ...updatedActive });
       }
 
-      saveLedgerTransactionToSupabase(result.newTransaction, result.newAudit, updatedActive).catch(err => console.warn('Direct Supabase save error:', err));
+      await saveLedgerTransactionToSupabase(result.newTransaction, result.newAudit, updatedActive);
       saveSchoolState(newState).catch(err => console.warn('Sync error saving transaction:', err));
 
       if (transactionType === 'CREDIT') {

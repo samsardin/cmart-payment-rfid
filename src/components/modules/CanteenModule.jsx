@@ -112,7 +112,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
   }, [state.students, activeStudent?.id]);
 
   // Process Canteen Payment
-  const handleProcessPayment = (e) => {
+  const handleProcessPayment = async (e) => {
     if (e) e.preventDefault();
 
     if (!activeStudent) {
@@ -165,7 +165,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
 
       setState(newState);
       const updatedStudent = result.updatedStudents.find(s => s.id === targetStudent.id);
-      saveLedgerTransactionToSupabase(result.newTransaction, result.newAudit, updatedStudent).catch(err => console.warn('Direct Supabase save error:', err));
+      await saveLedgerTransactionToSupabase(result.newTransaction, result.newAudit, updatedStudent);
       saveSchoolState(newState).catch(err => console.warn('Sync error saving canteen transaction:', err));
 
       if (updatedStudent) {
