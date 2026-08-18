@@ -122,7 +122,15 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
   const handleSimulateGateTap = (uid) => {
     const res = verifyRfidCard(uid, state.rfidCards, state.students, state.guardians);
     if (!res.success) {
+      playRfidBeep('error');
       alert(`Gagal Tap: ${res.message}`);
+      return;
+    }
+
+    // STRICT CONTROL: ONLY PENJEMPUT CARDS (ORANG TUA / WALI) ARE ALLOWED AT PICKUP GATE
+    if (res.cardType !== 'PENJEMPUT') {
+      playRfidBeep('error');
+      alert(`🔴 PENJEMPUTAN DITOLAK: Kartu '${uid}' adalah KARTU SISWA!\n\nHanya Kartu Khusus Penjemput (Orang Tua / Wali) yang dapat di-tap di Gerbang Penjemputan.`);
       return;
     }
 
