@@ -61,6 +61,19 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
 
   mergedState.loginAccounts = sanitizeLoginAccounts(rawAccounts, mergedState.students, mergedState.guardians);
 
+  // Preserve RAM & LocalStorage pickupLogs so active pickup queues never vanish on background polling!
+  const localPickupLogs = (localState && Array.isArray(localState.pickupLogs)) ? localState.pickupLogs : [];
+  const cloudPickupLogs = (cloudState && Array.isArray(cloudState.pickupLogs)) ? cloudState.pickupLogs : [];
+  const pickupLogsMap = new Map();
+  cloudPickupLogs.forEach(p => { if (p && p.id) pickupLogsMap.set(p.id, p); });
+  localPickupLogs.forEach(p => {
+    if (p && p.id) {
+      const existing = pickupLogsMap.get(p.id) || {};
+      pickupLogsMap.set(p.id, { ...existing, ...p });
+    }
+  });
+  mergedState.pickupLogs = Array.from(pickupLogsMap.values());
+
   return mergedState;
 }
 
@@ -219,7 +232,8 @@ export default function App() {
             rfidCards: merged.rfidCards || [],
             ledger: merged.ledger || [],
             auditLogs: merged.auditLogs || [],
-            loginAccounts: mergedAccounts
+            loginAccounts: mergedAccounts,
+            pickupLogs: merged.pickupLogs || localState?.pickupLogs || []
           };
 
           lastSyncedStateRef.current = JSON.stringify(freshState);
