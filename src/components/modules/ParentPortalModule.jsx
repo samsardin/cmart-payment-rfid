@@ -54,6 +54,13 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
   // Student specific data
   const studentLedger = state.ledger.filter(l => l.studentId === student?.id);
 
+  // Authoritative real-time balance calculations from latest ledger entries
+  const latestSavingsTx = [...studentLedger].reverse().find(tx => tx.accountType === 'TABUNGAN');
+  const latestDepositTx = [...studentLedger].reverse().find(tx => tx.accountType === 'DEPOSIT_KANTIN');
+
+  const activeSavingsBalance = latestSavingsTx !== undefined ? Number(latestSavingsTx.balanceAfter) : (Number(student?.savingsBalance) || 0);
+  const activeDepositBalance = latestDepositTx !== undefined ? Number(latestDepositTx.balanceAfter) : (Number(student?.canteenDepositBalance) || 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
@@ -228,7 +235,7 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
                   <span>Saldo Tabungan</span>
                 </div>
                 <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#064e3b', letterSpacing: '-0.02em' }}>
-                  Rp {student.savingsBalance.toLocaleString('id-ID')}
+                  Rp {activeSavingsBalance.toLocaleString('id-ID')}
                 </div>
               </div>
 
@@ -246,7 +253,7 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
                   <span>Deposit Kantin</span>
                 </div>
                 <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#78350f', letterSpacing: '-0.02em' }}>
-                  Rp {student.canteenDepositBalance.toLocaleString('id-ID')}
+                  Rp {activeDepositBalance.toLocaleString('id-ID')}
                 </div>
               </div>
 
