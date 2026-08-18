@@ -13,7 +13,7 @@ import LoginPage from './components/layout/LoginPage';
 
 import { useRfidWedge } from './services/useRfidWedge';
 import { verifyRfidCard, playRfidBeep } from './services/rfidService';
-import { isSupabaseConfigured } from './services/supabaseClient';
+import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { deleteRfidCard, loadSchoolState, saveSchoolState, ensureDefaultAccountsInSupabase } from './services/schoolRepository';
 import { exportToExcelXlsx } from './services/excelExporter';
 import { harmonizeStudentBalancesWithLedger } from './services/ledgerEngine';
@@ -261,9 +261,46 @@ export default function App() {
       });
   };
 
-  // Initial Cloud Fetch
+  // Supabase Real-time Subscription & Polling for Multi-User Live Sync Across All Active Roles
   useEffect(() => {
     syncWithCloudDatabase();
+
+    if (!isSupabaseConfigured || !supabase) return;
+
+    let channel;
+    try {
+      channel = supabase
+        .channel('school-db-realtime-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public' },
+          (payload) => {
+            console.log('⚡ Realtime Supabase DB change detected:', payload.table, payload.eventType);
+            syncWithCloudDatabase();
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Connected to Supabase Realtime multi-user live channel!');
+          }
+        });
+    } catch (rtErr) {
+      console.warn('Realtime channel subscription error:', rtErr);
+    }
+
+    // Periodic background polling every 3.5 seconds as fail-safe fallback
+    const intervalId = setInterval(() => {
+      syncWithCloudDatabase();
+    }, 3500);
+
+    return () => {
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (e) {}
+      }
+      clearInterval(intervalId);
+    };
   }, []);
 
   // Auto-sync refresh listener when smartphone/browser regains focus or visibility
