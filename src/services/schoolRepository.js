@@ -399,7 +399,7 @@ export function sanitizeLoginAccounts(accounts = [], students = [], guardians = 
   });
 }
 
-export async function saveSchoolState(state) {
+export async function saveSchoolState(state, options = {}) {
   // Always update LocalStorage immediately for instant local persistence
   try {
     const cleanAccounts = sanitizeLoginAccounts(state.loginAccounts, state.students, state.guardians);
@@ -415,6 +415,9 @@ export async function saveSchoolState(state) {
   if (!supabase) return;
 
   for (const [stateKey, tableName] of tableMappings) {
+    if (tableName === 'students' && options.skipStudents) {
+      continue;
+    }
     const rows = state[stateKey] || [];
     if (!rows.length) {
       continue;

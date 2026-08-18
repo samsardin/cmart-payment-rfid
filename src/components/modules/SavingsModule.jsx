@@ -266,7 +266,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
       }
 
       await saveLedgerTransactionToSupabase(result.newTransaction, result.newAudit, updatedActive);
-      saveSchoolState(newState).catch(err => console.warn('Sync error saving transaction:', err));
+      saveSchoolState(newState, { skipStudents: true }).catch(err => console.warn('Sync error saving transaction:', err));
 
       if (transactionType === 'CREDIT') {
         try {
