@@ -49,7 +49,7 @@ export default function RoleManagementModule({ state, setState }) {
   const financeAdmins = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return (state.loginAccounts || []).filter(a =>
-      a.roleId === 'ADMIN_KEUANGAN' &&
+      (a.roleId === 'ADMIN_KEUANGAN' || a.role_id === 'ADMIN_KEUANGAN' || a.role === 'ADMIN_KEUANGAN') &&
       ((a.username || '').toLowerCase().includes(q) || (a.name || '').toLowerCase().includes(q))
     );
   }, [state.loginAccounts, searchQuery]);
@@ -58,7 +58,7 @@ export default function RoleManagementModule({ state, setState }) {
   const pickupAdmins = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return (state.loginAccounts || []).filter(a =>
-      a.roleId === 'ADMIN_PENJEMPUTAN' &&
+      (a.roleId === 'ADMIN_PENJEMPUTAN' || a.role_id === 'ADMIN_PENJEMPUTAN' || a.role === 'ADMIN_PENJEMPUTAN') &&
       ((a.username || '').toLowerCase().includes(q) || (a.name || '').toLowerCase().includes(q))
     );
   }, [state.loginAccounts, searchQuery]);
@@ -67,7 +67,7 @@ export default function RoleManagementModule({ state, setState }) {
   const cashiers = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return (state.loginAccounts || []).filter(a =>
-      a.roleId === 'KASIR_KANTIN' &&
+      (a.roleId === 'KASIR_KANTIN' || a.role_id === 'KASIR_KANTIN' || a.role === 'KASIR_KANTIN') &&
       ((a.username || '').toLowerCase().includes(q) || (a.name || '').toLowerCase().includes(q))
     );
   }, [state.loginAccounts, searchQuery]);
@@ -234,7 +234,8 @@ export default function RoleManagementModule({ state, setState }) {
         username: cleanUsername,
         name: accountForm.name.trim() || cleanUsername,
         password: accountForm.password.trim(),
-        roleId: accountForm.roleId
+        roleId: accountForm.roleId,
+        role_id: accountForm.roleId
       };
 
       newState = {

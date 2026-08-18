@@ -79,8 +79,13 @@ const toAppRow = (row, tableKey) => {
   );
 
   // If username is penjemputan, always map to ADMIN_PENJEMPUTAN role in app
-  if (tableKey === 'loginAccounts' && mapped.username === 'penjemputan') {
-    mapped.roleId = 'ADMIN_PENJEMPUTAN';
+  if (tableKey === 'loginAccounts') {
+    if (mapped.username === 'penjemputan') {
+      mapped.roleId = 'ADMIN_PENJEMPUTAN';
+    }
+    const rId = mapped.roleId || row.role_id || row.roleId || row.role;
+    mapped.roleId = rId;
+    mapped.role_id = rId;
   }
 
   return mapped;
