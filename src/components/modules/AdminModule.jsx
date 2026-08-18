@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
-import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, seedInitialDataToSupabase, deleteGuardian, saveSchoolState, saveRfidCardToSupabase } from '../../services/schoolRepository';
+import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, seedInitialDataToSupabase, deleteGuardian, saveSchoolState, saveRfidCardToSupabase, forcePullStateFromSupabase } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings, externalSubTab, onSubTabChange }) {
   const [internalSubTab, setInternalSubTab] = useState(() => (currentRole?.id === 'SUPER_ADMIN' ? 'database' : 'rfid'));
@@ -505,6 +505,24 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       });
     } catch (err) {
       setFeedback({ type: 'error', text: `Gagal melakukan reset database: ${err.message}` });
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
+
+  const handleForcePullFromSupabase = async () => {
+    setIsProcessingAction(true);
+    setFeedback(null);
+    try {
+      const res = await forcePullStateFromSupabase();
+      if (res.success && res.data) {
+        setState(res.data);
+        setFeedback({ type: 'success', text: res.text });
+      } else {
+        setFeedback({ type: 'error', text: res.text || 'Gagal menyelaraskan data dari Supabase Cloud.' });
+      }
+    } catch (err) {
+      setFeedback({ type: 'error', text: `Terjadi kesalahan: ${err.message}` });
     } finally {
       setIsProcessingAction(false);
     }
@@ -2546,6 +2564,46 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 disabled={isProcessingAction}
               >
                 <Zap size={18} /> {isProcessingAction ? 'Mengirim ke Supabase...' : '⚡ Paksa Tulis Akun Penjemputan ke Supabase'}
+              </button>
+            </div>
+
+            {/* Panel 4: Force Pull & Restore All Data from Supabase Cloud */}
+            <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', border: '1.5px solid #93c5fd', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1e40af', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Download size={18} style={{ color: '#2563eb' }} />
+                  4. Pulihkan & Tarik Data Dari Supabase Cloud
+                </h4>
+                <p style={{ fontSize: '0.8rem', color: '#1e3a8a', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  Gunakan tombol ini jika tampilan di layar terasa kosong atau tidak sync dengan Supabase Cloud. Sistem akan <b>menarik 100% data riil dari Supabase Cloud</b> dan menampilkannya di tampilan browser.
+                </p>
+
+                <div style={{ background: '#ffffff', padding: '0.85rem', borderRadius: '10px', border: '1px solid #bfdbfe', marginBottom: '1.2rem', fontSize: '0.78rem', color: '#1e40af' }}>
+                  <b>🔄 Pulihkan Data Tampilan (Read & Sync Cloud):</b>
+                  <div style={{ marginTop: '0.3rem' }}>
+                    Menarik ulang data Siswa, Wali, Kartu RFID, Mutasi Tabungan & Log Audit langsung dari cloud.
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleForcePullFromSupabase}
+                className="btn"
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  padding: '0.75rem',
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
+                  cursor: 'pointer'
+                }}
+                disabled={isProcessingAction}
+              >
+                <Download size={18} /> {isProcessingAction ? 'Menarik Data Dari Cloud...' : '🔄 Tarik & Pulihkan Tampilan Dari Supabase Cloud'}
               </button>
             </div>
 

@@ -502,6 +502,27 @@ export async function deleteRfidCard(cardId) {
   if (error) throw error;
 }
 
+export async function forcePullStateFromSupabase() {
+  if (!supabase) return { success: false, text: 'Supabase belum terkonfigurasi.' };
+
+  try {
+    const cloudState = await loadSchoolState();
+    if (!cloudState) return { success: false, text: 'Gagal membaca data dari Supabase Cloud.' };
+
+    localStorage.removeItem('SYSTEM_WAS_RESET');
+    localStorage.setItem('SCHOOL_RFID_APP_STATE_V2', JSON.stringify(cloudState));
+
+    return {
+      success: true,
+      data: cloudState,
+      text: `BERHASIL! Data sekolah (${cloudState.students?.length || 0} Siswa, ${cloudState.guardians?.length || 0} Wali, ${cloudState.rfidCards?.length || 0} Kartu, ${cloudState.ledger?.length || 0} Mutasi) berhasil dipulihkan & ditarik 100% dari Supabase Cloud!`
+    };
+  } catch (err) {
+    console.error('Error force pulling state from Supabase:', err);
+    return { success: false, text: `Gagal menarik data: ${err.message}` };
+  }
+}
+
 export async function saveAccountToSupabase(username, password, roleId = 'KASIR_KANTIN', accId = null) {
   if (!supabase) return { success: false, text: 'Supabase belum aktif.' };
   const cleanUname = (username || '').trim().toLowerCase();
