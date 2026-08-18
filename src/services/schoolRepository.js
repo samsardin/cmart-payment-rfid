@@ -289,16 +289,38 @@ export async function loadSchoolState() {
 
   if (Array.isArray(stateObj.ledger)) {
     stateObj.ledger = stateObj.ledger.map(tx => {
-      if (!tx) return tx;
-      // Auto-repair Zahfan's last transaction timestamp to exact local time 20.18.55
-      if (tx.id === 'TX-1787059135266-375' || (tx.timestamp && (tx.timestamp.includes('13.18.55') || tx.timestamp.includes('13:18:55')))) {
-        const fixedTimestamp = '18/08/2026, 20.18.55';
-        if (supabase) {
-          supabase.from('ledger').update({ timestamp: fixedTimestamp }).eq('id', tx.id).then(() => {});
-        }
-        return { ...tx, timestamp: fixedTimestamp };
+      if (!tx || !tx.timestamp) return tx;
+
+      let fixedTimestamp = tx.timestamp;
+
+      // Auto-repair Zahfan's transaction explicitly
+      if (tx.id === 'TX-1787059135266-375' || tx.timestamp.includes('13.18.55') || tx.timestamp.includes('13:18:55')) {
+        fixedTimestamp = '18/08/2026, 20.18.55';
+      } else if (tx.timestamp.includes('T') || tx.timestamp.includes('Z')) {
+        // Convert historical ISO timestamp (e.g. 2026-08-18T15:18:55.266Z) to exact Indonesian local time string (18/08/2026, 22.18.55)
+        fixedTimestamp = formatDisplayTimestamp(tx.timestamp);
       }
-      return tx;
+
+      if (fixedTimestamp !== tx.timestamp && supabase) {
+        supabase.from('ledger').update({ timestamp: fixedTimestamp }).eq('id', tx.id).then(() => {});
+      }
+
+      return { ...tx, timestamp: fixedTimestamp };
+    });
+  }
+
+  if (Array.isArray(stateObj.auditLogs)) {
+    stateObj.auditLogs = stateObj.auditLogs.map(aud => {
+      if (!aud || !aud.timestamp) return aud;
+
+      let fixedTimestamp = aud.timestamp;
+      if (aud.timestamp.includes('T') || aud.timestamp.includes('Z')) {
+        fixedTimestamp = formatDisplayTimestamp(aud.timestamp);
+        if (fixedTimestamp !== aud.timestamp && supabase) {
+          supabase.from('audit_logs').update({ timestamp: fixedTimestamp }).eq('id', aud.id).then(() => {});
+        }
+      }
+      return { ...aud, timestamp: fixedTimestamp };
     });
   }
 
