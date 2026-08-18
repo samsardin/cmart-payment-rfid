@@ -245,20 +245,6 @@ export async function loadSchoolState() {
 
   let stateObj = Object.fromEntries(results);
 
-  // Only auto-seed if system was never explicitly reset by Super Admin
-  const wasReset = localStorage.getItem('SYSTEM_WAS_RESET') === 'true';
-  if (!wasReset && (!stateObj.students || !stateObj.students.length)) {
-    await seedInitialDataToSupabase();
-
-    results = await Promise.all(
-      tableMappings.map(async ([stateKey, tableName]) => {
-        const { data } = await supabase.from(tableName).select('*');
-        return [stateKey, (data || []).map(r => toAppRow(r, stateKey))];
-      })
-    );
-    stateObj = Object.fromEntries(results);
-  }
-
   if (Array.isArray(stateObj.ledger)) {
     stateObj.ledger = stateObj.ledger.map(tx => {
       if (!tx) return tx;

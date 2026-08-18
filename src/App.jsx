@@ -35,15 +35,14 @@ const STATE_COLLECTIONS = ['students', 'guardians', 'rfidCards', 'ledger', 'audi
 function mergeLocalDataIntoCloud(cloudState, localState) {
   if (!cloudState) return localState || {};
 
-  // If cloud state has actual student data, use cloud state; otherwise fallback to user's latest localState
-  const hasCloudStudents = Array.isArray(cloudState.students) && cloudState.students.length > 0;
-
+  // Supabase Cloud DB is the 100% authoritative source of truth.
+  // Empty tables in Supabase MUST remain 100% empty.
   const mergedState = {
-    students: hasCloudStudents ? cloudState.students : (localState?.students || []),
-    guardians: hasCloudStudents ? cloudState.guardians : (localState?.guardians || []),
-    rfidCards: hasCloudStudents ? cloudState.rfidCards : (localState?.rfidCards || []),
-    ledger: hasCloudStudents ? cloudState.ledger : (localState?.ledger || []),
-    auditLogs: hasCloudStudents ? cloudState.auditLogs : (localState?.auditLogs || []),
+    students: cloudState.students || [],
+    guardians: cloudState.guardians || [],
+    rfidCards: cloudState.rfidCards || [],
+    ledger: cloudState.ledger || [],
+    auditLogs: cloudState.auditLogs || [],
     loginAccounts: cloudState.loginAccounts || []
   };
 
