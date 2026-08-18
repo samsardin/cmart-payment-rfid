@@ -61,7 +61,7 @@ export const INITIAL_STUDENTS = [
     class: '5-A Tahfidz',
     guardianId: 'GDR-001',
     guardianName: 'Bapak Ahmad Subagyo',
-    savingsBalance: 350000,
+    savingsBalance: 378000,
     canteenDepositBalance: 75000,
     canteenBalanceSource: 'TABUNGAN', // 'TABUNGAN' or 'DEPOSIT'
     rfidUid: 'RFID-STD-101',

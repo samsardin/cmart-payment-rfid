@@ -16,6 +16,7 @@ import { verifyRfidCard, playRfidBeep } from './services/rfidService';
 import { isSupabaseConfigured } from './services/supabaseClient';
 import { deleteRfidCard, loadSchoolState, saveSchoolState, ensureDefaultAccountsInSupabase } from './services/schoolRepository';
 import { exportToExcelXlsx } from './services/excelExporter';
+import { harmonizeStudentBalancesWithLedger } from './services/ledgerEngine';
 
 import {
   ROLES,
@@ -105,12 +106,16 @@ export default function App() {
           ...LOGIN_ACCOUNTS.filter(defaultAcc => !savedUsernames.has(defaultAcc.username))
         ];
 
+        const rawStudents = Array.isArray(savedState.students) ? savedState.students : (isSupabaseConfigured ? [] : INITIAL_STUDENTS);
+        const rawLedger = Array.isArray(savedState.ledger) ? savedState.ledger : (isSupabaseConfigured ? [] : INITIAL_LEDGER);
+        const harmonizedStudents = harmonizeStudentBalancesWithLedger(rawStudents, rawLedger);
+
         const cleanState = {
           ...savedState,
-          students: Array.isArray(savedState.students) ? savedState.students : (isSupabaseConfigured ? [] : INITIAL_STUDENTS),
+          students: harmonizedStudents,
           guardians: Array.isArray(savedState.guardians) ? savedState.guardians : (isSupabaseConfigured ? [] : INITIAL_GUARDIANS),
           rfidCards: Array.isArray(savedState.rfidCards) ? savedState.rfidCards : (isSupabaseConfigured ? [] : INITIAL_RFID_CARDS),
-          ledger: Array.isArray(savedState.ledger) ? savedState.ledger : (isSupabaseConfigured ? [] : INITIAL_LEDGER),
+          ledger: rawLedger,
           auditLogs: Array.isArray(savedState.auditLogs) ? savedState.auditLogs : (isSupabaseConfigured ? [] : INITIAL_AUDIT_LOGS),
           loginAccounts: mergedLoginAccounts
         };
@@ -133,8 +138,10 @@ export default function App() {
       };
     }
 
+    const harmonizedInitialStudents = harmonizeStudentBalancesWithLedger(INITIAL_STUDENTS, INITIAL_LEDGER);
+
     return {
-      students: INITIAL_STUDENTS,
+      students: harmonizedInitialStudents,
       guardians: INITIAL_GUARDIANS,
       rfidCards: INITIAL_RFID_CARDS,
       ledger: INITIAL_LEDGER,

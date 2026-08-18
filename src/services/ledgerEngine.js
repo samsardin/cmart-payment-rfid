@@ -86,3 +86,69 @@ export const executeLedgerTransaction = (state, {
     newBalance
   };
 };
+
+/**
+ * Automatically harmonizes student balances (savingsBalance & canteenDepositBalance)
+ * with ledger transactions to eliminate any discrepancies between Green Card balance
+ * and ledger transaction history.
+ */
+export function harmonizeStudentBalancesWithLedger(students = [], ledger = []) {
+  if (!Array.isArray(students) || !students.length) return students || [];
+  if (!Array.isArray(ledger)) return students;
+
+  const latestSavingsBalance = new Map();
+  const latestDepositBalance = new Map();
+  const savingsSum = new Map();
+  const depositSum = new Map();
+  const hasSavingsTx = new Set();
+  const hasDepositTx = new Set();
+
+  const sortedLedger = [...ledger].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+
+  sortedLedger.forEach((tx) => {
+    const sId = tx.studentId || tx.student_id;
+    if (!sId) return;
+
+    const amt = Number(tx.amount) || 0;
+    const isCredit = tx.type === 'CREDIT';
+
+    if (tx.accountType === 'TABUNGAN') {
+      hasSavingsTx.add(sId);
+      const curr = savingsSum.get(sId) || 0;
+      savingsSum.set(sId, isCredit ? curr + amt : curr - amt);
+      if (tx.balanceAfter !== undefined && tx.balanceAfter !== null) {
+        latestSavingsBalance.set(sId, Number(tx.balanceAfter));
+      }
+    } else if (tx.accountType === 'DEPOSIT_KANTIN') {
+      hasDepositTx.add(sId);
+      const curr = depositSum.get(sId) || 0;
+      depositSum.set(sId, isCredit ? curr + amt : curr - amt);
+      if (tx.balanceAfter !== undefined && tx.balanceAfter !== null) {
+        latestDepositBalance.set(sId, Number(tx.balanceAfter));
+      }
+    }
+  });
+
+  return students.map((student) => {
+    let savingsBalance = Number(student.savingsBalance) || 0;
+    let canteenDepositBalance = Number(student.canteenDepositBalance) || 0;
+
+    if (latestSavingsBalance.has(student.id)) {
+      savingsBalance = latestSavingsBalance.get(student.id);
+    } else if (hasSavingsTx.has(student.id)) {
+      savingsBalance = Math.max(0, savingsSum.get(student.id) || 0);
+    }
+
+    if (latestDepositBalance.has(student.id)) {
+      canteenDepositBalance = latestDepositBalance.get(student.id);
+    } else if (hasDepositTx.has(student.id)) {
+      canteenDepositBalance = Math.max(0, depositSum.get(student.id) || 0);
+    }
+
+    return {
+      ...student,
+      savingsBalance,
+      canteenDepositBalance
+    };
+  });
+}
