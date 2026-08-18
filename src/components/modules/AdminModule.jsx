@@ -1567,151 +1567,160 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
           {/* Register Card Form */}
           <div className="glass-card" style={{ border: lastScannedUid ? '2px solid var(--accent-gold-500)' : 'var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-              <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                  <CreditCard size={20} style={{ color: 'var(--primary-600)' }} />
-                  Penertiban & Pemetaan Kartu RFID
-                </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--slate-500)', margin: 0 }}>
-                  Tempelkan kartu fisik 13.56 MHz PnP untuk mendaftarkan Siswa atau Orang Tua/Penjemput.
-                </p>
-              </div>
+            {/* Elegant Header & Segmented Pill Switcher */}
+            <div style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', padding: '1.25rem', borderRadius: '16px', border: '1px solid #bbf7d0', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#065f46', display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+                    <CreditCard size={22} style={{ color: '#059669' }} />
+                    Penertiban & Pemetaan Kartu RFID
+                  </h3>
+                  <p style={{ fontSize: '0.82rem', color: '#047857', margin: 0, fontWeight: 500 }}>
+                    Tempelkan kartu fisik 13.56 MHz PnP untuk mendaftarkan Siswa atau Orang Tua/Penjemput.
+                  </p>
+                </div>
 
-              {/* Segmented Pills Switcher (Kartu Siswa vs Kartu Penjemput) */}
-              <div style={{ background: '#f1f5f9', padding: '4px', borderRadius: '12px', display: 'flex', gap: '4px', border: '1px solid #e2e8f0' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNewCardType('SISWA');
-                    setNewCardAssignedTo(state.students[0]?.id || '');
-                    setOwnerSearchQuery('');
-                  }}
-                  style={{
-                    padding: '0.45rem 0.85rem',
-                    borderRadius: '9px',
-                    fontSize: '0.82rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    border: 'none',
-                    transition: 'all 0.2s ease',
-                    background: newCardType === 'SISWA' ? '#ffffff' : 'transparent',
-                    color: newCardType === 'SISWA' ? 'var(--primary-700)' : 'var(--slate-600)',
-                    boxShadow: newCardType === 'SISWA' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-                  }}
-                >
-                  🎒 Kartu Siswa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNewCardType('PENJEMPUT');
-                    setNewCardAssignedTo(state.guardians[0]?.id || '');
-                    setOwnerSearchQuery('');
-                  }}
-                  style={{
-                    padding: '0.45rem 0.85rem',
-                    borderRadius: '9px',
-                    fontSize: '0.82rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    border: 'none',
-                    transition: 'all 0.2s ease',
-                    background: newCardType === 'PENJEMPUT' ? '#ffffff' : 'transparent',
-                    color: newCardType === 'PENJEMPUT' ? '#d97706' : 'var(--slate-600)',
-                    boxShadow: newCardType === 'PENJEMPUT' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-                  }}
-                >
-                  👨‍👩‍👧 Kartu Orang Tua / Penjemput
-                </button>
+                {/* Segmented Pills Switcher (Kartu Siswa vs Kartu Penjemput) */}
+                <div style={{ background: '#ffffff', padding: '5px', borderRadius: '12px', display: 'flex', gap: '6px', border: '1.5px solid #a7f3d0', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewCardType('SISWA');
+                      setNewCardAssignedTo(state.students[0]?.id || '');
+                      setOwnerSearchQuery('');
+                    }}
+                    style={{
+                      padding: '0.5rem 1.1rem',
+                      borderRadius: '9px',
+                      fontSize: '0.85rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      border: 'none',
+                      transition: 'all 0.2s ease',
+                      background: newCardType === 'SISWA' ? '#059669' : 'transparent',
+                      color: newCardType === 'SISWA' ? '#ffffff' : '#475569',
+                      boxShadow: newCardType === 'SISWA' ? '0 4px 12px rgba(5,150,105,0.3)' : 'none'
+                    }}
+                  >
+                    🎒 Kartu Siswa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewCardType('PENJEMPUT');
+                      setNewCardAssignedTo(state.guardians[0]?.id || '');
+                      setOwnerSearchQuery('');
+                    }}
+                    style={{
+                      padding: '0.5rem 1.1rem',
+                      borderRadius: '9px',
+                      fontSize: '0.85rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      border: 'none',
+                      transition: 'all 0.2s ease',
+                      background: newCardType === 'PENJEMPUT' ? '#d97706' : 'transparent',
+                      color: newCardType === 'PENJEMPUT' ? '#ffffff' : '#475569',
+                      boxShadow: newCardType === 'PENJEMPUT' ? '0 4px 12px rgba(217,119,6,0.3)' : 'none'
+                    }}
+                  >
+                    👨‍👩‍👧 Kartu Orang Tua / Penjemput
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* High-Tech Card Scanner & Registration Panel */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1rem' }}>
-              {/* Left Box: USB Tap Scanner Card */}
-              <div style={{ background: newCardUid ? '#f0fdf4' : '#f8fafc', padding: '1.25rem', borderRadius: '16px', border: newCardUid ? '2px solid #86efac' : '1.5px solid #e2e8f0', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            {/* Two-Column Spacious High-Tech Panel */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', alignItems: 'stretch' }}>
+              {/* Left Column: USB Tap Reader Scanner Box */}
+              <div style={{ background: newCardUid ? '#f0fdf4' : '#ffffff', padding: '1.35rem', borderRadius: '16px', border: newCardUid ? '2px solid #22c55e' : '1.5px solid #e2e8f0', boxShadow: newCardUid ? '0 4px 20px rgba(34,197,94,0.12)' : 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: newCardUid ? '#166534' : 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Usb size={15} style={{ color: newCardUid ? '#16a34a' : 'var(--slate-400)' }} />
-                      {newCardUid ? '🟢 KARTU TERDETEKSI' : '📡 SIAP TAP KARTU...'}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: newCardUid ? '#15803d' : '#475569', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Usb size={17} style={{ color: newCardUid ? '#16a34a' : '#64748b' }} />
+                      {newCardUid ? '🟢 KARTU RFID TERDETEKSI' : '📡 READY: SIAP TAP KARTU'}
                     </span>
                     {newCardUid && (
                       <button
                         type="button"
                         onClick={() => setNewCardUid('')}
-                        style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d', fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                        style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d', fontSize: '0.75rem', fontWeight: 800, padding: '3px 10px', borderRadius: '8px', cursor: 'pointer' }}
                       >
-                        Reset / Tap Ulang
+                        🔄 Reset / Tap Ulang
                       </button>
                     )}
                   </div>
 
-                  <input
-                    ref={uidInputRef}
-                    type="text"
-                    className="form-input"
-                    placeholder="Tempelkan kartu pada USB RFID Reader..."
-                    value={newCardUid}
-                    onChange={(e) => setNewCardUid(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                      }
-                    }}
-                    style={{
-                      fontFamily: 'monospace',
-                      fontWeight: 800,
-                      fontSize: '1.15rem',
-                      textAlign: 'center',
-                      letterSpacing: '1px',
-                      background: '#ffffff',
-                      border: newCardUid ? '2px solid #22c55e' : '1.5px dashed #cbd5e1',
-                      color: newCardUid ? '#15803d' : 'var(--slate-400)',
-                      borderRadius: '10px',
-                      padding: '0.75rem'
-                    }}
-                    autoFocus
-                  />
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--slate-600)', marginBottom: '0.35rem' }}>
+                      UID Kartu RFID (Otomatis Terisi dari USB Reader):
+                    </label>
+                    <input
+                      ref={uidInputRef}
+                      type="text"
+                      className="form-input"
+                      placeholder="Tempelkan kartu ke USB Reader..."
+                      value={newCardUid}
+                      onChange={(e) => setNewCardUid(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                        }
+                      }}
+                      style={{
+                        fontFamily: 'monospace',
+                        fontWeight: 800,
+                        fontSize: '1.25rem',
+                        textAlign: 'center',
+                        letterSpacing: '1px',
+                        background: '#ffffff',
+                        border: newCardUid ? '2px solid #22c55e' : '2px dashed #cbd5e1',
+                        color: newCardUid ? '#15803d' : 'var(--slate-400)',
+                        borderRadius: '12px',
+                        padding: '0.85rem',
+                        boxShadow: newCardUid ? '0 2px 8px rgba(34,197,94,0.15)' : 'none'
+                      }}
+                      autoFocus
+                    />
+                  </div>
                 </div>
 
-                <div style={{ fontSize: '0.73rem', color: 'var(--slate-500)', marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span>ℹ️ Tempelkan kartu fisik 13.56 MHz PnP atau ketik manual UID di atas.</span>
+                <div style={{ fontSize: '0.76rem', color: '#64748b', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #f1f5f9', marginTop: '0.75rem' }}>
+                  💡 <b>Panduan:</b> Tempelkan kartu fisik 13.56 MHz PnP pada alat scanner USB, atau ketik UID kartu secara manual.
                 </div>
               </div>
 
-              {/* Right Box: Owner Selector & Preview */}
-              <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              {/* Right Column: Owner Selector & Preview */}
+              <div style={{ background: '#ffffff', padding: '1.35rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                    <label className="form-label" style={{ fontWeight: 800, margin: 0, fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <label style={{ fontWeight: 800, margin: 0, fontSize: '0.9rem', color: 'var(--slate-900)' }}>
                       Pilih Pemilik {newCardType === 'SISWA' ? 'Siswa' : 'Orang Tua / Wali'}:
                     </label>
 
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                    <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '3px', borderRadius: '8px' }}>
                       <button
                         type="button"
                         onClick={() => setIsNewOwner(false)}
-                        style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 700, background: !isNewOwner ? '#e0e7ff' : '#f8fafc', color: !isNewOwner ? '#3730a3' : '#64748b', cursor: 'pointer' }}
+                        style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: '6px', border: 'none', fontWeight: 700, background: !isNewOwner ? '#ffffff' : 'transparent', color: !isNewOwner ? '#1e293b' : '#64748b', cursor: 'pointer', boxShadow: !isNewOwner ? '0 1px 4px rgba(0,0,0,0.06)' : 'none' }}
                       >
-                        Pilih Ada
+                        👤 Pilih Dari Daftar
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsNewOwner(true)}
-                        style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid #fef08a', fontWeight: 700, background: isNewOwner ? '#fef9c3' : '#f8fafc', color: isNewOwner ? '#854d0e' : '#64748b', cursor: 'pointer' }}
+                        style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: '6px', border: 'none', fontWeight: 700, background: isNewOwner ? '#ffffff' : 'transparent', color: isNewOwner ? '#d97706' : '#64748b', cursor: 'pointer', boxShadow: isNewOwner ? '0 1px 4px rgba(0,0,0,0.06)' : 'none' }}
                       >
-                        + Pemilik Baru
+                        ➕ Pemilik Baru
                       </button>
                     </div>
                   </div>
 
                   {!isNewOwner ? (
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                    <div style={{ display: 'grid', gap: '0.65rem' }}>
                       <select
                         className="form-input"
-                        style={{ fontWeight: 700, padding: '0.6rem', fontSize: '0.85rem', borderRadius: '8px', background: '#f8fafc', border: '1.5px solid var(--primary-400)' }}
+                        style={{ fontWeight: 700, padding: '0.75rem 0.9rem', fontSize: '0.9rem', borderRadius: '10px', background: '#f8fafc', border: '1.5px solid var(--primary-500)', color: 'var(--slate-900)' }}
                         value={newCardAssignedTo}
                         onChange={(e) => {
                           const selId = e.target.value;
@@ -1726,7 +1735,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                           }
                         }}
                       >
-                        <option value="">-- Klik Untuk Pilih {newCardType === 'SISWA' ? 'Siswa' : 'Orang Tua'} --</option>
+                        <option value="">-- Klik Untuk Pilih {newCardType === 'SISWA' ? 'Siswa' : 'Orang Tua / Wali'} --</option>
                         {newCardType === 'SISWA'
                           ? (state.students || []).map(s => (
                               <option key={s.id} value={s.id}>
@@ -1742,7 +1751,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                       </select>
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                    <div style={{ display: 'grid', gap: '0.65rem' }}>
                       <input
                         ref={newOwnerNameInputRef}
                         type="text"
@@ -1750,17 +1759,17 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                         placeholder="Nama Pemilik Baru *"
                         value={newOwnerName}
                         onChange={(e) => setNewOwnerName(e.target.value)}
-                        style={{ padding: '0.55rem', fontSize: '0.85rem' }}
+                        style={{ padding: '0.65rem 0.85rem', fontSize: '0.88rem' }}
                       />
                       {newCardType === 'SISWA' ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                           <input
                             type="text"
                             className="form-input"
                             placeholder="NIS *"
                             value={newOwnerNis}
                             onChange={(e) => setNewOwnerNis(e.target.value)}
-                            style={{ padding: '0.5rem', fontSize: '0.82rem' }}
+                            style={{ padding: '0.6rem 0.75rem', fontSize: '0.85rem' }}
                           />
                           <input
                             type="text"
@@ -1768,18 +1777,18 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                             placeholder="Kelas *"
                             value={newOwnerClass}
                             onChange={(e) => setNewOwnerClass(e.target.value)}
-                            style={{ padding: '0.5rem', fontSize: '0.82rem' }}
+                            style={{ padding: '0.6rem 0.75rem', fontSize: '0.85rem' }}
                           />
                         </div>
                       ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                           <input
                             type="tel"
                             className="form-input"
                             placeholder="Nomor telepon *"
                             value={newOwnerPhone}
                             onChange={(e) => setNewOwnerPhone(e.target.value)}
-                            style={{ padding: '0.5rem', fontSize: '0.82rem' }}
+                            style={{ padding: '0.6rem 0.75rem', fontSize: '0.85rem' }}
                           />
                           <input
                             type="text"
@@ -1787,7 +1796,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                             placeholder="Hubungan (Ayah/Ibu) *"
                             value={newOwnerRelationship}
                             onChange={(e) => setNewOwnerRelationship(e.target.value)}
-                            style={{ padding: '0.5rem', fontSize: '0.82rem' }}
+                            style={{ padding: '0.6rem 0.75rem', fontSize: '0.85rem' }}
                           />
                         </div>
                       )}
@@ -1798,10 +1807,26 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 <button
                   type="button"
                   onClick={handleAddCard}
-                  className="btn btn-emerald"
-                  style={{ width: '100%', marginTop: '0.75rem', fontWeight: 800, padding: '0.75rem', fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(16,185,129,0.25)' }}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    marginTop: '1rem',
+                    fontWeight: 800,
+                    padding: '0.85rem',
+                    fontSize: '0.95rem',
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 14px rgba(5,150,105,0.3)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
                 >
-                  💳 Terbitkan & Petakan Kartu RFID
+                  <CreditCard size={18} /> TERBITKAN & PETAKAN KARTU RFID
                 </button>
               </div>
             </div>
