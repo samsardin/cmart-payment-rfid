@@ -4,22 +4,7 @@
  */
 
 export function getLocalIsoTimestamp(date = new Date()) {
-  const pad = (n, len = 2) => String(Math.floor(Math.abs(n))).padStart(len, '0');
-  
-  const year = date.getFullYear();
-  const month = pad(date.getMonth() + 1);
-  const day = pad(date.getDate());
-  const hours = pad(date.getHours());
-  const minutes = pad(date.getMinutes());
-  const seconds = pad(date.getSeconds());
-  const ms = pad(date.getMilliseconds(), 3);
-
-  const tzOffsetMinutes = -date.getTimezoneOffset();
-  const tzSign = tzOffsetMinutes >= 0 ? '+' : '-';
-  const tzHours = pad(Math.floor(Math.abs(tzOffsetMinutes) / 60));
-  const tzMins = pad(Math.abs(tzOffsetMinutes) % 60);
-
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${tzSign}${tzHours}:${tzMins}`;
+  return date.toISOString();
 }
 
 export function getLocalTodayDateString(date = new Date()) {
@@ -30,21 +15,50 @@ export function getLocalTodayDateString(date = new Date()) {
 export function formatDisplayTimestamp(ts) {
   if (!ts) return '-';
   
-  // If ts is already formatted as Indonesian string "18/8/2026, 16.34.59"
+  // If ts is already formatted as Indonesian string "18/08/2026, 20.18.55"
   if (typeof ts === 'string' && ts.includes('/') && ts.includes(',')) {
     return ts;
   }
 
-  const str = String(ts).trim();
-  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
-  if (isoMatch) {
-    const [, y, m, d, hh, mm, ss] = isoMatch;
-    return `${d}/${m}/${y}, ${hh}.${mm}.${ss}`;
+  // Parse ts into ms (handles ISO strings with Z, numbers, or custom formats)
+  let date;
+  if (typeof ts === 'number') {
+    date = new Date(ts);
+  } else {
+    const str = String(ts).trim();
+    const parsed = Date.parse(str);
+    if (!isNaN(parsed)) {
+      date = new Date(parsed);
+    } else {
+      // Fallback for custom date formats "DD/MM/YYYY, HH.mm.ss"
+      try {
+        const parts = str.split(/[,\s]+/);
+        if (parts.length >= 2) {
+          const dateParts = parts[0].split('/');
+          const timeParts = parts[1].replace(/\./g, ':').split(':');
+          if (dateParts.length === 3) {
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1;
+            const year = parseInt(dateParts[2], 10);
+            const hours = parseInt(timeParts[0] || '0', 10);
+            const minutes = parseInt(timeParts[1] || '0', 10);
+            const seconds = parseInt(timeParts[2] || '0', 10);
+            date = new Date(year, month, day, hours, minutes, seconds);
+          }
+        }
+      } catch (e) {}
+    }
   }
 
-  const date = new Date(ts);
-  if (isNaN(date.getTime())) return String(ts);
+  if (!date || isNaN(date.getTime())) return String(ts);
 
   const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}, ${pad(date.getHours())}.${pad(date.getMinutes())}.${pad(date.getSeconds())}`;
+  const day = pad(date.getDate());
+  const month = pad(date.getMonth() + 1);
+  const year = date.getFullYear();
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+
+  return `${day}/${month}/${year}, ${hours}.${minutes}.${seconds}`;
 }
