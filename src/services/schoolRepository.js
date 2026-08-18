@@ -184,8 +184,8 @@ export async function saveSchoolState(state) {
       const { error } = await supabase.from(tableName).upsert(dbRows);
       if (error) {
         console.error(`Error saving ${stateKey} to Supabase table ${tableName}:`, error);
-      } else {
-        // Purge obsolete rows in Supabase
+      } else if (tableName !== 'login_accounts') {
+        // Purge obsolete rows in Supabase for non-auth tables
         const activeIds = rows.map(r => r.id).filter(Boolean);
         if (activeIds.length > 0) {
           const formattedIds = activeIds.join(',');

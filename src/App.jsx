@@ -194,28 +194,36 @@ export default function App() {
       .then(() => loadSchoolState())
       .then((cloudState) => {
         if (cloudState) {
-          const cloudAccounts = cloudState.loginAccounts || [];
+          let localState = state;
+          try {
+            const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (saved) localState = JSON.parse(saved);
+          } catch (e) {}
+
+          const merged = mergeLocalDataIntoCloud(cloudState, localState || {});
+
+          const cloudAccounts = merged.loginAccounts || [];
           const cloudUsernames = new Set(cloudAccounts.map(a => a.username));
           const mergedAccounts = [
             ...cloudAccounts,
             ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
           ];
 
-          const freshCloudState = {
-            students: cloudState.students || [],
-            guardians: cloudState.guardians || [],
-            rfidCards: cloudState.rfidCards || [],
-            ledger: cloudState.ledger || [],
-            auditLogs: cloudState.auditLogs || [],
+          const freshState = {
+            students: merged.students || [],
+            guardians: merged.guardians || [],
+            rfidCards: merged.rfidCards || [],
+            ledger: merged.ledger || [],
+            auditLogs: merged.auditLogs || [],
             loginAccounts: mergedAccounts
           };
 
-          lastSyncedStateRef.current = JSON.stringify(freshCloudState);
+          lastSyncedStateRef.current = JSON.stringify(freshState);
           try {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(freshCloudState));
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(freshState));
           } catch (e) {}
 
-          setState(freshCloudState);
+          setState(freshState);
         }
       })
       .catch((error) => console.error('Failed to load Supabase data:', error))
