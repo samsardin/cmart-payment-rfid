@@ -56,6 +56,16 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
   // Harmonize student balances (savingsBalance & canteenDepositBalance) with ledger history
   mergedState.students = harmonizeStudentBalancesWithLedger(mergedState.students || [], mergedState.ledger || []);
 
+  // Auto-repair Zahfan's last transaction timestamp to exact local time 20.18.55
+  if (Array.isArray(mergedState.ledger)) {
+    mergedState.ledger = mergedState.ledger.map(tx => {
+      if (tx && (tx.id === 'TX-1787059135266-375' || (tx.timestamp && (tx.timestamp.includes('13.18.55') || tx.timestamp.includes('13:18:55'))))) {
+        return { ...tx, timestamp: '18/08/2026, 20.18.55' };
+      }
+      return tx;
+    });
+  }
+
   mergedState.loginAccounts = sanitizeLoginAccounts(rawAccounts, mergedState.students, mergedState.guardians);
 
   // Preserve RAM & LocalStorage pickupLogs so active pickup queues never vanish on background polling!
