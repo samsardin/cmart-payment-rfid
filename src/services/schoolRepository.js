@@ -296,8 +296,7 @@ export async function loadSchoolState() {
       // Auto-repair Zahfan's transaction explicitly
       if (tx.id === 'TX-1787059135266-375' || tx.timestamp.includes('13.18.55') || tx.timestamp.includes('13:18:55')) {
         fixedTimestamp = '18/08/2026, 20.18.55';
-      } else if (tx.timestamp.includes('T') || tx.timestamp.includes('Z')) {
-        // Convert historical ISO timestamp (e.g. 2026-08-18T15:18:55.266Z) to exact Indonesian local time string (18/08/2026, 22.18.55)
+      } else {
         fixedTimestamp = formatDisplayTimestamp(tx.timestamp);
       }
 

@@ -22,24 +22,39 @@ export function getLocalTodayDateString(date = new Date()) {
 export function formatDisplayTimestamp(ts) {
   if (!ts) return '-';
   
-  const str = String(ts).trim();
+  let str = String(ts).trim();
 
   // Hard guarantee repair for Zahfan's transaction (TX-1787059135266-375)
   if (str.includes('1787059135266') || str.includes('13.18.55') || str.includes('13:18:55')) {
     return '18/08/2026, 20.18.55';
   }
 
-  // 1. If timestamp is already formatted as Indonesian string (e.g. "18/08/2026, 22.29.25")
-  if (str.includes('/') || (str.includes(',') && !str.includes('T'))) {
-    return str;
-  }
+  let date = null;
 
-  // 2. Handle numeric timestamp or ISO format (e.g. "2026-08-18T15:29:31.000Z")
-  let date;
   if (typeof ts === 'number') {
     date = new Date(ts);
-  } else if (str.includes('T')) {
-    const parsed = Date.parse(str);
+  } else {
+    let parseableStr = str;
+
+    // Handle DD/MM/YYYY, HH.mm.ss or DD/MM/YYYY HH:mm:ss format
+    if (parseableStr.includes('/')) {
+      const dParts = parseableStr.split(/[\s,]+/);
+      if (dParts.length >= 2) {
+        const dateTokens = dParts[0].split('/');
+        const timeTokens = dParts[1].replace(/\./g, ':').split(':');
+        if (dateTokens.length === 3 && timeTokens.length >= 2) {
+          const year = dateTokens[2];
+          const month = dateTokens[1].padStart(2, '0');
+          const day = dateTokens[0].padStart(2, '0');
+          const hour = timeTokens[0].padStart(2, '0');
+          const min = timeTokens[1].padStart(2, '0');
+          const sec = (timeTokens[2] || '00').padStart(2, '0');
+          parseableStr = `${year}-${month}-${day}T${hour}:${min}:${sec}`;
+        }
+      }
+    }
+
+    const parsed = Date.parse(parseableStr);
     if (!isNaN(parsed)) {
       date = new Date(parsed);
     }
@@ -72,13 +87,6 @@ export function formatDisplayTimestamp(ts) {
     }
     return `${day}/${month}/${year}, ${hour}.${minute}.${second}`;
   } catch (e) {
-    const pad = (n) => String(n).padStart(2, '0');
-    const day = pad(date.getDate());
-    const month = pad(date.getMonth() + 1);
-    const year = date.getFullYear();
-    const hours = pad(date.getHours());
-    const minutes = pad(date.getMinutes());
-    const seconds = pad(date.getSeconds());
-    return `${day}/${month}/${year}, ${hours}.${minutes}.${seconds}`;
+    return str;
   }
 }
