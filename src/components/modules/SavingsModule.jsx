@@ -10,9 +10,11 @@ import { verifyRfidCard, checkIdempotency, playRfidBeep } from '../../services/r
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 
 export default function SavingsModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
-  // activeStudent is null by default until an RFID card is scanned
+  // activeStudent is null by default until an RFID card is scanned or student is selected manually
   const [activeStudent, setActiveStudent] = useState(null);
   const [unregisteredUid, setUnregisteredUid] = useState(null);
+  const [selectedManualStudentId, setSelectedManualStudentId] = useState('');
+  const [manualStudentSearch, setManualStudentSearch] = useState('');
   
   // Registration form state for unregistered cards
   const [regStudentId, setRegStudentId] = useState('');
@@ -281,6 +283,8 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
   const handleClearSession = () => {
     setActiveStudent(null);
     setUnregisteredUid(null);
+    setSelectedManualStudentId('');
+    setManualStudentSearch('');
     setFeedback(null);
     setAmount('');
     setDescription('');
@@ -415,14 +419,41 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
           
           <div className="glass-card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <CreditCard size={20} style={{ color: 'var(--primary-600)' }} />
                 Loket Transaksi Siswa (Active Session)
               </h3>
-              <button className="btn btn-secondary btn-sm" onClick={handleClearSession} style={{ fontSize: '0.75rem' }}>
-                <RotateCcw size={14} /> Tap Kartu Lain
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <select
+                  className="form-select"
+                  style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.25rem 0.5rem', borderRadius: '8px', borderColor: 'var(--primary-300)', maxWidth: '200px' }}
+                  value={currentActiveStudent.id}
+                  onChange={(e) => {
+                    const sId = e.target.value;
+                    if (sId) {
+                      const found = state.students.find(s => s.id === sId);
+                      if (found) {
+                        setActiveStudent(found);
+                        setSelectedManualStudentId(sId);
+                        setFeedback({
+                          type: 'success',
+                          text: `Siswa Dipilih Manual: ${found.name} (${found.class}) - NIS: ${found.nis}`
+                        });
+                      }
+                    }
+                  }}
+                >
+                  {state.students.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.class}) — NIS: {s.nis}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn btn-secondary btn-sm" onClick={handleClearSession} style={{ fontSize: '0.75rem' }}>
+                  <RotateCcw size={14} /> Ganti / Reset
+                </button>
+              </div>
             </div>
 
             {/* Student Digital Fintech Card */}
@@ -701,7 +732,159 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
 
         </div>
 
-      ) : null}
+      ) : (
+        /* Manual Student Selection Card (Top-Up Without RFID Tap) */
+        <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: '1.5px solid var(--primary-300)', boxShadow: '0 4px 16px rgba(16, 185, 129, 0.08)' }}>
+          
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{ background: '#ecfdf5', padding: '0.55rem', borderRadius: '12px', color: '#047857', border: '1px solid #a7f3d0' }}>
+                <UserCheck size={26} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', color: 'var(--slate-800)', fontWeight: 800 }}>
+                  Loket Top-Up & Setoran Siswa (Tanpa Tap Kartu)
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--slate-500)' }}>
+                  Pilih atau cari nama/NIS siswa di bawah ini untuk langsung memproses setoran Tabungan Utama & Deposit Kantin.
+                </p>
+              </div>
+            </div>
+            
+            <button className="btn btn-secondary btn-sm" onClick={onOpenRfidModal} style={{ fontWeight: 700, color: 'var(--primary-700)', borderColor: 'var(--primary-300)' }}>
+              <Radio size={16} /> Tap / Simulasi Kartu RFID
+            </button>
+          </div>
+
+          {/* Search & Select Control */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+            
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--primary-900)' }}>
+                <Search size={14} style={{ display: 'inline', marginRight: '4px', color: 'var(--primary-600)' }} />
+                1. Cari & Pilih Siswa dari Dropdown:
+              </label>
+              <select
+                className="form-select"
+                value={selectedManualStudentId}
+                onChange={(e) => {
+                  const sId = e.target.value;
+                  setSelectedManualStudentId(sId);
+                  if (sId) {
+                    const found = state.students.find(s => s.id === sId);
+                    if (found) {
+                      setActiveStudent(found);
+                      setFeedback({
+                        type: 'success',
+                        text: `Siswa Dipilih Manual: ${found.name} (${found.class}) - NIS: ${found.nis}`
+                      });
+                    }
+                  }
+                }}
+                style={{ fontSize: '0.95rem', fontWeight: 700, padding: '0.7rem 0.9rem', borderRadius: '10px', borderColor: 'var(--primary-400)', background: '#f0fdf4' }}
+              >
+                <option value="">-- Klik di sini untuk cari nama / NIS siswa --</option>
+                {state.students.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.class}) — NIS: {s.nis} | Saldo Tabungan: Rp {(s.savingsBalance || 0).toLocaleString('id-ID')} | Deposit: Rp {(s.canteenDepositBalance || 0).toLocaleString('id-ID')}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '0.84rem' }}>
+                2. Filter Cepat Daftar Siswa:
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ketik nama atau NIS untuk memperkecil daftar..."
+                value={manualStudentSearch}
+                onChange={(e) => setManualStudentSearch(e.target.value)}
+                style={{ fontSize: '0.9rem', padding: '0.7rem 0.9rem', borderRadius: '10px' }}
+              />
+            </div>
+
+          </div>
+
+          {/* Quick Select Student Cards */}
+          <div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--slate-600)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Sparkles size={14} style={{ color: 'var(--accent-gold-600)' }} />
+              Atau Klik Kartu Siswa di Bawah Ini:
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
+              {(state.students || [])
+                .filter(s => {
+                  const q = manualStudentSearch.toLowerCase().trim();
+                  if (!q) return true;
+                  return (s.name || '').toLowerCase().includes(q) || (s.nis || '').toLowerCase().includes(q) || (s.class || '').toLowerCase().includes(q);
+                })
+                .slice(0, 8)
+                .map(s => (
+                  <div
+                    key={s.id}
+                    onClick={() => {
+                      setActiveStudent(s);
+                      setSelectedManualStudentId(s.id);
+                      setFeedback({
+                        type: 'success',
+                        text: `Siswa Dipilih Manual: ${s.name} (${s.class}) - NIS: ${s.nis}`
+                      });
+                    }}
+                    className="glass-card"
+                    style={{
+                      padding: '0.85rem',
+                      cursor: 'pointer',
+                      border: '1.5px solid var(--slate-200)',
+                      borderRadius: '12px',
+                      transition: 'all 0.2s ease',
+                      background: 'white'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--primary-500)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--slate-200)';
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <img
+                        src={s.photo}
+                        alt={s.name}
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-400)' }}
+                      />
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.88rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {s.name}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--slate-500)' }}>
+                          {s.class} • NIS: {s.nis}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.6rem', paddingTop: '0.4rem', borderTop: '1px dashed var(--slate-200)', fontSize: '0.72rem' }}>
+                      <span style={{ color: 'var(--primary-700)', fontWeight: 700 }}>
+                        Tabungan: Rp {(s.savingsBalance || 0).toLocaleString('id-ID')}
+                      </span>
+                      <span style={{ color: 'var(--accent-gold-700)', fontWeight: 700 }}>
+                        Deposit: Rp {(s.canteenDepositBalance || 0).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+        </div>
+      )}
 
       {/* Main Full Ledger Transaction Table */}
       <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
