@@ -114,10 +114,11 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
     setIsProcessing(true);
     setFeedback(null);
 
+    const targetStudent = currentActiveStudent || activeStudent;
     const accountType = balanceSource === 'DEPOSIT' ? 'DEPOSIT_KANTIN' : 'TABUNGAN';
     const currentBalance = balanceSource === 'DEPOSIT' 
-      ? (Number(activeStudent.canteenDepositBalance) || 0) 
-      : (Number(activeStudent.savingsBalance) || 0);
+      ? (Number(targetStudent?.canteenDepositBalance) || 0) 
+      : (Number(targetStudent?.savingsBalance) || 0);
 
     if (currentBalance < paymentAmount) {
       setIsProcessing(false);
@@ -130,7 +131,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
 
     try {
       const result = executeLedgerTransaction(state, {
-        studentId: activeStudent.id,
+        studentId: targetStudent.id,
         accountType,
         type: 'DEBIT',
         category: 'BELANJA_KANTIN_RFID',

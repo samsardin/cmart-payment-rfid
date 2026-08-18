@@ -55,14 +55,14 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
   const currentActiveStudent = useMemo(() => {
     if (!activeStudent?.id) return null;
     return state.students.find(s => s.id === activeStudent.id) || activeStudent;
-  }, [state.students, activeStudent]);
+  }, [state.students, activeStudent?.id]);
 
   // Keep activeStudent synced with latest state.students
   useEffect(() => {
     if (activeStudent?.id) {
       const fresh = state.students.find(s => s.id === activeStudent.id);
       if (fresh && (fresh.savingsBalance !== activeStudent.savingsBalance || fresh.canteenDepositBalance !== activeStudent.canteenDepositBalance)) {
-        setActiveStudent({ ...fresh });
+        setActiveStudent(fresh);
       }
     }
   }, [state.students, activeStudent?.id]);
