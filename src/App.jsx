@@ -60,12 +60,22 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     return ca;
   });
 
+  // Merge ledger transactions so local transactions are preserved during background sync polling
+  const cloudLedgerIds = new Set((cloudState.ledger || []).map(l => l && l.id));
+  const localUnsyncedLedger = (localState.ledger || []).filter(l => l && l.id && !cloudLedgerIds.has(l.id));
+  const mergedLedger = [...localUnsyncedLedger, ...(cloudState.ledger || [])];
+
+  // Merge audit logs so local audits are preserved during background sync polling
+  const cloudAuditIds = new Set((cloudState.auditLogs || []).map(a => a && a.id));
+  const localUnsyncedAudit = (localState.auditLogs || []).filter(a => a && a.id && !cloudAuditIds.has(a.id));
+  const mergedAudit = [...localUnsyncedAudit, ...(cloudState.auditLogs || [])];
+
   const mergedState = {
     students: mergedStudents,
     guardians: cloudState.guardians || [],
     rfidCards: cloudState.rfidCards || [],
-    ledger: cloudState.ledger || [],
-    auditLogs: cloudState.auditLogs || [],
+    ledger: mergedLedger,
+    auditLogs: mergedAudit,
     loginAccounts: cloudAccounts
   };
 

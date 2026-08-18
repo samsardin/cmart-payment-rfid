@@ -9,7 +9,7 @@ import { executeLedgerTransaction, recalculateLedgerRunningBalances } from '../.
 import { verifyRfidCard, checkIdempotency, playRfidBeep } from '../../services/rfidService';
 import { getLocalIsoTimestamp, getLocalTodayDateString, formatDisplayTimestamp, parseTimestampMs } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
-import { saveSchoolState } from '../../services/schoolRepository';
+import { saveSchoolState, saveLedgerTransactionToSupabase } from '../../services/schoolRepository';
 
 export default function SavingsModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
   // activeStudent is null by default until an RFID card is scanned or student is selected manually
@@ -265,6 +265,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
         setActiveStudent({ ...updatedActive });
       }
 
+      saveLedgerTransactionToSupabase(result.newTransaction, result.newAudit, updatedActive).catch(err => console.warn('Direct Supabase save error:', err));
       saveSchoolState(newState).catch(err => console.warn('Sync error saving transaction:', err));
 
       if (transactionType === 'CREDIT') {

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { verifyRfidCard, checkIdempotency } from '../../services/rfidService';
 import { executeLedgerTransaction, recalculateLedgerRunningBalances } from '../../services/ledgerEngine';
-import { saveSchoolState } from '../../services/schoolRepository';
+import { saveSchoolState, saveLedgerTransactionToSupabase } from '../../services/schoolRepository';
 import { formatDisplayTimestamp, parseTimestampMs } from '../../services/dateUtils';
 
 export default function CanteenModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
@@ -164,9 +164,10 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
       };
 
       setState(newState);
+      const updatedStudent = result.updatedStudents.find(s => s.id === targetStudent.id);
+      saveLedgerTransactionToSupabase(result.newTransaction, result.newAudit, updatedStudent).catch(err => console.warn('Direct Supabase save error:', err));
       saveSchoolState(newState).catch(err => console.warn('Sync error saving canteen transaction:', err));
 
-      const updatedStudent = result.updatedStudents.find(s => s.id === targetStudent.id);
       if (updatedStudent) {
         setActiveStudent({ ...updatedStudent });
       }

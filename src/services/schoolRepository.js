@@ -519,6 +519,50 @@ export async function forcePullStateFromSupabase() {
   }
 }
 
+export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, updatedStudent = null) {
+  if (!supabase) return { success: false, text: 'Supabase belum aktif.' };
+
+  try {
+    if (newTx) {
+      const dbTx = toDatabaseRow(newTx, 'ledger');
+      const { error: txErr } = await supabase.from('ledger').upsert(dbTx);
+      if (txErr) {
+        console.warn(`Direct upsert ledger TX ${newTx.id} failed (${txErr.message}), retrying clean insert:`, txErr);
+        const cleanTx = {
+          id: dbTx.id,
+          timestamp: dbTx.timestamp || getLocalIsoTimestamp(),
+          student_id: dbTx.student_id,
+          student_name: dbTx.student_name || 'Siswa',
+          account_type: dbTx.account_type || 'DEPOSIT_KANTIN',
+          type: dbTx.type || 'DEBIT',
+          category: dbTx.category || 'BELANJA_KANTIN_RFID',
+          amount: Number(dbTx.amount) || 0,
+          balance_after: Number(dbTx.balance_after) || 0,
+          actor: dbTx.actor || 'Kasir Kantin RFID',
+          reference: dbTx.reference || `REF-${Date.now()}`,
+          description: dbTx.description || 'Transaksi Kantin'
+        };
+        await supabase.from('ledger').upsert(cleanTx);
+      }
+    }
+
+    if (updatedStudent) {
+      const dbStudent = toDatabaseRow(updatedStudent, 'students');
+      await supabase.from('students').upsert(dbStudent);
+    }
+
+    if (newAudit) {
+      const dbAudit = toDatabaseRow(newAudit, 'auditLogs');
+      await supabase.from('audit_logs').upsert(dbAudit);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Error saving ledger transaction to Supabase:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function saveAccountToSupabase(username, password, roleId = 'KASIR_KANTIN', accId = null) {
   if (!supabase) return { success: false, text: 'Supabase belum aktif.' };
   const cleanUname = (username || '').trim().toLowerCase();
