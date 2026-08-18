@@ -33,11 +33,12 @@ export default function LoginPage({ onPasswordLogin, onRfidLogin, rfidFeedback }
           </div>
           <h1 style={{ color: '#ffffff', fontSize: '1.65rem', lineHeight: 1.2, fontWeight: 800 }}>C-Mart Payment</h1>
           <p style={{ color: '#d1fae5', marginTop: '0.5rem', fontSize: '0.88rem', lineHeight: 1.6 }}>Sistem Pembayaran CMart berbasis kartu RFID melalui Deposit atau Tabungan</p>
-          <div className="login-rfid-info-box" style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.2)', fontSize: '0.84rem', color: '#ecfdf5', lineHeight: 1.6, textAlign: 'left' }}>
-            <b style={{ color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-              <CreditCard size={16} style={{ color: '#34d399' }} /> Login Kartu RFID
+          <div className="login-rfid-info-box" style={{ width: '100%', marginTop: '1.5rem', padding: '0.85rem 1rem', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.2)', fontSize: '0.78rem', color: '#ecfdf5', lineHeight: 1.5, textAlign: 'left' }}>
+            <b style={{ color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.3rem' }}>
+              <CreditCard size={15} style={{ color: '#34d399' }} /> Login Kartu RFID & Wali Murid
             </b>
-            Siswa dan orang tua/wali dapat tap kartu RFID di halaman ini untuk masuk langsung ke portal masing-masing.
+            <div>• <b>Tap Kartu:</b> Tap kartu RFID untuk masuk ke portal otomatis.</div>
+            <div>• <b>Orang Tua / Wali:</b> Masukkan <b>No. HP / WA Wali</b> atau <b>NIS Anak</b> (Password: <code>wali123</code>).</div>
           </div>
         </div>
 
