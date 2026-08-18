@@ -1134,37 +1134,44 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   };
 
   // -------------------------------------------------------------
-  // MASTER SISWA: EXPORT DATA TO .XLSX
+  // MASTER SISWA & WALI: EXPORT DATA TO .XLSX
   // -------------------------------------------------------------
   const handleExportExcelSiswa = () => {
     const columns = [
-      'ID Siswa',
       'NIS',
-      'Nama Lengkap',
+      'Nama Siswa',
       'Kelas',
+      'Jenis Kelamin',
+      'Nama Wali',
+      'No HP Wali',
+      'Hubungan',
       'UID RFID',
-      'Status Keaktifan',
-      'Nama Orang Tua/Wali',
       'Saldo Tabungan (Rp)',
-      'Saldo Deposit Kantin (Rp)'
+      'Saldo Kantin (Rp)',
+      'Status'
     ];
 
-    const dataRows = (state.students || []).map(s => [
-      s.id,
-      s.nis,
-      s.name,
-      s.class,
-      s.rfidUid || '',
-      s.status || 'AKTIF',
-      s.guardianName || '',
-      Number(s.savingsBalance) || 0,
-      Number(s.canteenDepositBalance) || 0
-    ]);
+    const dataRows = (state.students || []).map(s => {
+      const gdr = (state.guardians || []).find(g => g.id === s.guardianId);
+      return [
+        s.nis || '',
+        s.name || '',
+        s.class || '',
+        s.gender || 'L',
+        gdr ? gdr.name : (s.guardianName || ''),
+        gdr ? (gdr.phone || '') : (s.guardianPhone || ''),
+        gdr ? (gdr.relationship || 'Ayah') : (s.guardianRelationship || 'Ayah'),
+        s.rfidUid || '',
+        Number(s.savingsBalance) || 0,
+        Number(s.canteenDepositBalance) || 0,
+        s.status || 'AKTIF'
+      ];
+    });
 
     exportToExcelXlsx({
-      filename: `master_data_siswa_${new Date().toISOString().slice(0, 10)}.xlsx`,
-      sheetName: 'Data Siswa',
-      title: 'MASTER DATA SISWA & PEMETAAN KELAS',
+      filename: `master_data_siswa_dan_wali_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      sheetName: 'Data Siswa & Wali',
+      title: 'MASTER DATA SISWA & KONEKSI ORANG TUA WALI',
       summaryRows: [
         ['Tanggal Cetak', new Date().toLocaleString('id-ID')],
         ['Total Siswa', (state.students || []).length]
@@ -1173,42 +1180,63 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       dataRows
     });
 
-    setFeedback({ type: 'success', text: 'Master data siswa berhasil diunduh dalam format Microsoft Excel (.xlsx).' });
+    setFeedback({ type: 'success', text: 'Master data siswa & wali berhasil diunduh dalam format Microsoft Excel (.xlsx).' });
   };
 
   // Download Template for Excel Import/Update (Row 1 starts with Column Headers)
   const handleDownloadTemplateSiswa = () => {
     const columns = [
-      'ID Siswa',
       'NIS',
-      'Nama Lengkap',
+      'Nama Siswa',
       'Kelas',
+      'Jenis Kelamin',
+      'Nama Wali',
+      'No HP Wali',
+      'Hubungan',
       'UID RFID',
+      'Saldo Tabungan',
+      'Saldo Kantin',
       'Status'
     ];
 
-    // Include existing student data as template rows so admins can easily modify class names!
-    const dataRows = (state.students || []).map(s => [
-      s.id,
-      s.nis,
-      s.name,
-      s.class,
-      s.rfidUid || '',
-      s.status || 'AKTIF'
-    ]);
+    let dataRows = (state.students || []).map(s => {
+      const gdr = (state.guardians || []).find(g => g.id === s.guardianId);
+      return [
+        s.nis || '',
+        s.name || '',
+        s.class || '',
+        s.gender || 'L',
+        gdr ? gdr.name : (s.guardianName || ''),
+        gdr ? (gdr.phone || '') : (s.guardianPhone || ''),
+        gdr ? (gdr.relationship || 'Ayah') : (s.guardianRelationship || 'Ayah'),
+        s.rfidUid || '',
+        Number(s.savingsBalance) || 0,
+        Number(s.canteenDepositBalance) || 0,
+        s.status || 'AKTIF'
+      ];
+    });
+
+    if (dataRows.length === 0) {
+      dataRows = [
+        ['1001', 'Ahmad Fatih', '6-A Tahfidz', 'L', 'Hendra Wijaya', '081234567890', 'Ayah', '0959036483', 50000, 20000, 'AKTIF'],
+        ['1002', 'Aisyah Putri', '5-B Reguler', 'P', 'Ratna Sari', '081987654321', 'Ibu', '', 0, 0, 'AKTIF']
+      ];
+    }
 
     exportToExcelXlsx({
-      filename: `template_update_kelas_siswa_${new Date().toISOString().slice(0, 10)}.xlsx`,
-      sheetName: 'Update Kelas Siswa',
+      filename: `template_import_siswa_dan_wali_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      sheetName: 'Import Siswa & Wali',
       title: null,
       summaryRows: [],
       columns,
       dataRows
     });
+
+    setFeedback({ type: 'success', text: 'Template Excel Import Siswa & Wali berhasil diunduh. Silakan isi dan upload kembali.' });
   };
 
   // -------------------------------------------------------------
-  // MASTER SISWA: IMPORT & BATCH UPDATE FROM .XLSX FILE
+  // MASTER SISWA & WALI: BATCH IMPORT FROM .XLSX FILE
   // -------------------------------------------------------------
   const handleFileUploadSiswa = (e) => {
     const file = e.target.files[0];
@@ -1223,7 +1251,6 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         const wsName = wb.SheetNames[0];
         const ws = wb.Sheets[wsName];
 
-        // 1. Get 2D array representation of worksheet
         const sheet2D = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
         if (!sheet2D || sheet2D.length === 0) {
@@ -1231,13 +1258,12 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           return;
         }
 
-        // 2. Find Header Row index in 2D array
         let headerRowIndex = -1;
         for (let i = 0; i < sheet2D.length; i++) {
           const rowCells = sheet2D[i];
           if (Array.isArray(rowCells) && rowCells.length > 0) {
             const rowStr = rowCells.map(c => String(c || '').toLowerCase()).join(' ');
-            if (rowStr.includes('nis') || rowStr.includes('nama') || rowStr.includes('kelas') || rowStr.includes('id siswa') || rowStr.includes('rfid')) {
+            if (rowStr.includes('nis') || rowStr.includes('nama') || rowStr.includes('kelas') || rowStr.includes('wali')) {
               headerRowIndex = i;
               break;
             }
@@ -1245,20 +1271,17 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         }
 
         if (headerRowIndex === -1) {
-          headerRowIndex = 0; // Default to row 0 if no explicit header row detected
+          headerRowIndex = 0;
         }
 
         const headerRow = (sheet2D[headerRowIndex] || []).map(c => String(c || '').trim());
 
-        // 3. Precise Two-Pass Column Index Matcher
         const findColIdx = (exactKeywords, fallbackKeywords = []) => {
-          // Pass 1: Exact Alphanumeric Match
           for (const kw of exactKeywords) {
             const cleanKw = kw.toLowerCase().replace(/[^a-z0-9]/g, '');
             const idx = headerRow.findIndex(h => h.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanKw);
             if (idx !== -1) return idx;
           }
-          // Pass 2: Substring Match
           for (const kw of fallbackKeywords) {
             const cleanKw = kw.toLowerCase().replace(/[^a-z0-9]/g, '');
             const idx = headerRow.findIndex(h => h.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanKw));
@@ -1267,17 +1290,25 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           return -1;
         };
 
-        const idColIdx = findColIdx(['idsiswa', 'id_siswa', 'studentid', 'student_id', 'id']);
         const nisColIdx = findColIdx(['nis', 'nisn', 'nomorinduk', 'nonis'], ['nis', 'induk']);
-        const nameColIdx = findColIdx(['namalengkap', 'namasiswa', 'nama', 'fullname', 'name'], ['nama', 'name']);
+        const nameColIdx = findColIdx(['namasiswa', 'namalengkap', 'nama', 'fullname', 'name'], ['nama', 'name']);
         const classColIdx = findColIdx(['kelas', 'class', 'kls'], ['kelas', 'class', 'kls']);
+        const genderColIdx = findColIdx(['jeniskelamin', 'jk', 'gender', 'kelamin'], ['kelamin', 'gender']);
+        const gdrNameColIdx = findColIdx(['namawali', 'namaorangtua', 'namaparent', 'wali', 'orangtua'], ['wali', 'orangtua']);
+        const gdrPhoneColIdx = findColIdx(['nohpwali', 'nohp', 'telepon', 'wa', 'hp', 'phone', 'telp'], ['hp', 'phone', 'wa', 'telp']);
+        const gdrRelColIdx = findColIdx(['hubungan', 'relasi', 'relationship'], ['hubungan', 'relasi']);
         const rfidColIdx = findColIdx(['uidrfid', 'rfiduid', 'rfid', 'uid'], ['rfid', 'uid']);
+        const savingsColIdx = findColIdx(['saldotabungan', 'tabungan', 'savings'], ['tabungan']);
+        const canteenColIdx = findColIdx(['saldokantin', 'kantin', 'deposit'], ['kantin']);
         const statusColIdx = findColIdx(['status'], ['status']);
+        const idColIdx = findColIdx(['idsiswa', 'id_siswa', 'studentid', 'id']);
 
         let updatedCount = 0;
         let addedCount = 0;
+        let guardianCreatedCount = 0;
 
         const currentStudents = [...(state.students || [])];
+        const currentGuardians = [...(state.guardians || [])];
 
         const cleanStr = (val) => {
           if (val === undefined || val === null) return '';
@@ -1288,7 +1319,6 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
         const cleanAlphaNum = (val) => cleanStr(val).toLowerCase().replace(/[^a-z0-9]/g, '');
 
-        // 4. Process data rows starting from headerRowIndex + 1
         for (let r = headerRowIndex + 1; r < sheet2D.length; r++) {
           const row = sheet2D[r];
           if (!Array.isArray(row) || row.length === 0) continue;
@@ -1297,61 +1327,97 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           let nis = nisColIdx !== -1 && row[nisColIdx] !== undefined ? cleanStr(row[nisColIdx]) : '';
           let name = nameColIdx !== -1 && row[nameColIdx] !== undefined ? cleanStr(row[nameColIdx]) : '';
           let cls = classColIdx !== -1 && row[classColIdx] !== undefined ? cleanStr(row[classColIdx]) : '';
+          let gender = genderColIdx !== -1 && row[genderColIdx] !== undefined ? cleanStr(row[genderColIdx]).toUpperCase() : 'L';
+          if (gender.startsWith('P') || gender.startsWith('W')) gender = 'P'; else gender = 'L';
+
+          let gdrName = gdrNameColIdx !== -1 && row[gdrNameColIdx] !== undefined ? cleanStr(row[gdrNameColIdx]) : '';
+          let gdrPhone = gdrPhoneColIdx !== -1 && row[gdrPhoneColIdx] !== undefined ? cleanStr(row[gdrPhoneColIdx]) : '';
+          let gdrRel = gdrRelColIdx !== -1 && row[gdrRelColIdx] !== undefined ? cleanStr(row[gdrRelColIdx]) : 'Ayah';
           let rfid = rfidColIdx !== -1 && row[rfidColIdx] !== undefined ? cleanStr(row[rfidColIdx]).toUpperCase() : '';
           let status = statusColIdx !== -1 && row[statusColIdx] !== undefined ? cleanStr(row[statusColIdx]).toUpperCase() : 'AKTIF';
+          let savingsVal = savingsColIdx !== -1 && row[savingsColIdx] !== undefined && row[savingsColIdx] !== '' ? Number(row[savingsColIdx]) || 0 : null;
+          let canteenVal = canteenColIdx !== -1 && row[canteenColIdx] !== undefined && row[canteenColIdx] !== '' ? Number(row[canteenColIdx]) || 0 : null;
 
-          // POSITIONAL / CELL-BY-CELL FALLBACK IF HEADER MATCHING WAS PARTIAL
-          if (!id && !nis && !name) {
-            // Scan all cells in the row to auto-detect roles
-            row.forEach(cell => {
-              const strCell = cleanStr(cell);
-              if (!strCell) return;
-              if (strCell.toUpperCase().startsWith('STD-')) id = strCell;
-              else if (strCell.toUpperCase().startsWith('RFID-')) rfid = strCell.toUpperCase();
-              else if (/^\d{5,12}$/.test(strCell) && !nis) nis = strCell; // Numeric 5-12 digits is NIS
-              else if (/[a-zA-Z]/.test(strCell) && strCell.length > 2 && !name) name = strCell;
-              else if ((strCell.length <= 15 || strCell.toLowerCase().includes('kelas')) && !cls) cls = strCell;
+          if (!name && !nis && !id) continue;
+
+          // GUARDIAN BINDING & AUTO CREATION
+          let targetGuardianId = '';
+          if (gdrName || gdrPhone) {
+            const cleanPhone = cleanAlphaNum(gdrPhone);
+            const cleanGdrName = cleanAlphaNum(gdrName);
+
+            let existingGdrIndex = currentGuardians.findIndex(g => {
+              if (cleanPhone && cleanAlphaNum(g.phone) === cleanPhone) return true;
+              if (cleanGdrName && cleanAlphaNum(g.name) === cleanGdrName) return true;
+              return false;
             });
-          }
 
-          if (!name && !nis && !id) continue; // Skip empty rows
+            if (existingGdrIndex >= 0) {
+              targetGuardianId = currentGuardians[existingGdrIndex].id;
+              currentGuardians[existingGdrIndex] = {
+                ...currentGuardians[existingGdrIndex],
+                name: gdrName || currentGuardians[existingGdrIndex].name,
+                phone: gdrPhone || currentGuardians[existingGdrIndex].phone,
+                relationship: gdrRel || currentGuardians[existingGdrIndex].relationship
+              };
+            } else {
+              targetGuardianId = `GDR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+              currentGuardians.push({
+                id: targetGuardianId,
+                name: gdrName || `Wali dari ${name}`,
+                phone: gdrPhone,
+                relationship: gdrRel || 'Ayah',
+                studentId: '',
+                rfidCardUid: '',
+                address: ''
+              });
+              guardianCreatedCount++;
+            }
+          }
 
           const cleanTargetId = cleanAlphaNum(id);
           const cleanTargetNis = cleanAlphaNum(nis);
           const cleanTargetName = cleanAlphaNum(name);
 
-          // Ultra Flexible Student Matcher
           const targetIndex = currentStudents.findIndex(s => {
             if (cleanTargetId && cleanAlphaNum(s.id) === cleanTargetId) return true;
             if (cleanTargetNis && cleanAlphaNum(s.nis) === cleanTargetNis) return true;
             if (cleanTargetName && cleanAlphaNum(s.name) === cleanTargetName) return true;
-            if (cleanTargetName && cleanTargetName.length > 3 && cleanAlphaNum(s.name).includes(cleanTargetName)) return true;
             return false;
           });
 
           if (targetIndex >= 0) {
-            // SELECTIVE UPDATE: Update class, name, nis, rfid, status ONLY!
+            const existingStudent = currentStudents[targetIndex];
             currentStudents[targetIndex] = {
-              ...currentStudents[targetIndex],
-              class: cls || currentStudents[targetIndex].class,
-              name: name || currentStudents[targetIndex].name,
-              nis: nis || currentStudents[targetIndex].nis,
-              rfidUid: rfid || currentStudents[targetIndex].rfidUid,
-              status: status || currentStudents[targetIndex].status
+              ...existingStudent,
+              name: name || existingStudent.name,
+              nis: nis || existingStudent.nis,
+              class: cls || existingStudent.class,
+              gender: gender || existingStudent.gender || 'L',
+              guardianId: targetGuardianId || existingStudent.guardianId,
+              guardianName: gdrName || existingStudent.guardianName,
+              guardianPhone: gdrPhone || existingStudent.guardianPhone,
+              guardianRelationship: gdrRel || existingStudent.guardianRelationship,
+              rfidUid: rfid || existingStudent.rfidUid,
+              savingsBalance: savingsVal !== null ? savingsVal : existingStudent.savingsBalance,
+              canteenDepositBalance: canteenVal !== null ? canteenVal : existingStudent.canteenDepositBalance,
+              status: status || existingStudent.status
             };
             updatedCount++;
-          } else if (name && nis) {
-            // Add new student if not matched
+          } else {
             const newId = id || `STD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
             currentStudents.push({
               id: newId,
-              nis,
-              name,
+              nis: nis || newId,
+              name: name || 'Siswa Baru',
               class: cls || 'Kelas Baru',
-              guardianId: '',
-              guardianName: '',
-              savingsBalance: 0,
-              canteenDepositBalance: 0,
+              gender: gender || 'L',
+              guardianId: targetGuardianId,
+              guardianName: gdrName,
+              guardianPhone: gdrPhone,
+              guardianRelationship: gdrRel,
+              savingsBalance: savingsVal !== null ? savingsVal : 0,
+              canteenDepositBalance: canteenVal !== null ? canteenVal : 0,
               canteenBalanceSource: 'TABUNGAN',
               rfidUid: rfid,
               photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
@@ -1368,26 +1434,29 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           action: 'IMPORT_BATCH_DATA_SISWA',
           entity: 'students',
           entityId: 'BATCH',
-          details: `Import/Update batch data siswa via Excel: ${updatedCount} siswa di-update (termasuk kelas) & ${addedCount} siswa baru. Saldo & mutasi utuh!`,
+          details: `Import/Update batch Siswa & Wali via Excel: ${updatedCount} siswa di-update, ${addedCount} siswa baru, ${guardianCreatedCount} wali baru terbuat.`,
           ip: getClientIpAndDevice()
         };
 
-        setState(prev => ({
-          ...prev,
+        const updatedState = {
+          ...state,
           students: currentStudents,
-          auditLogs: [auditLog, ...(prev.auditLogs || [])]
-        }));
+          guardians: currentGuardians,
+          auditLogs: [auditLog, ...(state.auditLogs || [])]
+        };
+
+        setState(updatedState);
+        saveSchoolState(updatedState);
 
         if (updatedCount > 0 || addedCount > 0) {
           setFeedback({
             type: 'success',
-            text: `✅ Import Sukses! ${updatedCount} data kelas/nama siswa berhasil diperbarui & ${addedCount} siswa baru ditambahkan. Seluruh saldo tabungan & deposit tetap utuh!`
+            text: `✅ Import Excel Sukses! ${addedCount} siswa baru ditambahkan, ${updatedCount} siswa di-update, dan ${guardianCreatedCount} data wali baru otomatis terbuat & terhubung!`
           });
         } else {
-          const sampleHeaders = headerRow.join(', ');
           setFeedback({
             type: 'warning',
-            text: `⚠️ Dibaca ${sheet2D.length - headerRowIndex - 1} baris dari Excel (Header: [${sampleHeaders}]). Tidak ada data NIS/Nama yang cocok dengan data siswa di sistem.`
+            text: `⚠️ File Excel dibaca (${sheet2D.length - headerRowIndex - 1} baris), namun tidak ada baris data siswa yang dapat diproses.`
           });
         }
 
