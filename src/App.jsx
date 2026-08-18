@@ -60,15 +60,9 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     return ca;
   });
 
-  // Merge ledger transactions so local transactions are preserved during background sync polling
-  const cloudLedgerIds = new Set((cloudState.ledger || []).map(l => l && l.id));
-  const localUnsyncedLedger = (localState.ledger || []).filter(l => l && l.id && !cloudLedgerIds.has(l.id));
-  const mergedLedger = [...localUnsyncedLedger, ...(cloudState.ledger || [])];
-
-  // Merge audit logs so local audits are preserved during background sync polling
-  const cloudAuditIds = new Set((cloudState.auditLogs || []).map(a => a && a.id));
-  const localUnsyncedAudit = (localState.auditLogs || []).filter(a => a && a.id && !cloudAuditIds.has(a.id));
-  const mergedAudit = [...localUnsyncedAudit, ...(cloudState.auditLogs || [])];
+  // STRICT SYNC: Purge phantom local transactions and use ONLY real ledger & audit logs from Supabase Cloud!
+  const mergedLedger = cloudState.ledger || [];
+  const mergedAudit = cloudState.auditLogs || [];
 
   const mergedState = {
     students: mergedStudents,
@@ -85,29 +79,10 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
   ];
 
-  // Ensure student balances in UI match Supabase Cloud students table 100%, plus any local unsynced transactions in RAM.
-  const unsyncedTxMap = new Map();
-  localUnsyncedLedger.forEach(tx => {
-    const sId = tx.studentId || tx.student_id;
-    if (!sId) return;
-    const accType = tx.accountType || 'TABUNGAN';
-    const key = `${sId}_${accType}`;
-    unsyncedTxMap.set(key, Number(tx.balanceAfter ?? tx.balance_after));
-  });
-
+  // Ensure student balances in UI match Supabase Cloud students table 100%
   mergedState.students = mergedStudents.map(student => {
     let savingsBalance = Number(student.savingsBalance ?? student.savings_balance) || 0;
     let canteenDepositBalance = Number(student.canteenDepositBalance ?? student.canteen_deposit_balance) || 0;
-
-    const savKey = `${student.id}_TABUNGAN`;
-    if (unsyncedTxMap.has(savKey)) {
-      savingsBalance = unsyncedTxMap.get(savKey);
-    }
-
-    const depKey = `${student.id}_DEPOSIT_KANTIN`;
-    if (unsyncedTxMap.has(depKey)) {
-      canteenDepositBalance = unsyncedTxMap.get(depKey);
-    }
 
     return {
       ...student,
