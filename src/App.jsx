@@ -60,9 +60,24 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     return ca;
   });
 
-  // STRICT SYNC: Purge phantom local transactions and use ONLY real ledger & audit logs from Supabase Cloud!
-  const mergedLedger = cloudState.ledger || [];
-  const mergedAudit = cloudState.auditLogs || [];
+  // Preserve recent local transactions from RAM created in the last 2 minutes while cloud sync completes
+  const cloudLedgerIds = new Set((cloudState.ledger || []).map(l => l && l.id));
+  const nowMs = Date.now();
+  const recentLocalUnsynced = (localState.ledger || []).filter(l => {
+    if (!l || !l.id || cloudLedgerIds.has(l.id)) return false;
+    const txTimeMs = parseTimestampMs(l.timestamp);
+    return txTimeMs > 0 && (nowMs - txTimeMs) < 120000;
+  });
+
+  const mergedLedger = [...recentLocalUnsynced, ...(cloudState.ledger || [])];
+
+  const cloudAuditIds = new Set((cloudState.auditLogs || []).map(a => a && a.id));
+  const recentLocalAudit = (localState.auditLogs || []).filter(a => {
+    if (!a || !a.id || cloudAuditIds.has(a.id)) return false;
+    const audTimeMs = parseTimestampMs(a.timestamp);
+    return audTimeMs > 0 && (nowMs - audTimeMs) < 120000;
+  });
+  const mergedAudit = [...recentLocalAudit, ...(cloudState.auditLogs || [])];
 
   const mergedState = {
     students: mergedStudents,

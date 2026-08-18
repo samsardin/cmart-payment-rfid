@@ -19,12 +19,46 @@ const tableMappings = [
   ['loginAccounts', 'login_accounts'],
 ];
 
+function toValidIsoString(ts) {
+  if (!ts) return new Date().toISOString();
+  if (ts instanceof Date) return ts.toISOString();
+
+  const str = String(ts).trim();
+  if (/^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}/.test(str)) {
+    return str;
+  }
+
+  if (str.includes('/')) {
+    const parts = str.split(/[\s,]+/);
+    if (parts.length >= 2) {
+      const dTokens = parts[0].split('/');
+      const tTokens = parts[1].replace(/\./g, ':').split(':');
+      if (dTokens.length === 3 && tTokens.length >= 2) {
+        const year = dTokens[2];
+        const month = String(dTokens[1]).padStart(2, '0');
+        const day = String(dTokens[0]).padStart(2, '0');
+        const hour = String(tTokens[0]).padStart(2, '0');
+        const min = String(tTokens[1]).padStart(2, '0');
+        const sec = String(tTokens[2] || '0').padStart(2, '0');
+        return `${year}-${month}-${day}T${hour}:${min}:${sec}.000Z`;
+      }
+    }
+  }
+
+  const ms = Date.parse(str);
+  if (!isNaN(ms)) {
+    return new Date(ms).toISOString();
+  }
+
+  return new Date().toISOString();
+}
+
 const toDatabaseRow = (row, tableKey) => {
   const mapped = Object.fromEntries(
     Object.entries(row).map(([key, value]) => [key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), value])
   );
 
-  const nowIso = getLocalIsoTimestamp();
+  const nowIso = new Date().toISOString();
 
   // Guarantee mandatory database column constraints per table schema
   if (tableKey === 'students') {
@@ -72,7 +106,7 @@ const toDatabaseRow = (row, tableKey) => {
   }
   if (tableKey === 'ledger') {
     if (!mapped.id) mapped.id = `TX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    if (!mapped.timestamp) mapped.timestamp = nowIso;
+    mapped.timestamp = toValidIsoString(mapped.timestamp || row.timestamp);
     if (!mapped.student_id) mapped.student_id = row.studentId || row.student_id || 'STD-UNKNOWN';
     if (!mapped.student_name) mapped.student_name = row.studentName || row.student_name || 'Siswa';
     if (!mapped.account_type) mapped.account_type = row.accountType || row.account_type || 'DEPOSIT_KANTIN';
@@ -86,7 +120,7 @@ const toDatabaseRow = (row, tableKey) => {
     delete mapped.updated_at;
   }
   if (tableKey === 'auditLogs') {
-    if (!mapped.timestamp) mapped.timestamp = nowIso;
+    mapped.timestamp = toValidIsoString(mapped.timestamp || row.timestamp);
     if (!mapped.actor) mapped.actor = 'System';
     if (!mapped.action) mapped.action = 'LOG';
     if (!mapped.entity) mapped.entity = 'system';
