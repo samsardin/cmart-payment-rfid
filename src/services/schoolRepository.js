@@ -26,6 +26,17 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.status) mapped.status = 'AKTIF';
     if (mapped.savings_balance === undefined || mapped.savings_balance === null) mapped.savings_balance = 0;
     if (mapped.canteen_deposit_balance === undefined || mapped.canteen_deposit_balance === null) mapped.canteen_deposit_balance = 0;
+
+    // Ensure guardian_id is NULL if empty string, preventing FK constraint errors in Supabase
+    if (!mapped.guardian_id || typeof mapped.guardian_id !== 'string' || mapped.guardian_id.trim() === '') {
+      mapped.guardian_id = null;
+    }
+
+    // Guarantee non-empty unique NIS
+    if (!mapped.nis || typeof mapped.nis !== 'string' || mapped.nis.trim() === '') {
+      mapped.nis = mapped.id || `NIS-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    }
+
     delete mapped.guardian_phone;
     delete mapped.guardian_relationship;
     delete mapped.updated_at;
@@ -252,17 +263,16 @@ export async function saveSchoolState(state) {
           console.warn(`Batch upsert students returned error (${error.message}), falling back to row-by-row:`, error);
           for (const dbRow of dbRows) {
             try {
-              const { error: rowErr } = await supabase.from(tableName).upsert(dbRow);
+              let { error: rowErr } = await supabase.from(tableName).upsert(dbRow);
               if (rowErr) {
-                console.error(`Failed upserting student ${dbRow.name} (${dbRow.id}):`, rowErr);
+                console.warn(`Upsert student ${dbRow.name} failed (${rowErr.message}), retrying with guardian_id = null...`);
+                const retryRow = { ...dbRow, guardian_id: null };
+                const { error: retryErr } = await supabase.from(tableName).upsert(retryRow);
+                if (retryErr) {
+                  console.error(`Failed upserting student ${dbRow.name} (${dbRow.id}):`, retryErr);
+                }
               }
             } catch (e) {}
-          }
-        } else {
-          const activeIds = rows.map(r => r.id).filter(Boolean);
-          if (activeIds.length > 0) {
-            const formattedIds = activeIds.join(',');
-            await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
           }
         }
       } else if (tableName === 'guardians') {
