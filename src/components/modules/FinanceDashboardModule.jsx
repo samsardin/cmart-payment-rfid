@@ -5,7 +5,7 @@ import {
   PiggyBank, BadgeDollarSign, Calendar, FileSpreadsheet, Download, Filter
 } from 'lucide-react';
 import { exportToExcelXlsx } from '../../services/excelExporter';
-import { recalculateLedgerRunningBalances } from '../../services/ledgerEngine';
+import { recalculateLedgerRunningBalances, parseSafeTimestamp } from '../../services/ledgerEngine';
 
 const MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -16,7 +16,7 @@ export default function FinanceDashboardModule({ state }) {
   const currentDate = new Date();
   
   // Time period filter: 'TODAY' (Harian), 'WEEKLY' (Pekanan), 'MONTHLY' (Bulanan), 'ALL' (Semua Waktu)
-  const [timeRange, setTimeRange] = useState('TODAY');
+  const [timeRange, setTimeRange] = useState('ALL');
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth()); // 0 - 11
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,8 +26,11 @@ export default function FinanceDashboardModule({ state }) {
     const yearsSet = new Set([currentDate.getFullYear()]);
     (state.ledger || []).forEach(tx => {
       if (tx.timestamp) {
-        const y = new Date(tx.timestamp).getFullYear();
-        if (!isNaN(y)) yearsSet.add(y);
+        const ms = parseSafeTimestamp(tx.timestamp);
+        if (ms) {
+          const y = new Date(ms).getFullYear();
+          if (!isNaN(y)) yearsSet.add(y);
+        }
       }
     });
     return Array.from(yearsSet).sort((a, b) => b - a);
@@ -41,12 +44,14 @@ export default function FinanceDashboardModule({ state }) {
 
     return fixedLedger.filter(tx => {
       if (!tx.timestamp) return false;
-      const txDate = new Date(tx.timestamp);
+      const txMs = parseSafeTimestamp(tx.timestamp);
+      if (!txMs) return false;
+      const txDate = new Date(txMs);
 
       if (timeRange === 'TODAY') {
         return txDate.toDateString() === now.toDateString();
       } else if (timeRange === 'WEEKLY') {
-        const diffDays = (now - txDate) / (1000 * 3600 * 24);
+        const diffDays = (now.getTime() - txMs) / (1000 * 3600 * 24);
         return diffDays >= 0 && diffDays <= 7;
       } else if (timeRange === 'MONTHLY') {
         return txDate.getMonth() === Number(selectedMonth) && txDate.getFullYear() === Number(selectedYear);
@@ -86,7 +91,7 @@ export default function FinanceDashboardModule({ state }) {
     });
 
     const recentTransactions = [...searchMatches]
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      .sort((a, b) => parseSafeTimestamp(b.timestamp) - parseSafeTimestamp(a.timestamp));
 
     return {
       totalSavings,
