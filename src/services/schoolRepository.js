@@ -180,16 +180,40 @@ export async function saveSchoolState(state) {
     }
 
     try {
-      const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
-      const { error } = await supabase.from(tableName).upsert(dbRows);
-      if (error) {
-        console.error(`Error saving ${stateKey} to Supabase table ${tableName}:`, error);
-      } else if (tableName !== 'login_accounts') {
-        // Purge obsolete rows in Supabase for non-auth tables
-        const activeIds = rows.map(r => r.id).filter(Boolean);
-        if (activeIds.length > 0) {
-          const formattedIds = activeIds.join(',');
-          await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
+      if (tableName === 'login_accounts') {
+        for (const r of rows) {
+          try {
+            const dbRow = toDatabaseRow(r, stateKey);
+            let { error: accErr } = await supabase.from(tableName).upsert(dbRow);
+            if (accErr) {
+              console.warn(`Upsert account ${dbRow.username} returned error, attempting clean fallback:`, accErr);
+              const fallbackRow = {
+                id: dbRow.id,
+                username: dbRow.username,
+                password: dbRow.password,
+                role_id: dbRow.role_id
+              };
+              const { error: retryErr } = await supabase.from(tableName).upsert(fallbackRow);
+              if (retryErr) {
+                console.error(`Failed upserting account ${dbRow.username}:`, retryErr);
+              }
+            }
+          } catch (accExc) {
+            console.warn(`Exception upserting account ${r.username}:`, accExc);
+          }
+        }
+      } else {
+        const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
+        const { error } = await supabase.from(tableName).upsert(dbRows);
+        if (error) {
+          console.error(`Error saving ${stateKey} to Supabase table ${tableName}:`, error);
+        } else {
+          // Purge obsolete rows in Supabase for non-auth tables
+          const activeIds = rows.map(r => r.id).filter(Boolean);
+          if (activeIds.length > 0) {
+            const formattedIds = activeIds.join(',');
+            await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
+          }
         }
       }
     } catch (tableErr) {
