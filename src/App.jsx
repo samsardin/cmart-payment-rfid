@@ -60,24 +60,9 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     return ca;
   });
 
-  // Preserve recent local transactions from RAM created in the last 2 minutes while cloud sync completes
-  const cloudLedgerIds = new Set((cloudState.ledger || []).map(l => l && l.id));
-  const nowMs = Date.now();
-  const recentLocalUnsynced = (localState.ledger || []).filter(l => {
-    if (!l || !l.id || cloudLedgerIds.has(l.id)) return false;
-    const txTimeMs = parseTimestampMs(l.timestamp);
-    return txTimeMs > 0 && (nowMs - txTimeMs) < 120000;
-  });
-
-  const mergedLedger = [...recentLocalUnsynced, ...(cloudState.ledger || [])];
-
-  const cloudAuditIds = new Set((cloudState.auditLogs || []).map(a => a && a.id));
-  const recentLocalAudit = (localState.auditLogs || []).filter(a => {
-    if (!a || !a.id || cloudAuditIds.has(a.id)) return false;
-    const audTimeMs = parseTimestampMs(a.timestamp);
-    return audTimeMs > 0 && (nowMs - audTimeMs) < 120000;
-  });
-  const mergedAudit = [...recentLocalAudit, ...(cloudState.auditLogs || [])];
+  // STRICT SUPABASE SYNC: Purge any local transactions/audits not present in Supabase Cloud database!
+  const mergedLedger = cloudState.ledger || [];
+  const mergedAudit = cloudState.auditLogs || [];
 
   const mergedState = {
     students: mergedStudents,
@@ -94,7 +79,7 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
   ];
 
-  // Ensure student balances in UI match Supabase Cloud students table 100%
+  // Force student balances in UI to 100% match Supabase Cloud students table
   mergedState.students = mergedStudents.map(student => {
     let savingsBalance = Number(student.savingsBalance ?? student.savings_balance) || 0;
     let canteenDepositBalance = Number(student.canteenDepositBalance ?? student.canteen_deposit_balance) || 0;
