@@ -130,14 +130,38 @@ const toAppRow = (row, tableKey) => {
 export async function forceUpsertSystemAccountsToSupabase(state = null) {
   if (!supabase) return { success: false, text: 'Koneksi Supabase belum aktif.' };
 
+  // Fetch existing accounts directly from Supabase Cloud to avoid overwriting updated passwords
+  let dbAccountMap = new Map();
+  try {
+    const { data: dbAccs } = await supabase.from('login_accounts').select('*');
+    if (Array.isArray(dbAccs)) {
+      dbAccs.forEach(a => {
+        if (a && a.username) dbAccountMap.set(a.username.toLowerCase(), a);
+      });
+    }
+  } catch (e) {}
+
   const currentAccounts = state?.loginAccounts || [];
   const findPass = (uname, defaultPass) => {
-    const acc = currentAccounts.find(a => (a.username || '').toLowerCase() === uname.toLowerCase());
-    return (acc && acc.password && acc.password.trim()) ? acc.password.trim() : defaultPass;
+    const u = uname.toLowerCase();
+    const accState = currentAccounts.find(a => (a.username || '').toLowerCase() === u);
+    if (accState && accState.password && accState.password.trim()) return accState.password.trim();
+    
+    const accDb = dbAccountMap.get(u);
+    if (accDb && accDb.password && accDb.password.trim()) return accDb.password.trim();
+
+    return defaultPass;
   };
+
   const findRole = (uname, defaultRole) => {
-    const acc = currentAccounts.find(a => (a.username || '').toLowerCase() === uname.toLowerCase());
-    return (acc && (acc.roleId || acc.role_id)) ? (acc.roleId || acc.role_id) : defaultRole;
+    const u = uname.toLowerCase();
+    const accState = currentAccounts.find(a => (a.username || '').toLowerCase() === u);
+    if (accState && (accState.roleId || accState.role_id)) return accState.roleId || accState.role_id;
+
+    const accDb = dbAccountMap.get(u);
+    if (accDb && (accDb.role_id || accDb.roleId)) return accDb.role_id || accDb.roleId;
+
+    return defaultRole;
   };
 
   const systemAccounts = [
