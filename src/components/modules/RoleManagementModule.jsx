@@ -253,7 +253,8 @@ export default function RoleManagementModule({ state, setState }) {
             username: cleanUsername,
             name: accountForm.name.trim() || cleanUsername,
             password: accountForm.password.trim(),
-            roleId: accountForm.roleId || a.roleId
+            roleId: accountForm.roleId || a.roleId || a.role_id,
+            role_id: accountForm.roleId || a.role_id || a.roleId
           };
         }
         return a;

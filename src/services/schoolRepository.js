@@ -127,15 +127,25 @@ const toAppRow = (row, tableKey) => {
   return mapped;
 };
 
-export async function forceUpsertSystemAccountsToSupabase() {
+export async function forceUpsertSystemAccountsToSupabase(state = null) {
   if (!supabase) return { success: false, text: 'Koneksi Supabase belum aktif.' };
 
+  const currentAccounts = state?.loginAccounts || [];
+  const findPass = (uname, defaultPass) => {
+    const acc = currentAccounts.find(a => (a.username || '').toLowerCase() === uname.toLowerCase());
+    return (acc && acc.password && acc.password.trim()) ? acc.password.trim() : defaultPass;
+  };
+  const findRole = (uname, defaultRole) => {
+    const acc = currentAccounts.find(a => (a.username || '').toLowerCase() === uname.toLowerCase());
+    return (acc && (acc.roleId || acc.role_id)) ? (acc.roleId || acc.role_id) : defaultRole;
+  };
+
   const systemAccounts = [
-    { id: 'ACC-ADMIN-001', username: 'superadmin', password: 'admin123', role_id: 'SUPER_ADMIN' },
-    { id: 'ACC-ADMIN-002', username: 'admin', password: 'admin123', role_id: 'ADMIN_KEUANGAN' },
-    { id: 'ACC-ADMIN-003', username: 'kasir', password: 'kasir123', role_id: 'KASIR_KANTIN' },
-    { id: 'ACC-ADMIN-005', username: 'kasirdemo', password: 'kasir123', role_id: 'KASIR_KANTIN' },
-    { id: 'ACC-ADMIN-004', username: 'penjemputan', password: 'penjemputan123', role_id: 'ADMIN_PENJEMPUTAN' }
+    { id: 'ACC-ADMIN-001', username: 'superadmin', password: findPass('superadmin', 'admin123'), role_id: findRole('superadmin', 'SUPER_ADMIN') },
+    { id: 'ACC-ADMIN-002', username: 'admin', password: findPass('admin', 'admin123'), role_id: findRole('admin', 'ADMIN_KEUANGAN') },
+    { id: 'ACC-ADMIN-003', username: 'kasir', password: findPass('kasir', 'kasir123'), role_id: findRole('kasir', 'KASIR_KANTIN') },
+    { id: 'ACC-ADMIN-005', username: 'kasirdemo', password: findPass('kasirdemo', 'kasir123'), role_id: findRole('kasirdemo', 'KASIR_KANTIN') },
+    { id: 'ACC-ADMIN-004', username: 'penjemputan', password: findPass('penjemputan', 'penjemputan123'), role_id: findRole('penjemputan', 'ADMIN_PENJEMPUTAN') }
   ];
 
   try {
@@ -325,7 +335,7 @@ export async function saveSchoolState(state) {
     try {
       if (tableName === 'login_accounts') {
         // Guarantee system accounts (superadmin, admin, kasir, kasirdemo, penjemputan) are always present
-        await forceUpsertSystemAccountsToSupabase();
+        await forceUpsertSystemAccountsToSupabase(state);
 
         const cleanAccounts = sanitizeLoginAccounts(rows, state.students, state.guardians);
         const validUsernames = new Set(cleanAccounts.map(a => a.username));
