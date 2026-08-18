@@ -2470,6 +2470,19 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                   >
                     <Zap size={18} /> {isProcessingAction ? 'Memulihkan...' : '🔄 Pulihkan & Seed Data Sekolah Ke Supabase Cloud'}
                   </button>
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Bersihkan seluruh cache LocalStorage di browser lokal ini? Aplikasi akan dimuat ulang.')) {
+                        localStorage.clear();
+                        window.location.reload();
+                      }
+                    }}
+                    className="btn btn-secondary"
+                    style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontWeight: 700, marginTop: '0.5rem', background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' }}
+                  >
+                    <Trash2 size={16} /> 🧹 Bersihkan Semua Cache Local Browser
+                  </button>
                 </div>
               </div>
             </div>
