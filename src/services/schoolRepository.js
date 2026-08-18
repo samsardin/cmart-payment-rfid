@@ -40,7 +40,7 @@ function toValidIsoString(ts) {
         const hour = String(tTokens[0]).padStart(2, '0');
         const min = String(tTokens[1]).padStart(2, '0');
         const sec = String(tTokens[2] || '0').padStart(2, '0');
-        return `${year}-${month}-${day}T${hour}:${min}:${sec}.000Z`;
+        return `${year}-${month}-${day}T${hour}:${min}:${sec}.000+07:00`;
       }
     }
   }
