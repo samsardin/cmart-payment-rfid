@@ -14,7 +14,7 @@ import LoginPage from './components/layout/LoginPage';
 import { useRfidWedge } from './services/useRfidWedge';
 import { verifyRfidCard, playRfidBeep } from './services/rfidService';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
-import { deleteRfidCard, loadSchoolState, saveSchoolState, ensureDefaultAccountsInSupabase } from './services/schoolRepository';
+import { deleteRfidCard, loadSchoolState, saveSchoolState, ensureDefaultAccountsInSupabase, sanitizeLoginAccounts } from './services/schoolRepository';
 import { exportToExcelXlsx } from './services/excelExporter';
 import { harmonizeStudentBalancesWithLedger } from './services/ledgerEngine';
 
@@ -54,10 +54,12 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
 
   const cloudAccounts = mergedState.loginAccounts || [];
   const cloudUsernames = new Set(cloudAccounts.map(a => a.username));
-  mergedState.loginAccounts = [
+  const rawAccounts = [
     ...cloudAccounts,
     ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
   ];
+
+  mergedState.loginAccounts = sanitizeLoginAccounts(rawAccounts, mergedState.students, mergedState.guardians);
 
   return mergedState;
 }
@@ -72,23 +74,25 @@ export default function App() {
         const savedState = JSON.parse(saved);
         const savedAccounts = Array.isArray(savedState.loginAccounts) ? savedState.loginAccounts : [];
         const savedUsernames = new Set(savedAccounts.map(a => a.username));
-        const mergedLoginAccounts = [
+        const rawAccounts = [
           ...savedAccounts,
           ...LOGIN_ACCOUNTS.filter(defaultAcc => !savedUsernames.has(defaultAcc.username))
         ];
 
         const rawStudents = Array.isArray(savedState.students) ? savedState.students : (isSupabaseConfigured ? [] : INITIAL_STUDENTS);
         const rawLedger = Array.isArray(savedState.ledger) ? savedState.ledger : (isSupabaseConfigured ? [] : INITIAL_LEDGER);
+        const rawGuardians = Array.isArray(savedState.guardians) ? savedState.guardians : (isSupabaseConfigured ? [] : INITIAL_GUARDIANS);
         const harmonizedStudents = harmonizeStudentBalancesWithLedger(rawStudents, rawLedger);
+        const cleanAccounts = sanitizeLoginAccounts(rawAccounts, harmonizedStudents, rawGuardians);
 
         const cleanState = {
           ...savedState,
           students: harmonizedStudents,
-          guardians: Array.isArray(savedState.guardians) ? savedState.guardians : (isSupabaseConfigured ? [] : INITIAL_GUARDIANS),
+          guardians: rawGuardians,
           rfidCards: Array.isArray(savedState.rfidCards) ? savedState.rfidCards : (isSupabaseConfigured ? [] : INITIAL_RFID_CARDS),
           ledger: rawLedger,
           auditLogs: Array.isArray(savedState.auditLogs) ? savedState.auditLogs : (isSupabaseConfigured ? [] : INITIAL_AUDIT_LOGS),
-          loginAccounts: mergedLoginAccounts
+          loginAccounts: cleanAccounts
         };
 
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleanState));

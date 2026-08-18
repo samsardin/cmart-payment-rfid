@@ -155,10 +155,45 @@ export async function loadSchoolState() {
   return Object.fromEntries(results);
 }
 
+export function sanitizeLoginAccounts(accounts = [], students = [], guardians = []) {
+  const validStudentIds = new Set((students || []).map(s => s && s.id).filter(Boolean));
+  const validGuardianIds = new Set((guardians || []).map(g => g && g.id).filter(Boolean));
+
+  return (accounts || []).filter(acc => {
+    if (!acc || !acc.username) return false;
+
+    const rId = acc.roleId || acc.role_id || acc.role;
+    if (['SUPER_ADMIN', 'ADMIN_KEUANGAN', 'KASIR_KANTIN', 'ADMIN_PENJEMPUTAN'].includes(rId)) {
+      return true;
+    }
+
+    if (rId === 'ORANG_TUA') {
+      const gId = acc.guardianId || acc.guardian_id;
+      const sId = acc.studentId || acc.student_id;
+      if (gId && validGuardianIds.has(gId)) return true;
+      if (sId && validStudentIds.has(sId)) return true;
+      return false;
+    }
+
+    if (rId === 'SISWA') {
+      const sId = acc.studentId || acc.student_id;
+      if (sId && validStudentIds.has(sId)) return true;
+      return false;
+    }
+
+    return false;
+  });
+}
+
 export async function saveSchoolState(state) {
   // Always update LocalStorage immediately for instant local persistence
   try {
-    localStorage.setItem('SCHOOL_RFID_APP_STATE_V2', JSON.stringify(state));
+    const cleanAccounts = sanitizeLoginAccounts(state.loginAccounts, state.students, state.guardians);
+    const cleanState = {
+      ...state,
+      loginAccounts: cleanAccounts
+    };
+    localStorage.setItem('SCHOOL_RFID_APP_STATE_V2', JSON.stringify(cleanState));
   } catch (lsErr) {
     console.warn('Warning updating localStorage:', lsErr);
   }
@@ -182,26 +217,33 @@ export async function saveSchoolState(state) {
 
     try {
       if (tableName === 'login_accounts') {
-        for (const r of rows) {
+        const cleanAccounts = sanitizeLoginAccounts(rows, state.students, state.guardians);
+        const validUsernames = new Set(cleanAccounts.map(a => a.username));
+
+        for (const r of cleanAccounts) {
           try {
             const dbRow = toDatabaseRow(r, stateKey);
             let { error: accErr } = await supabase.from(tableName).upsert(dbRow);
             if (accErr) {
-              console.warn(`Upsert account ${dbRow.username} returned error, attempting clean fallback:`, accErr);
               const fallbackRow = {
                 id: dbRow.id,
                 username: dbRow.username,
                 password: dbRow.password,
                 role_id: dbRow.role_id
               };
-              const { error: retryErr } = await supabase.from(tableName).upsert(fallbackRow);
-              if (retryErr) {
-                console.error(`Failed upserting account ${dbRow.username}:`, retryErr);
-              }
+              await supabase.from(tableName).upsert(fallbackRow);
             }
-          } catch (accExc) {
-            console.warn(`Exception upserting account ${r.username}:`, accExc);
-          }
+          } catch (accExc) {}
+        }
+
+        // Clean up orphan dummy accounts from Supabase Cloud login_accounts table automatically
+        try {
+          const systemUsernames = ['superadmin', 'admin', 'keuangan', 'kasir', 'kasirdemo', 'penjemputan'];
+          const keepUsernames = [...new Set([...systemUsernames, ...Array.from(validUsernames)])];
+          const formattedUsernames = keepUsernames.map(u => `'${u}'`).join(',');
+          await supabase.from(tableName).delete().not('username', 'in', `(${formattedUsernames})`);
+        } catch (delErr) {
+          console.warn('Warning cleaning orphan accounts from Supabase:', delErr);
         }
       } else if (tableName === 'students') {
         const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
