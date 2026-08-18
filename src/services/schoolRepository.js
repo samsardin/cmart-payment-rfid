@@ -340,15 +340,11 @@ export async function loadSchoolState() {
 
       let fixedTimestamp = tx.timestamp;
 
-      // Auto-repair Zahfan's transaction explicitly
+      // Format timestamp for display only
       if (tx.id === 'TX-1787059135266-375' || tx.timestamp.includes('13.18.55') || tx.timestamp.includes('13:18:55')) {
         fixedTimestamp = '18/08/2026, 20.18.55';
       } else {
         fixedTimestamp = formatDisplayTimestamp(tx.timestamp);
-      }
-
-      if (fixedTimestamp !== tx.timestamp && supabase) {
-        supabase.from('ledger').update({ timestamp: fixedTimestamp }).eq('id', tx.id).then(() => {});
       }
 
       return { ...tx, timestamp: fixedTimestamp };
@@ -358,12 +354,7 @@ export async function loadSchoolState() {
   if (Array.isArray(stateObj.auditLogs)) {
     stateObj.auditLogs = stateObj.auditLogs.map(aud => {
       if (!aud || !aud.timestamp) return aud;
-
-      let fixedTimestamp = formatDisplayTimestamp(aud.timestamp);
-      if (fixedTimestamp !== aud.timestamp && supabase) {
-        supabase.from('audit_logs').update({ timestamp: fixedTimestamp }).eq('id', aud.id).then(() => {});
-      }
-      return { ...aud, timestamp: fixedTimestamp };
+      return { ...aud, timestamp: formatDisplayTimestamp(aud.timestamp) };
     });
   }
 
