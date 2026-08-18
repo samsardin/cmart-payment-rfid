@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Wallet, Radio, CreditCard, KeyRound, LockKeyhole, GraduationCap, UserCheck, ShoppingBag } from 'lucide-react';
+import { recalculateLedgerRunningBalances, parseSafeTimestamp } from '../../services/ledgerEngine';
 
 export default function ParentPortalModule({ state, authenticatedSession, onOpenRfidModal, view, onChangePassword }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -52,11 +53,16 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
   };
 
   // Student specific data
-  const studentLedger = state.ledger.filter(l => l.studentId === student?.id);
+  const rawStudentLedger = (state.ledger || []).filter(l => (l.studentId || l.student_id) === student?.id);
 
-  // Authoritative real-time balance calculations from latest ledger entries
-  const latestSavingsTx = [...studentLedger].reverse().find(tx => tx.accountType === 'TABUNGAN');
-  const latestDepositTx = [...studentLedger].reverse().find(tx => tx.accountType === 'DEPOSIT_KANTIN');
+  // Recalculate fixed ledger with proper safe timestamps
+  const studentLedger = recalculateLedgerRunningBalances(rawStudentLedger, state.students);
+
+  // Authoritative real-time balance calculations from latest ledger entries sorted by timestamp
+  const sortedLedger = [...studentLedger].sort((a, b) => parseSafeTimestamp(a.timestamp) - parseSafeTimestamp(b.timestamp));
+
+  const latestSavingsTx = sortedLedger.filter(tx => tx.accountType === 'TABUNGAN').pop();
+  const latestDepositTx = sortedLedger.filter(tx => tx.accountType === 'DEPOSIT_KANTIN').pop();
 
   const activeSavingsBalance = latestSavingsTx !== undefined ? Number(latestSavingsTx.balanceAfter) : (Number(student?.savingsBalance) || 0);
   const activeDepositBalance = latestDepositTx !== undefined ? Number(latestDepositTx.balanceAfter) : (Number(student?.canteenDepositBalance) || 0);

@@ -87,6 +87,35 @@ export const executeLedgerTransaction = (state, {
   };
 };
 
+export function parseSafeTimestamp(ts) {
+  if (!ts) return 0;
+  if (ts instanceof Date) return ts.getTime();
+  if (typeof ts === 'number') return ts;
+
+  const isoTime = Date.parse(ts);
+  if (!isNaN(isoTime)) return isoTime;
+
+  try {
+    const parts = String(ts).split(/[,\s]+/);
+    if (parts.length >= 2) {
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].replace(/\./g, ':').split(':');
+      if (dateParts.length === 3) {
+        const day = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const year = parseInt(dateParts[2], 10);
+        const hours = parseInt(timeParts[0] || '0', 10);
+        const minutes = parseInt(timeParts[1] || '0', 10);
+        const seconds = parseInt(timeParts[2] || '0', 10);
+        const parsedDate = new Date(year, month, day, hours, minutes, seconds);
+        if (!isNaN(parsedDate.getTime())) return parsedDate.getTime();
+      }
+    }
+  } catch (e) {}
+
+  return 0;
+}
+
 /**
  * Recalculates exact balanceAfter for every transaction in ledger chronologically per student & accountType.
  * This guarantees 100% mathematical consistency across all modules (Admin, Kasir, Portal Wali, Dashboard).
@@ -94,10 +123,10 @@ export const executeLedgerTransaction = (state, {
 export function recalculateLedgerRunningBalances(ledger = [], students = []) {
   if (!Array.isArray(ledger) || !ledger.length) return [];
 
-  const indexedLedger = ledger.map((tx, idx) => ({ ...tx, _origIndex: idx }));
+  const indexedLedger = ledger.map((tx, idx) => ({ ...tx, _origIndex: idx, _parsedTime: parseSafeTimestamp(tx.timestamp) }));
 
   // Sort chronological (timestamp ASC)
-  indexedLedger.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+  indexedLedger.sort((a, b) => (a._parsedTime || 0) - (b._parsedTime || 0));
 
   const studentMap = new Map();
   if (Array.isArray(students)) {
@@ -171,7 +200,7 @@ export function recalculateLedgerRunningBalances(ledger = [], students = []) {
     };
   });
 
-  return updatedLedger.sort((a, b) => a._origIndex - b._origIndex).map(({ _origIndex, ...tx }) => tx);
+  return updatedLedger.sort((a, b) => a._origIndex - b._origIndex).map(({ _origIndex, _parsedTime, ...tx }) => tx);
 }
 
 /**
