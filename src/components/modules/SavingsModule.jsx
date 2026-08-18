@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti';
 import { executeLedgerTransaction } from '../../services/ledgerEngine';
 import { verifyRfidCard, checkIdempotency, playRfidBeep } from '../../services/rfidService';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
+import { getClientIpAndDevice } from '../../services/networkUtils';
 
 export default function SavingsModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
   // activeStudent is null by default until an RFID card is scanned or student is selected manually
@@ -195,7 +196,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
       entity: 'rfidCards',
       entityId: unregisteredUid,
       details: `Pendaftaran Kartu RFID Siswa Baru: ${unregisteredUid} untuk ${targetStudent.name} (${targetStudent.class})`,
-      ip: '127.0.0.1'
+      ip: getClientIpAndDevice()
     };
 
     setState(prev => ({

@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from './dateUtils';
+import { getClientIpAndDevice } from './networkUtils';
 import { LOGIN_ACCOUNTS } from '../data/mockData';
 
 const tableMappings = [
@@ -308,7 +309,7 @@ export async function resetOperationalDatabase(currentState) {
       entity: 'system',
       entityId: 'reset-all',
       details: 'Pembersihan total seluruh data operasional sekolah (Siswa, Wali, Kartu RFID, Mutasi Tabungan, Audit Log & Akun Siswa/Wali) oleh Super Admin',
-      ip: '127.0.0.1'
+      ip: getClientIpAndDevice()
     }],
     loginAccounts: managementAccounts
   };
@@ -502,7 +503,7 @@ export async function restoreDatabaseFromJson(parsedPayload, currentState) {
         entity: 'system',
         entityId: 'restore-json',
         details: `Pemulihan/Restore database dari file cadangan (${parsedPayload.exportedAt || 'JSON Backup'})`,
-        ip: '127.0.0.1'
+        ip: getClientIpAndDevice()
       },
       ...auditLogs
     ],

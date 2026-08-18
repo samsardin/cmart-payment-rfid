@@ -7,6 +7,7 @@ import {
 import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
+import { getClientIpAndDevice } from '../../services/networkUtils';
 import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, deleteGuardian, saveSchoolState } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings, externalSubTab, onSubTabChange }) {
@@ -140,7 +141,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           entity: 'guardians',
           entityId: targetGdrId,
           details: `${editingGuardian ? 'Update' : 'Tambah'} data Orang Tua '${cleanName}' (${cleanRel})`,
-          ip: '127.0.0.1'
+          ip: getClientIpAndDevice()
         },
         ...(state.auditLogs || [])
       ]
@@ -188,7 +189,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           entity: 'guardians',
           entityId: gdrId,
           details: `Hapus data Orang Tua '${gdrName}' dari sistem`,
-          ip: '127.0.0.1'
+          ip: getClientIpAndDevice()
         },
         ...(state.auditLogs || [])
       ]
@@ -334,7 +335,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
               entity: 'guardians',
               entityId: 'batch-import',
               details: `Import Batch Excel Data Orang Tua: ${addedCount} baru, ${updatedCount} diperbarui`,
-              ip: '127.0.0.1'
+              ip: getClientIpAndDevice()
             },
             ...(state.auditLogs || [])
           ]
@@ -635,7 +636,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         entity: 'rfid_cards',
         entityId: cardId,
         details: `Perubahan status kartu ${card.uid} (${card.assignedToName}) menjadi ${newStatus}`,
-        ip: '127.0.0.1'
+        ip: getClientIpAndDevice()
       };
 
       return {
@@ -659,7 +660,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
         entity: 'rfid_cards',
         entityId: card.id,
         details: `Menghapus kartu RFID UID ${card.uid} milik ${card.assignedToName}`,
-        ip: '127.0.0.1'
+        ip: getClientIpAndDevice()
       };
 
       return {
@@ -784,7 +785,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       entity: 'rfid_cards',
       entityId: newCard.id,
       details: `Penerbitan kartu baru UID ${cleanUid} untuk ${assignedName}`,
-      ip: '127.0.0.1'
+      ip: getClientIpAndDevice()
     };
 
     setState(prev => {
@@ -1375,7 +1376,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           entity: 'students',
           entityId: 'BATCH',
           details: `Import/Update batch data siswa via Excel: ${updatedCount} siswa di-update (termasuk kelas) & ${addedCount} siswa baru. Saldo & mutasi utuh!`,
-          ip: '127.0.0.1'
+          ip: getClientIpAndDevice()
         };
 
         setState(prev => ({
@@ -2226,7 +2227,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                       </span>
                     </td>
                     <td style={{ fontSize: '0.82rem', color: 'var(--slate-700)' }}>{log.details}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--slate-500)' }}>{log.ip}</td>
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--slate-500)' }}>{log.ip && log.ip !== '127.0.0.1' ? log.ip : getClientIpAndDevice()}</td>
                   </tr>
                 ))}
               </tbody>

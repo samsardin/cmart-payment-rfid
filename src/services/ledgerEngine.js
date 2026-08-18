@@ -1,4 +1,5 @@
 import { getLocalIsoTimestamp } from './dateUtils';
+import { getClientIpAndDevice } from './networkUtils';
 
 // Ledger Accounting Engine for Student Savings & Canteen Accounts
 
@@ -75,7 +76,7 @@ export const executeLedgerTransaction = (state, {
     entity: 'students',
     entityId: studentId,
     details: `${type === 'CREDIT' ? 'Setoran/Topup' : 'Penarikan/Belanja'} Rp ${amountNumber.toLocaleString('id-ID')} (${accountType}) - Saldo Akhir: Rp ${newBalance.toLocaleString('id-ID')}`,
-    ip: '127.0.0.1'
+    ip: getClientIpAndDevice()
   };
 
   return {
