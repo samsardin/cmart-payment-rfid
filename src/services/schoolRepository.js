@@ -91,9 +91,13 @@ const toDatabaseRow = (row, tableKey) => {
 const toAppRow = (row, tableKey) => {
   const mapped = Object.fromEntries(
     Object.entries(row)
-      .filter(([key]) => key !== 'created_at')
       .map(([key, value]) => [key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()), value])
   );
+
+  // Preserve original timestamp or fallback to created_at
+  if (!mapped.timestamp && (row.created_at || mapped.createdAt)) {
+    mapped.timestamp = row.created_at || mapped.createdAt;
+  }
 
   // If username is penjemputan, always map to ADMIN_PENJEMPUTAN role in app
   if (tableKey === 'loginAccounts') {
