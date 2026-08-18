@@ -104,7 +104,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
   useEffect(() => {
     if (activeStudent?.id) {
       const fresh = state.students.find(s => s.id === activeStudent.id);
-      if (fresh && (fresh.savingsBalance !== activeStudent.savingsBalance || fresh.canteenDepositBalance !== activeStudent.canteenDepositBalance)) {
+      if (fresh) {
         setActiveStudent({ ...fresh });
       }
     }
