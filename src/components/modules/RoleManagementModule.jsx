@@ -3,7 +3,7 @@ import {
   Users, UserPlus, UserCheck, Edit3, Trash2, KeyRound, ShieldCheck,
   Plus, Search, CheckCircle2, XCircle, Store, Wallet, Lock, X, Volume2
 } from 'lucide-react';
-import { saveSchoolState, saveAccountToSupabase } from '../../services/schoolRepository';
+import { saveSchoolState, saveAccountToSupabase, saveStudentToSupabase } from '../../services/schoolRepository';
 
 export default function RoleManagementModule({ state, setState }) {
   // Sub-tabs: 'STUDENTS' | 'FINANCE_ADMIN' | 'PICKUP_ADMIN' | 'CASHIER'
@@ -167,6 +167,10 @@ export default function RoleManagementModule({ state, setState }) {
 
     if (newState) {
       setState(newState);
+      if (selectedItem && selectedItem.id) {
+        const savedSt = (newState.students || []).find(s => s.id === selectedItem.id);
+        if (savedSt) saveStudentToSupabase(savedSt).catch(err => console.warn('Direct student save error:', err));
+      }
       saveSchoolState(newState).catch(err => console.warn('Sync error saving student:', err));
     }
 

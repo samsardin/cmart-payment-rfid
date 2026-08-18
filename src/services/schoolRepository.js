@@ -416,9 +416,8 @@ export async function saveSchoolState(state) {
             try {
               let { error: rowErr } = await supabase.from(tableName).upsert(dbRow);
               if (rowErr) {
-                console.warn(`Upsert student ${dbRow.name} failed (${rowErr.message}), retrying without invalid fields...`);
-                const retryRow = { ...dbRow };
-                if (!retryRow.guardian_id) retryRow.guardian_id = null;
+                console.warn(`Upsert student ${dbRow.name} failed (${rowErr.message}), retrying with guardian_id = null...`);
+                const retryRow = { ...dbRow, guardian_id: null };
                 const { error: retryErr } = await supabase.from(tableName).upsert(retryRow);
                 if (retryErr) {
                   console.error(`Failed upserting student ${dbRow.name} (${dbRow.id}):`, retryErr);
@@ -559,6 +558,28 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
     return { success: true };
   } catch (err) {
     console.error('Error saving ledger transaction to Supabase:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function saveStudentToSupabase(student) {
+  if (!supabase || !student) return { success: false };
+
+  try {
+    const dbRow = toDatabaseRow(student, 'students');
+    let { error } = await supabase.from('students').upsert(dbRow);
+    if (error) {
+      console.warn(`Direct student upsert ${student.name} failed (${error.message}), retrying with clean FK...`, error);
+      const retryRow = { ...dbRow, guardian_id: null };
+      const { error: retryErr } = await supabase.from('students').upsert(retryRow);
+      if (retryErr) {
+        console.error(`Retry student upsert ${student.name} failed:`, retryErr);
+        return { success: false, error: retryErr.message };
+      }
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('Error saving student to Supabase:', err);
     return { success: false, error: err.message };
   }
 }
