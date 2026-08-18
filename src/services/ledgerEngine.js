@@ -128,8 +128,6 @@ export function recalculateLedgerRunningBalances(ledger = [], students = []) {
   if (!Array.isArray(ledger) || !ledger.length) return [];
 
   const indexedLedger = ledger.map((tx, idx) => ({ ...tx, _origIndex: idx, _parsedTime: parseSafeTimestamp(tx.timestamp) }));
-
-  // Sort chronological (timestamp ASC)
   indexedLedger.sort((a, b) => (a._parsedTime || 0) - (b._parsedTime || 0));
 
   const studentMap = new Map();
@@ -139,68 +137,21 @@ export function recalculateLedgerRunningBalances(ledger = [], students = []) {
     });
   }
 
-  // Calculate total credit & debit in ledger per (studentId + '_' + accountType)
-  const ledgerCredits = new Map();
-  const ledgerDebits = new Map();
-  const hasCreditTx = new Set();
-
-  indexedLedger.forEach((tx) => {
-    const sId = tx.studentId || tx.student_id;
-    const accType = tx.accountType || 'TABUNGAN';
-    const key = `${sId}_${accType}`;
-
-    const amt = Number(tx.amount) || 0;
-    if (tx.type === 'CREDIT') {
-      hasCreditTx.add(key);
-      ledgerCredits.set(key, (ledgerCredits.get(key) || 0) + amt);
-    } else {
-      ledgerDebits.set(key, (ledgerDebits.get(key) || 0) + amt);
-    }
-  });
-
-  const runningBalances = new Map();
-
-  studentMap.forEach((student, sId) => {
-    const savingsKey = `${sId}_TABUNGAN`;
-    const depositKey = `${sId}_DEPOSIT_KANTIN`;
-
-    const savingsVal = Number(student.savingsBalance) || 0;
-    const depositVal = Number(student.canteenDepositBalance) || 0;
-
-    const savCredits = ledgerCredits.get(savingsKey) || 0;
-    const savDebits = ledgerDebits.get(savingsKey) || 0;
-
-    if (hasCreditTx.has(savingsKey)) {
-      runningBalances.set(savingsKey, 0);
-    } else {
-      runningBalances.set(savingsKey, Math.max(0, savingsVal + savDebits - savCredits));
-    }
-
-    const depCredits = ledgerCredits.get(depositKey) || 0;
-    const depDebits = ledgerDebits.get(depositKey) || 0;
-
-    if (hasCreditTx.has(depositKey)) {
-      runningBalances.set(depositKey, 0);
-    } else {
-      runningBalances.set(depositKey, Math.max(0, depositVal + depDebits - depCredits));
-    }
-  });
-
+  // Preserve existing balanceAfter on transactions, or calculate running balances
   const updatedLedger = indexedLedger.map((tx) => {
     const sId = tx.studentId || tx.student_id;
-    const accType = tx.accountType || 'TABUNGAN';
-    const key = `${sId}_${accType}`;
+    const student = studentMap.get(sId);
 
-    const currentRunning = runningBalances.get(key) || 0;
-    const amt = Number(tx.amount) || 0;
-    const isCredit = tx.type === 'CREDIT';
-    const nextRunning = isCredit ? currentRunning + amt : Math.max(0, currentRunning - amt);
-
-    runningBalances.set(key, nextRunning);
+    let bAfter = Number(tx.balanceAfter ?? tx.balance_after);
+    if (isNaN(bAfter)) {
+      bAfter = tx.accountType === 'DEPOSIT_KANTIN'
+        ? (Number(student?.canteenDepositBalance) || 0)
+        : (Number(student?.savingsBalance) || 0);
+    }
 
     return {
       ...tx,
-      balanceAfter: nextRunning
+      balanceAfter: bAfter
     };
   });
 
@@ -214,13 +165,10 @@ export function recalculateLedgerRunningBalances(ledger = [], students = []) {
  */
 export function harmonizeStudentBalancesWithLedger(students = [], ledger = []) {
   if (!Array.isArray(students) || !students.length) return students || [];
-  if (!Array.isArray(ledger)) return students;
+  if (!Array.isArray(ledger) || !ledger.length) return students;
 
-  const fixedLedger = recalculateLedgerRunningBalances(ledger, students);
-
-  // CRITICAL FIX: Sort fixedLedger ASCENDING by timestamp (oldest first, newest last)
-  // so the last iteration sets the true LATEST balanceAfter for each student.
-  const sortedLedger = [...fixedLedger].sort((a, b) => parseSafeTimestamp(a.timestamp) - parseSafeTimestamp(b.timestamp));
+  // Sort ledger ASCENDING by timestamp (oldest first, newest last)
+  const sortedLedger = [...ledger].sort((a, b) => parseSafeTimestamp(a.timestamp) - parseSafeTimestamp(b.timestamp));
 
   const latestSavingsBalance = new Map();
   const latestDepositBalance = new Map();
@@ -229,16 +177,19 @@ export function harmonizeStudentBalancesWithLedger(students = [], ledger = []) {
     const sId = tx.studentId || tx.student_id;
     if (!sId) return;
 
-    if (tx.accountType === 'TABUNGAN') {
-      latestSavingsBalance.set(sId, Number(tx.balanceAfter));
-    } else if (tx.accountType === 'DEPOSIT_KANTIN') {
-      latestDepositBalance.set(sId, Number(tx.balanceAfter));
+    const bAfter = Number(tx.balanceAfter ?? tx.balance_after);
+    if (!isNaN(bAfter)) {
+      if (tx.accountType === 'TABUNGAN') {
+        latestSavingsBalance.set(sId, bAfter);
+      } else if (tx.accountType === 'DEPOSIT_KANTIN') {
+        latestDepositBalance.set(sId, bAfter);
+      }
     }
   });
 
   return students.map((student) => {
-    let savingsBalance = Number(student.savingsBalance) || 0;
-    let canteenDepositBalance = Number(student.canteenDepositBalance) || 0;
+    let savingsBalance = Number(student.savingsBalance ?? student.savings_balance) || 0;
+    let canteenDepositBalance = Number(student.canteenDepositBalance ?? student.canteen_deposit_balance) || 0;
 
     if (latestSavingsBalance.has(student.id)) {
       savingsBalance = latestSavingsBalance.get(student.id);
