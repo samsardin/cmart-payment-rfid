@@ -689,6 +689,11 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     let newStudent = null;
     let newGuardian = null;
 
+    if (!isNewOwner && !newCardAssignedTo) {
+      setFeedback({ type: 'error', text: `Silakan pilih ${newCardType === 'SISWA' ? 'Siswa' : 'Orang Tua / Wali'} pemilik kartu terlebih dahulu.` });
+      return;
+    }
+
     if (isNewOwner) {
       if (!newOwnerName.trim()) {
         setFeedback({ type: 'error', text: 'Nama pemilik baru tidak boleh kosong.' });
@@ -744,6 +749,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           return;
         }
         assignedName = s.name;
+        assignedId = s.id;
       } else {
         const g = state.guardians.find(gr => gr.id === newCardAssignedTo);
         if (!g) {
@@ -751,6 +757,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
           return;
         }
         assignedName = `${g.name} (${g.relationship})`;
+        assignedId = g.id;
       }
     }
 
@@ -810,13 +817,16 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       const filteredCards = prev.rfidCards.filter(c => c.assignedToId !== assignedId && c.uid.toUpperCase() !== cleanUid);
       const updatedRfidCards = [newCard, ...filteredCards];
 
-      return {
+      const nextState = {
         ...prev,
         students: updatedStudents,
         guardians: updatedGuardians,
         rfidCards: updatedRfidCards,
         auditLogs: [newAudit, ...prev.auditLogs]
       };
+
+      saveSchoolState(nextState);
+      return nextState;
     });
 
     setFeedback({
