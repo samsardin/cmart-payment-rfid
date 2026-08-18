@@ -92,11 +92,32 @@ export function parseSafeTimestamp(ts) {
   if (ts instanceof Date) return ts.getTime();
   if (typeof ts === 'number') return ts;
 
-  const isoTime = Date.parse(ts);
-  if (!isNaN(isoTime)) return isoTime;
+  const str = String(ts).trim();
 
+  // 1. Check for wall-clock ISO string YYYY-MM-DDTHH:mm:ss
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:?\d{2})?$/);
+  if (isoMatch) {
+    const [, y, m, d, hh, mm, ss, ms, tz] = isoMatch;
+    if (tz) {
+      const parsed = Date.parse(str);
+      if (!isNaN(parsed)) return parsed;
+    } else {
+      const date = new Date(
+        parseInt(y, 10),
+        parseInt(m, 10) - 1,
+        parseInt(d, 10),
+        parseInt(hh, 10),
+        parseInt(mm, 10),
+        parseInt(ss, 10),
+        ms ? parseInt(ms.slice(0, 3).padEnd(3, '0'), 10) : 0
+      );
+      if (!isNaN(date.getTime())) return date.getTime();
+    }
+  }
+
+  // 2. Check for Indonesian string format "18/8/2026, 16.34.59"
   try {
-    const parts = String(ts).split(/[,\s]+/);
+    const parts = str.split(/[,\s]+/);
     if (parts.length >= 2) {
       const dateParts = parts[0].split('/');
       const timeParts = parts[1].replace(/\./g, ':').split(':');
@@ -112,6 +133,9 @@ export function parseSafeTimestamp(ts) {
       }
     }
   } catch (e) {}
+
+  const standardParse = Date.parse(str);
+  if (!isNaN(standardParse)) return standardParse;
 
   return 0;
 }

@@ -7,7 +7,7 @@ import {
 import confetti from 'canvas-confetti';
 import { executeLedgerTransaction, recalculateLedgerRunningBalances } from '../../services/ledgerEngine';
 import { verifyRfidCard, checkIdempotency, playRfidBeep } from '../../services/rfidService';
-import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
+import { getLocalIsoTimestamp, getLocalTodayDateString, formatDisplayTimestamp } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
 import { saveSchoolState } from '../../services/schoolRepository';
 
@@ -713,7 +713,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
                     filteredStudentHistory.map(tx => (
                       <tr key={tx.id}>
                         <td style={{ fontSize: '0.75rem', color: 'var(--slate-600)' }}>
-                          {new Date(tx.timestamp).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
+                          {formatDisplayTimestamp(tx.timestamp)}
                         </td>
                         <td style={{ fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 700 }}>{tx.id}</td>
                         <td>
@@ -971,7 +971,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
                         {tx.id}
                       </div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)' }}>
-                        {new Date(tx.timestamp).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
+                        {formatDisplayTimestamp(tx.timestamp)}
                       </div>
                     </td>
                     <td>

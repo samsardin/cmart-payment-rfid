@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { recalculateLedgerRunningBalances, parseSafeTimestamp } from '../../services/ledgerEngine';
+import { formatDisplayTimestamp } from '../../services/dateUtils';
 
 const MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -542,7 +543,7 @@ export default function FinanceDashboardModule({ state }) {
                     <td>
                       <div style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--slate-800)', fontFamily: 'monospace' }}>{tx.id}</div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)' }}>
-                        {new Date(tx.timestamp).toLocaleString('id-ID')}
+                        {formatDisplayTimestamp(tx.timestamp)}
                       </div>
                     </td>
                     <td>

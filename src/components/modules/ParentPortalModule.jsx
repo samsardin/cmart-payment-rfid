@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Users, Wallet, Radio, CreditCard, KeyRound, LockKeyhole, GraduationCap, UserCheck, ShoppingBag } from 'lucide-react';
 import { recalculateLedgerRunningBalances, parseSafeTimestamp } from '../../services/ledgerEngine';
+import { formatDisplayTimestamp } from '../../services/dateUtils';
 
 export default function ParentPortalModule({ state, authenticatedSession, onOpenRfidModal, view, onChangePassword }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -284,7 +285,7 @@ export default function ParentPortalModule({ state, authenticatedSession, onOpen
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>{tx.description}</div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--slate-400)' }}>
-                          {new Date(tx.timestamp).toLocaleString('id-ID')} ({tx.accountType})
+                          {formatDisplayTimestamp(tx.timestamp)} ({tx.accountType})
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
