@@ -59,6 +59,9 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
   ];
 
+  // Harmonize student balances (savingsBalance & canteenDepositBalance) with ledger history
+  mergedState.students = harmonizeStudentBalancesWithLedger(mergedState.students || [], mergedState.ledger || []);
+
   mergedState.loginAccounts = sanitizeLoginAccounts(rawAccounts, mergedState.students, mergedState.guardians);
 
   // Preserve RAM & LocalStorage pickupLogs so active pickup queues never vanish on background polling!

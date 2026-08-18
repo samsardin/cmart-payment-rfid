@@ -214,10 +214,14 @@ export function harmonizeStudentBalancesWithLedger(students = [], ledger = []) {
 
   const fixedLedger = recalculateLedgerRunningBalances(ledger, students);
 
+  // CRITICAL FIX: Sort fixedLedger ASCENDING by timestamp (oldest first, newest last)
+  // so the last iteration sets the true LATEST balanceAfter for each student.
+  const sortedLedger = [...fixedLedger].sort((a, b) => parseSafeTimestamp(a.timestamp) - parseSafeTimestamp(b.timestamp));
+
   const latestSavingsBalance = new Map();
   const latestDepositBalance = new Map();
 
-  fixedLedger.forEach((tx) => {
+  sortedLedger.forEach((tx) => {
     const sId = tx.studentId || tx.student_id;
     if (!sId) return;
 
