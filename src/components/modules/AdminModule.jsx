@@ -1590,8 +1590,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     onChange={(e) => setNewCardUid(e.target.value.toUpperCase())}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (newCardUid.trim()) handleAddCard();
+                        e.preventDefault(); // Prevent physical USB RFID scanner Enter key from auto-submitting card!
                       }
                     }}
                     style={{
@@ -1844,7 +1843,12 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 )}
               </div>
 
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={handleAddCard}
+                className="btn btn-primary"
+                style={{ width: '100%', marginTop: '0.5rem', fontWeight: 800, padding: '0.75rem' }}
+              >
                 Terbitkan & Petakan Kartu RFID
               </button>
             </form>
