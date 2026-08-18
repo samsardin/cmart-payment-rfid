@@ -120,17 +120,40 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
 
   // Handle Manual/Simulated Tap Card at Security Gate
   const handleSimulateGateTap = (uid) => {
-    const res = verifyRfidCard(uid, state.rfidCards, state.students, state.guardians);
+    const cleanUid = uid.trim().toUpperCase();
+
+    // 1. Direct check in rfidCards table
+    const cardObj = (state.rfidCards || []).find(c => c.uid.toUpperCase() === cleanUid);
+
+    // 2. Direct check in students table (if student has rfidUid)
+    const studentDirect = (state.students || []).find(s => s.rfidUid && s.rfidUid.toUpperCase() === cleanUid);
+
+    // REJECT CASE A: Card registered explicitly as SISWA
+    if (cardObj && cardObj.type === 'SISWA') {
+      playRfidBeep('error');
+      alert(`🔴 PENJEMPUTAN DITOLAK: Kartu '${cleanUid}' adalah KARTU SISWA milik ${cardObj.assignedToName || 'Siswa'}!\n\nHanya Kartu Khusus Penjemput (Orang Tua / Wali) yang dapat di-tap di Gerbang Penjemputan.`);
+      return;
+    }
+
+    // REJECT CASE B: Card is assigned directly to a student's rfidUid
+    if (studentDirect && (!cardObj || cardObj.type !== 'PENJEMPUT')) {
+      playRfidBeep('error');
+      alert(`🔴 PENJEMPUTAN DITOLAK: Kartu '${cleanUid}' terdaftar sebagai KARTU SISWA milik ${studentDirect.name} (Kelas ${studentDirect.class})!\n\nHanya Kartu Khusus Penjemput (Orang Tua / Wali) yang dapat di-tap di Gerbang Penjemputan.`);
+      return;
+    }
+
+    // 3. Full verifyRfidCard check
+    const res = verifyRfidCard(cleanUid, state.rfidCards, state.students, state.guardians);
     if (!res.success) {
       playRfidBeep('error');
       alert(`Gagal Tap: ${res.message}`);
       return;
     }
 
-    // STRICT CONTROL: ONLY PENJEMPUT CARDS (ORANG TUA / WALI) ARE ALLOWED AT PICKUP GATE
+    // REJECT CASE C: Card type is not PENJEMPUT
     if (res.cardType !== 'PENJEMPUT') {
       playRfidBeep('error');
-      alert(`🔴 PENJEMPUTAN DITOLAK: Kartu '${uid}' adalah KARTU SISWA!\n\nHanya Kartu Khusus Penjemput (Orang Tua / Wali) yang dapat di-tap di Gerbang Penjemputan.`);
+      alert(`🔴 PENJEMPUTAN DITOLAK: Kartu '${cleanUid}' adalah KARTU SISWA!\n\nHanya Kartu Khusus Penjemput (Orang Tua / Wali) yang dapat di-tap di Gerbang Penjemputan.`);
       return;
     }
 
@@ -846,6 +869,26 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
                       <div style={{ fontSize: '0.82rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <User size={14} style={{ color: '#f59e0b' }} />
                         Penjemput: <b style={{ color: '#ffffff' }}>{item.guardianName}</b>
+                      </div>
+
+                      <div style={{ marginTop: '0.6rem', display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          type="button"
+                          className="btn btn-emerald btn-sm"
+                          onClick={() => handleCompletePickup(item.id)}
+                          style={{ background: '#10b981', color: '#ffffff', fontWeight: 800, fontSize: '0.8rem', padding: '0.4rem 0.85rem', borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
+                          title="Tandai siswa telah dijemput / pulang"
+                        >
+                          <CheckCircle2 size={15} /> Selesai Pulang
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleRepeatCall(item)}
+                          style={{ color: '#f59e0b', borderColor: '#d97706', fontSize: '0.78rem', padding: '0.35rem 0.65rem', background: 'rgba(245, 158, 11, 0.1)' }}
+                        >
+                          <RotateCcw size={14} /> Panggil Ulang
+                        </button>
                       </div>
                     </div>
 
