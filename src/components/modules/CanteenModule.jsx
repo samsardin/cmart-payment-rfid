@@ -86,6 +86,19 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
     return state.students.find(s => s.id === activeStudent.id) || activeStudent;
   }, [state.students, activeStudent]);
 
+  // Derived canteen transaction history sorted NEWEST FIRST (timestamp DESC)
+  const canteenLedgerHistory = useMemo(() => {
+    if (!Array.isArray(state.ledger)) return [];
+    return [...state.ledger]
+      .filter(l => (
+        l.category === 'BELANJA_KANTIN_RFID' ||
+        l.accountType === 'DEPOSIT_KANTIN' ||
+        l.category === 'DEPOSIT_KANTIN' ||
+        l.category === 'PENARIKAN_DEPOSIT_KANTIN'
+      ))
+      .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  }, [state.ledger]);
+
   // Keep activeStudent synced with latest state.students
   useEffect(() => {
     if (activeStudent?.id) {
@@ -871,7 +884,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
             Riwayat Transaksi Pembayaran Kasir Kantin
           </h3>
           <span className="badge badge-gold" style={{ fontWeight: 800 }}>
-            {state.ledger.filter(l => l.category === 'BELANJA_KANTIN_RFID' || l.accountType === 'DEPOSIT_KANTIN').length} Transaksi
+            {canteenLedgerHistory.length} Transaksi
           </span>
         </div>
 
@@ -889,45 +902,43 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
               </tr>
             </thead>
             <tbody>
-              {state.ledger.filter(l => l.category === 'BELANJA_KANTIN_RFID' || l.accountType === 'DEPOSIT_KANTIN').length === 0 ? (
+              {canteenLedgerHistory.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--slate-400)' }}>
                     Belum ada riwayat transaksi pembayaran kasir kantin tercatat.
                   </td>
                 </tr>
               ) : (
-                state.ledger
-                  .filter(l => l.category === 'BELANJA_KANTIN_RFID' || l.accountType === 'DEPOSIT_KANTIN')
-                  .map(t => (
-                    <tr key={t.id}>
-                      <td>
-                        <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.8rem', color: 'var(--slate-900)' }}>
-                          {t.reference || t.id}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)' }}>
-                          {new Date(t.timestamp).toLocaleString('id-ID')}
-                        </div>
-                      </td>
-                      <td style={{ fontWeight: 800, color: 'var(--slate-900)' }}>{t.studentName}</td>
-                      <td>
-                        <span className={`badge ${t.accountType === 'DEPOSIT_KANTIN' ? 'badge-gold' : 'badge-emerald'}`}>
-                          {t.accountType === 'DEPOSIT_KANTIN' ? 'Deposit Kantin' : 'Tabungan Utama'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="badge badge-purple" style={{ fontSize: '0.7rem' }}>
-                          {t.category}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 900, color: '#dc2626' }}>
-                        - Rp {(Number(t.amount) || 0).toLocaleString('id-ID')}
-                      </td>
-                      <td style={{ fontWeight: 700, color: 'var(--slate-800)' }}>
-                        Rp {(Number(t.balanceAfter) || 0).toLocaleString('id-ID')}
-                      </td>
-                      <td style={{ fontSize: '0.78rem', color: 'var(--slate-600)' }}>{t.actor}</td>
-                    </tr>
-                  ))
+                canteenLedgerHistory.map(t => (
+                  <tr key={t.id}>
+                    <td>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.8rem', color: 'var(--slate-900)' }}>
+                        {t.reference || t.id}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)' }}>
+                        {new Date(t.timestamp).toLocaleString('id-ID')}
+                      </div>
+                    </td>
+                    <td style={{ fontWeight: 800, color: 'var(--slate-900)' }}>{t.studentName}</td>
+                    <td>
+                      <span className={`badge ${t.accountType === 'DEPOSIT_KANTIN' ? 'badge-gold' : 'badge-emerald'}`}>
+                        {t.accountType === 'DEPOSIT_KANTIN' ? 'Deposit Kantin' : 'Tabungan Utama'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="badge badge-purple" style={{ fontSize: '0.7rem' }}>
+                        {t.category}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 900, color: t.type === 'CREDIT' ? '#059669' : '#dc2626' }}>
+                      {t.type === 'CREDIT' ? '+ ' : '- '}Rp {(Number(t.amount) || 0).toLocaleString('id-ID')}
+                    </td>
+                    <td style={{ fontWeight: 700, color: 'var(--slate-800)' }}>
+                      Rp {(Number(t.balanceAfter) || 0).toLocaleString('id-ID')}
+                    </td>
+                    <td style={{ fontSize: '0.78rem', color: 'var(--slate-600)' }}>{t.actor}</td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
