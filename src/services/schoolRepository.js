@@ -456,6 +456,33 @@ export async function deleteRfidCard(cardId) {
   if (error) throw error;
 }
 
+export async function saveAccountToSupabase(username, password, roleId = 'KASIR_KANTIN', accId = null) {
+  if (!supabase) return { success: false, text: 'Supabase belum aktif.' };
+  const cleanUname = (username || '').trim().toLowerCase();
+  const cleanPass = (password || '').trim();
+  if (!cleanUname || !cleanPass) return { success: false };
+
+  try {
+    // 1. Direct update by username
+    await supabase.from('login_accounts').update({ password: cleanPass, role_id: roleId }).eq('username', cleanUname);
+
+    // 2. Direct upsert
+    const rowId = accId || (cleanUname === 'kasirdemo' ? 'ACC-ADMIN-005' : (cleanUname === 'kasir' ? 'ACC-ADMIN-003' : (cleanUname === 'admin' ? 'ACC-ADMIN-002' : (cleanUname === 'superadmin' ? 'ACC-ADMIN-001' : (cleanUname === 'penjemputan' ? 'ACC-ADMIN-004' : `ACC-ADMIN-${Date.now()}`)))));
+
+    const accountRow = {
+      id: rowId,
+      username: cleanUname,
+      password: cleanPass,
+      role_id: roleId
+    };
+    await supabase.from('login_accounts').upsert(accountRow);
+    return { success: true };
+  } catch (e) {
+    console.error('Error saving account to Supabase:', e);
+    return { success: false, text: e.message };
+  }
+}
+
 export async function saveRfidCardToSupabase(assignedId, cleanUid, type = 'SISWA', assignedName = 'Siswa', cardId = null) {
   if (!supabase) return { success: false, text: 'Supabase belum terkonfigurasi.' };
 

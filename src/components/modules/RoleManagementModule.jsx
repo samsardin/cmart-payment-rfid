@@ -3,7 +3,7 @@ import {
   Users, UserPlus, UserCheck, Edit3, Trash2, KeyRound, ShieldCheck,
   Plus, Search, CheckCircle2, XCircle, Store, Wallet, Lock, X, Volume2
 } from 'lucide-react';
-import { saveSchoolState } from '../../services/schoolRepository';
+import { saveSchoolState, saveAccountToSupabase } from '../../services/schoolRepository';
 
 export default function RoleManagementModule({ state, setState }) {
   // Sub-tabs: 'STUDENTS' | 'FINANCE_ADMIN' | 'PICKUP_ADMIN' | 'CASHIER'
@@ -271,6 +271,7 @@ export default function RoleManagementModule({ state, setState }) {
     if (newState) {
       setState(newState);
       saveSchoolState(newState).catch(err => console.warn('Sync error saving account:', err));
+      saveAccountToSupabase(cleanUsername, accountForm.password.trim(), accountForm.roleId, selectedItem?.id);
     }
 
     setModalType(null);

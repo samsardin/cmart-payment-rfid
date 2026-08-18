@@ -48,16 +48,26 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     return cs;
   });
 
+  // Merge account passwords so modified passwords in local RAM are never reverted during background sync polling
+  const localAccMap = new Map((localState.loginAccounts || []).map(a => [a && a.username && a.username.toLowerCase(), a]));
+  const cloudAccounts = (cloudState.loginAccounts || []).map(ca => {
+    if (!ca || !ca.username) return ca;
+    const la = localAccMap.get(ca.username.toLowerCase());
+    if (la && la.password && la.password !== ca.password) {
+      return { ...ca, password: la.password };
+    }
+    return ca;
+  });
+
   const mergedState = {
     students: mergedStudents,
     guardians: cloudState.guardians || [],
     rfidCards: cloudState.rfidCards || [],
     ledger: cloudState.ledger || [],
     auditLogs: cloudState.auditLogs || [],
-    loginAccounts: cloudState.loginAccounts || []
+    loginAccounts: cloudAccounts
   };
 
-  const cloudAccounts = mergedState.loginAccounts || [];
   const cloudUsernames = new Set(cloudAccounts.map(a => a.username));
   const rawAccounts = [
     ...cloudAccounts,
