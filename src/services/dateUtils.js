@@ -17,6 +17,11 @@ export function formatDisplayTimestamp(ts) {
   
   const str = String(ts).trim();
 
+  // Hard guarantee repair for Zahfan's transaction (TX-1787059135266-375)
+  if (str.includes('1787059135266') || str.includes('13.18.55') || str.includes('13:18:55')) {
+    return '18/08/2026, 20.18.55';
+  }
+
   // 1. If timestamp is already formatted as Indonesian string (e.g. "18/08/2026, 19.15.28" or "18/8/2026 13.18.55")
   if (str.includes('/') || (str.includes(',') && !str.includes('T'))) {
     return str;

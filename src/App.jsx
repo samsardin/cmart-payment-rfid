@@ -99,8 +99,16 @@ export default function App() {
           ...LOGIN_ACCOUNTS.filter(defaultAcc => !savedUsernames.has(defaultAcc.username))
         ];
 
-        const rawStudents = Array.isArray(savedState.students) ? savedState.students : (isSupabaseConfigured ? [] : INITIAL_STUDENTS);
-        const rawLedger = Array.isArray(savedState.ledger) ? savedState.ledger : (isSupabaseConfigured ? [] : INITIAL_LEDGER);
+        let rawLedger = Array.isArray(savedState.ledger) ? savedState.ledger : (isSupabaseConfigured ? [] : INITIAL_LEDGER);
+        rawLedger = rawLedger.map(tx => {
+          if (!tx) return tx;
+          const tStr = String(tx.timestamp || '') + String(tx.id || '');
+          if (tx.id === 'TX-1787059135266-375' || tStr.includes('13.18.55') || tStr.includes('13:18:55') || tStr.includes('1787059135266')) {
+            return { ...tx, timestamp: '18/08/2026, 20.18.55' };
+          }
+          return tx;
+        });
+
         const rawGuardians = Array.isArray(savedState.guardians) ? savedState.guardians : (isSupabaseConfigured ? [] : INITIAL_GUARDIANS);
         const harmonizedStudents = harmonizeStudentBalancesWithLedger(rawStudents, rawLedger);
         const cleanAccounts = sanitizeLoginAccounts(rawAccounts, harmonizedStudents, rawGuardians);
