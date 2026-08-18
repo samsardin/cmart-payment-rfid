@@ -33,60 +33,33 @@ const LEGACY_LOCAL_STORAGE_KEY = 'SCHOOL_RFID_APP_STATE_V1';
 const STATE_COLLECTIONS = ['students', 'guardians', 'rfidCards', 'ledger', 'auditLogs', 'loginAccounts'];
 
 function mergeLocalDataIntoCloud(cloudState, localState) {
+  if (isSupabaseConfigured && cloudState) {
+    const cloudAccounts = cloudState.loginAccounts || [];
+    const cloudUsernames = new Set(cloudAccounts.map(a => a.username));
+    const mergedAccounts = [
+      ...cloudAccounts,
+      ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
+    ];
+
+    return {
+      students: cloudState.students || [],
+      guardians: cloudState.guardians || [],
+      rfidCards: cloudState.rfidCards || [],
+      ledger: cloudState.ledger || [],
+      auditLogs: cloudState.auditLogs || [],
+      loginAccounts: mergedAccounts
+    };
+  }
+
   return STATE_COLLECTIONS.reduce((mergedState, collection) => {
     const cloudRows = cloudState[collection] || [];
     const localRows = localState[collection] || [];
-    const localMap = new Map(localRows.map((row) => [row.id, row]));
-
-    if (collection === 'students') {
-      const mergedStudentsMap = new Map();
-      cloudRows.forEach(cStudent => {
-        if (cStudent && cStudent.id) {
-          mergedStudentsMap.set(cStudent.id, cStudent);
-        }
-      });
-      localRows.forEach(lStudent => {
-        if (lStudent && lStudent.id) {
-          const existingCloud = mergedStudentsMap.get(lStudent.id) || {};
-          mergedStudentsMap.set(lStudent.id, {
-            ...existingCloud,
-            ...lStudent,
-            savingsBalance: lStudent.savingsBalance !== undefined ? Number(lStudent.savingsBalance) : Number(existingCloud.savingsBalance || 0),
-            canteenDepositBalance: lStudent.canteenDepositBalance !== undefined ? Number(lStudent.canteenDepositBalance) : Number(existingCloud.canteenDepositBalance || 0),
-            rfidUid: lStudent.rfidUid || existingCloud.rfidUid
-          });
-        }
-      });
-
-      return {
-        ...mergedState,
-        students: Array.from(mergedStudentsMap.values())
-      };
-    }
-
-    if (collection === 'ledger' || collection === 'auditLogs') {
-      const rowMap = new Map();
-      cloudRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
-      localRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
-
-      const sortedRows = Array.from(rowMap.values()).sort((a, b) => {
-        const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return tB - tA;
-      });
-
-      return {
-        ...mergedState,
-        [collection]: sortedRows
-      };
-    }
-
-    const cloudIds = new Set(cloudRows.map((row) => row.id));
-    const newLocalRows = localRows.filter((row) => !cloudIds.has(row.id));
-
+    const rowMap = new Map();
+    cloudRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
+    localRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
     return {
       ...mergedState,
-      [collection]: [...cloudRows, ...newLocalRows],
+      [collection]: Array.from(rowMap.values())
     };
   }, { ...cloudState });
 }
