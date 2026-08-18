@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
-import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, seedInitialDataToSupabase, deleteGuardian, saveSchoolState } from '../../services/schoolRepository';
+import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, seedInitialDataToSupabase, deleteGuardian, saveSchoolState, saveRfidCardToSupabase } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings, externalSubTab, onSubTabChange }) {
   const [internalSubTab, setInternalSubTab] = useState(() => (currentRole?.id === 'SUPER_ADMIN' ? 'database' : 'rfid'));
@@ -826,6 +826,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
       };
 
       saveSchoolState(nextState);
+      saveRfidCardToSupabase(assignedId, cleanUid, newCardType, assignedName, cardIdToUse);
       return nextState;
     });
 

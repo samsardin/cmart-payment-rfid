@@ -34,14 +34,16 @@ const toDatabaseRow = (row, tableKey) => {
     mapped.savings_balance = Number(mapped.savings_balance) || 0;
     mapped.canteen_deposit_balance = Number(mapped.canteen_deposit_balance) || 0;
 
+    // Ensure rfid_uid and rfid_card_uid are both clean string or NULL
+    const cleanRfid = (mapped.rfid_uid && typeof mapped.rfid_uid === 'string' && mapped.rfid_uid.trim() !== '') 
+      ? mapped.rfid_uid.trim().toUpperCase() 
+      : null;
+    mapped.rfid_uid = cleanRfid;
+    mapped.rfid_card_uid = cleanRfid;
+
     // Ensure guardian_id is NULL if empty string, preventing FK constraint errors in Supabase
     if (!mapped.guardian_id || typeof mapped.guardian_id !== 'string' || mapped.guardian_id.trim() === '') {
       mapped.guardian_id = null;
-    }
-
-    // Ensure rfid_uid is NULL if empty string, preventing UNIQUE constraint errors in Supabase
-    if (!mapped.rfid_uid || typeof mapped.rfid_uid !== 'string' || mapped.rfid_uid.trim() === '') {
-      mapped.rfid_uid = null;
     }
 
     // Guarantee non-empty unique NIS
@@ -442,6 +444,48 @@ export async function deleteRfidCard(cardId) {
 
   const { error } = await supabase.from('rfid_cards').delete().eq('id', cardId);
   if (error) throw error;
+}
+
+export async function saveRfidCardToSupabase(assignedId, cleanUid, type = 'SISWA', assignedName = 'Siswa', cardId = null) {
+  if (!supabase) return { success: false, text: 'Supabase belum terkonfigurasi.' };
+
+  const cId = cardId || `CARD-${Date.now()}`;
+  const cleanUidUpper = (cleanUid || '').trim().toUpperCase();
+
+  try {
+    if (type === 'SISWA') {
+      // Direct update to students table in Supabase
+      const { error: err1 } = await supabase.from('students').update({ rfid_uid: cleanUidUpper }).eq('id', assignedId);
+      if (err1) {
+        console.warn('Update student rfid_uid returned notice:', err1.message);
+        await supabase.from('students').update({ rfid_card_uid: cleanUidUpper }).eq('id', assignedId);
+      }
+    } else {
+      // Direct update to guardians table in Supabase
+      await supabase.from('guardians').update({ rfid_card_uid: cleanUidUpper }).eq('id', assignedId);
+    }
+
+    // Direct upsert to rfid_cards table in Supabase
+    const cardRow = {
+      id: cId,
+      uid: cleanUidUpper,
+      type: type,
+      assigned_to_name: assignedName,
+      assigned_to_id: assignedId,
+      status: 'ACTIVE',
+      issued_at: getLocalTodayDateString()
+    };
+
+    const { error: cardErr } = await supabase.from('rfid_cards').upsert(cardRow);
+    if (cardErr) {
+      console.warn('Upsert rfid_cards table notice:', cardErr.message);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Error saving RFID card directly to Supabase:', err);
+    return { success: false, text: err.message };
+  }
 }
 
 export async function deleteGuardian(guardianId) {
