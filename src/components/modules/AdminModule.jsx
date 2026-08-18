@@ -1557,30 +1557,87 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
 
           {/* Register Card Form */}
           <div className="glass-card" style={{ border: lastScannedUid ? '2px solid var(--accent-gold-500)' : 'var(--glass-border)' }}>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Plus size={18} style={{ color: 'var(--primary-600)' }} />
-              Registrasi Kartu RFID Baru
-            </h3>
-
-            {/* USB RFID Status Bar */}
-            <div style={{ background: '#f0fdf4', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--primary-300)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Usb size={20} style={{ color: 'var(--primary-700)' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.84rem', color: 'var(--primary-950)' }}>
-                  Perangkat USB RFID Reader Ready (13.56 MHz MF1 S50 PnP)
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--slate-600)' }}>
-                  Tempelkan kartu baru di mana saja pada layar ini untuk mengisi UID otomatis!
-                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                  <CreditCard size={20} style={{ color: 'var(--primary-600)' }} />
+                  Penertiban & Pemetaan Kartu RFID
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--slate-500)', margin: 0 }}>
+                  Tempelkan kartu fisik 13.56 MHz PnP untuk mendaftarkan Siswa atau Orang Tua/Penjemput.
+                </p>
+              </div>
+
+              {/* Segmented Pills Switcher (Kartu Siswa vs Kartu Penjemput) */}
+              <div style={{ background: '#f1f5f9', padding: '4px', borderRadius: '12px', display: 'flex', gap: '4px', border: '1px solid #e2e8f0' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCardType('SISWA');
+                    setNewCardAssignedTo(state.students[0]?.id || '');
+                    setOwnerSearchQuery('');
+                  }}
+                  style={{
+                    padding: '0.45rem 0.85rem',
+                    borderRadius: '9px',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: 'none',
+                    transition: 'all 0.2s ease',
+                    background: newCardType === 'SISWA' ? '#ffffff' : 'transparent',
+                    color: newCardType === 'SISWA' ? 'var(--primary-700)' : 'var(--slate-600)',
+                    boxShadow: newCardType === 'SISWA' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+                  }}
+                >
+                  🎒 Kartu Siswa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCardType('PENJEMPUT');
+                    setNewCardAssignedTo(state.guardians[0]?.id || '');
+                    setOwnerSearchQuery('');
+                  }}
+                  style={{
+                    padding: '0.45rem 0.85rem',
+                    borderRadius: '9px',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: 'none',
+                    transition: 'all 0.2s ease',
+                    background: newCardType === 'PENJEMPUT' ? '#ffffff' : 'transparent',
+                    color: newCardType === 'PENJEMPUT' ? '#d97706' : 'var(--slate-600)',
+                    boxShadow: newCardType === 'PENJEMPUT' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+                  }}
+                >
+                  👨‍👩‍👧 Kartu Orang Tua / Penjemput
+                </button>
               </div>
             </div>
 
-            <form onSubmit={handleAddCard}>
-              <div className="form-group">
-                <label className="form-label" style={{ fontWeight: 700 }}>
-                  UID Kartu RFID (Otomatis Terisi dari USB Reader):
-                </label>
-                <div style={{ position: 'relative' }}>
+            {/* High-Tech Card Scanner & Registration Panel */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1rem' }}>
+              {/* Left Box: USB Tap Scanner Card */}
+              <div style={{ background: newCardUid ? '#f0fdf4' : '#f8fafc', padding: '1.25rem', borderRadius: '16px', border: newCardUid ? '2px solid #86efac' : '1.5px solid #e2e8f0', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: newCardUid ? '#166534' : 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Usb size={15} style={{ color: newCardUid ? '#16a34a' : 'var(--slate-400)' }} />
+                      {newCardUid ? '🟢 KARTU TERDETEKSI' : '📡 SIAP TAP KARTU...'}
+                    </span>
+                    {newCardUid && (
+                      <button
+                        type="button"
+                        onClick={() => setNewCardUid('')}
+                        style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d', fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        Reset / Tap Ulang
+                      </button>
+                    )}
+                  </div>
+
                   <input
                     ref={uidInputRef}
                     type="text"
@@ -1590,268 +1647,154 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     onChange={(e) => setNewCardUid(e.target.value.toUpperCase())}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        e.preventDefault(); // Prevent physical USB RFID scanner Enter key from auto-submitting card!
+                        e.preventDefault();
                       }
                     }}
                     style={{
                       fontFamily: 'monospace',
                       fontWeight: 800,
-                      fontSize: '1.1rem',
-                      background: lastScannedUid ? '#fefce8' : 'white',
-                      border: lastScannedUid ? '2px solid var(--accent-gold-500)' : '1px solid var(--slate-300)'
+                      fontSize: '1.15rem',
+                      textAlign: 'center',
+                      letterSpacing: '1px',
+                      background: '#ffffff',
+                      border: newCardUid ? '2px solid #22c55e' : '1.5px dashed #cbd5e1',
+                      color: newCardUid ? '#15803d' : 'var(--slate-400)',
+                      borderRadius: '10px',
+                      padding: '0.75rem'
                     }}
                     autoFocus
                   />
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">Tipe Peruntukan Kartu:</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  <button
-                    type="button"
-                    className={`btn ${newCardType === 'SISWA' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => {
-                      setNewCardType('SISWA');
-                      setNewCardAssignedTo(state.students[0]?.id || '');
-                    }}
-                  >
-                    Kartu Siswa
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${newCardType === 'PENJEMPUT' ? 'btn-gold' : 'btn-secondary'}`}
-                    onClick={() => {
-                      setNewCardType('PENJEMPUT');
-                      setNewCardAssignedTo(state.guardians[0]?.id || '');
-                    }}
-                  >
-                    Kartu Orang Tua / Wali
-                  </button>
+                <div style={{ fontSize: '0.73rem', color: 'var(--slate-500)', marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>ℹ️ Tempelkan kartu fisik 13.56 MHz PnP atau ketik manual UID di atas.</span>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Petakan ke Pemilik:</label>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <button
-                    type="button"
-                    className={`btn ${!isNewOwner ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setIsNewOwner(false)}
-                  >
-                    Pilih dari daftar
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${isNewOwner ? 'btn-gold' : 'btn-secondary'}`}
-                    onClick={() => setIsNewOwner(true)}
-                  >
-                    Buat pemilik baru
-                  </button>
-                </div>
+              {/* Right Box: Owner Selector & Preview */}
+              <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                    <label className="form-label" style={{ fontWeight: 800, margin: 0, fontSize: '0.85rem' }}>
+                      Pilih Pemilik {newCardType === 'SISWA' ? 'Siswa' : 'Orang Tua / Wali'}:
+                    </label>
 
-                {!isNewOwner ? (
-                  <div style={{ display: 'grid', gap: '0.65rem' }}>
-                    <select
-                      className="form-input"
-                      style={{ fontWeight: 700, padding: '0.65rem 0.85rem', fontSize: '0.9rem', borderRadius: 'var(--radius-md)', background: '#f8fafc', border: '1.5px solid var(--primary-500)' }}
-                      value={newCardAssignedTo}
-                      onChange={(e) => {
-                        const selId = e.target.value;
-                        setNewCardAssignedTo(selId);
-                        setIsNewOwner(false);
-                        if (newCardType === 'SISWA') {
-                          const st = (state.students || []).find(s => s.id === selId);
-                          if (st) setOwnerSearchQuery(`${st.name} (${st.class}) - NIS: ${st.nis}`);
-                        } else {
-                          const gd = (state.guardians || []).find(g => g.id === selId);
-                          if (gd) setOwnerSearchQuery(`${gd.name} (${gd.relationship})`);
-                        }
-                      }}
-                    >
-                      <option value="">-- Klik Untuk Pilih {newCardType === 'SISWA' ? 'Siswa' : 'Orang Tua / Wali'} Dari Daftar --</option>
-                      {newCardType === 'SISWA'
-                        ? (state.students || []).map(s => (
-                            <option key={s.id} value={s.id}>
-                              {s.name} (Kelas {s.class}) - NIS: {s.nis} {s.rfidUid ? `[RFID: ${s.rfidUid}]` : '[Belum Ada RFID]'}
-                            </option>
-                          ))
-                        : (state.guardians || []).map(g => (
-                            <option key={g.id} value={g.id}>
-                              {g.name} ({g.relationship}) - Telp: {g.phone || '-'}
-                            </option>
-                          ))
-                      }
-                    </select>
-
-                    <div style={{ position: 'relative' }}>
-                      <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
-                      <input
-                        ref={ownerSearchInputRef}
-                        type="text"
-                        className="form-input"
-                        placeholder={newCardType === 'SISWA' ? "Atau pencarian cepat nama/NIS..." : "Atau pencarian cepat nama/no HP..."}
-                        style={{ paddingLeft: '36px', paddingRight: ownerSearchQuery ? '36px' : '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)' }}
-                        value={ownerSearchQuery}
-                        onFocus={(e) => {
-                          e.target.select();
-                          setIsOwnerDropdownOpen(true);
-                        }}
-                        onChange={(e) => {
-                          setOwnerSearchQuery(e.target.value);
-                          setIsOwnerDropdownOpen(true);
-                        }}
-                      />
-                      {ownerSearchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOwnerSearchQuery('');
-                            setNewCardAssignedTo('');
-                            setIsOwnerDropdownOpen(true);
-                          }}
-                          style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-400)' }}
-                        >
-                          <X size={15} />
-                        </button>
-                      )}
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setIsNewOwner(false)}
+                        style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 700, background: !isNewOwner ? '#e0e7ff' : '#f8fafc', color: !isNewOwner ? '#3730a3' : '#64748b', cursor: 'pointer' }}
+                      >
+                        Pilih Ada
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsNewOwner(true)}
+                        style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid #fef08a', fontWeight: 700, background: isNewOwner ? '#fef9c3' : '#f8fafc', color: isNewOwner ? '#854d0e' : '#64748b', cursor: 'pointer' }}
+                      >
+                        + Pemilik Baru
+                      </button>
                     </div>
+                  </div>
 
-                    {/* Search Results Panel */}
-                    {isOwnerDropdownOpen && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: 0,
-                          right: 0,
-                          zIndex: 100,
-                          marginTop: '4px',
-                          maxHeight: '220px',
-                          overflowY: 'auto',
-                          background: 'white',
-                          border: '1px solid var(--slate-300)',
-                          borderRadius: 'var(--radius-md)',
-                          boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                          padding: '0.35rem'
+                  {!isNewOwner ? (
+                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                      <select
+                        className="form-input"
+                        style={{ fontWeight: 700, padding: '0.6rem', fontSize: '0.85rem', borderRadius: '8px', background: '#f8fafc', border: '1.5px solid var(--primary-400)' }}
+                        value={newCardAssignedTo}
+                        onChange={(e) => {
+                          const selId = e.target.value;
+                          setNewCardAssignedTo(selId);
+                          setIsNewOwner(false);
+                          if (newCardType === 'SISWA') {
+                            const st = (state.students || []).find(s => s.id === selId);
+                            if (st) setOwnerSearchQuery(`${st.name} (${st.class}) - NIS: ${st.nis}`);
+                          } else {
+                            const gd = (state.guardians || []).find(g => g.id === selId);
+                            if (gd) setOwnerSearchQuery(`${gd.name} (${gd.relationship})`);
+                          }
                         }}
                       >
-                        {searchedOwnersList.length === 0 ? (
-                          <div style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--slate-400)' }}>
-                            Tidak ada {newCardType === 'SISWA' ? 'siswa' : 'orang tua'} ditemukan untuk kata kunci "{ownerSearchQuery}"
-                          </div>
-                        ) : (
-                          searchedOwnersList.map(item => {
-                            const isSelected = item.id === newCardAssignedTo;
-                            return (
-                              <div
-                                key={item.id}
-                                onClick={() => {
-                                  setNewCardAssignedTo(item.id);
-                                  setIsNewOwner(false); // Map to existing student (don't create new duplicate student!)
-                                  if (newCardType === 'SISWA') {
-                                    setOwnerSearchQuery(`${item.name} (${item.class}) - NIS: ${item.nis}`);
-                                  } else {
-                                    setOwnerSearchQuery(`${item.name} (${item.relationship})`);
-                                  }
-                                  setIsOwnerDropdownOpen(false);
-                                }}
-                                style={{
-                                  padding: '0.5rem 0.75rem',
-                                  borderRadius: 'var(--radius-sm)',
-                                  cursor: 'pointer',
-                                  background: isSelected ? '#ecfdf5' : 'transparent',
-                                  borderBottom: '1px solid #f1f5f9',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  gap: '0.5rem',
-                                  transition: 'background 0.15s ease'
-                                }}
-                                onMouseDown={(e) => e.preventDefault()}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                  {newCardType === 'SISWA' ? (
-                                    <img src={item.photo} alt={item.name} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
-                                  ) : (
-                                    <Users size={18} style={{ color: 'var(--primary-600)' }} />
-                                  )}
-                                  <div>
-                                    <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--slate-900)' }}>{item.name}</div>
-                                    <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
-                                      {newCardType === 'SISWA' ? `NIS: ${item.nis} • Kelas ${item.class}` : `HP: ${item.phone} (${item.relationship})`}
-                                    </div>
-                                  </div>
-                                </div>
+                        <option value="">-- Klik Untuk Pilih {newCardType === 'SISWA' ? 'Siswa' : 'Orang Tua'} --</option>
+                        {newCardType === 'SISWA'
+                          ? (state.students || []).map(s => (
+                              <option key={s.id} value={s.id}>
+                                {s.name} (Kelas {s.class}) - NIS: {s.nis} {s.rfidUid ? `[RFID: ${s.rfidUid}]` : '[Belum Ada RFID]'}
+                              </option>
+                            ))
+                          : (state.guardians || []).map(g => (
+                              <option key={g.id} value={g.id}>
+                                {g.name} ({g.relationship}) - Telp: {g.phone || '-'}
+                              </option>
+                            ))
+                        }
+                      </select>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                      <input
+                        ref={newOwnerNameInputRef}
+                        type="text"
+                        className="form-input"
+                        placeholder="Nama Pemilik Baru *"
+                        value={newOwnerName}
+                        onChange={(e) => setNewOwnerName(e.target.value)}
+                        style={{ padding: '0.55rem', fontSize: '0.85rem' }}
+                      />
+                      {newCardType === 'SISWA' ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="NIS *"
+                            value={newOwnerNis}
+                            onChange={(e) => setNewOwnerNis(e.target.value)}
+                            style={{ padding: '0.5rem', fontSize: '0.82rem' }}
+                          />
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="Kelas *"
+                            value={newOwnerClass}
+                            onChange={(e) => setNewOwnerClass(e.target.value)}
+                            style={{ padding: '0.5rem', fontSize: '0.82rem' }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                          <input
+                            type="tel"
+                            className="form-input"
+                            placeholder="Nomor telepon *"
+                            value={newOwnerPhone}
+                            onChange={(e) => setNewOwnerPhone(e.target.value)}
+                            style={{ padding: '0.5rem', fontSize: '0.82rem' }}
+                          />
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="Hubungan (Ayah/Ibu) *"
+                            value={newOwnerRelationship}
+                            onChange={(e) => setNewOwnerRelationship(e.target.value)}
+                            style={{ padding: '0.5rem', fontSize: '0.82rem' }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-                                {isSelected && (
-                                  <CheckCircle2 size={16} style={{ color: 'var(--primary-600)' }} />
-                                )}
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ display: 'grid', gap: '0.5rem' }}>
-                    <input
-                      ref={newOwnerNameInputRef}
-                      type="text"
-                      className="form-input"
-                      placeholder="Nama Pemilik Baru *"
-                      value={newOwnerName}
-                      onChange={(e) => setNewOwnerName(e.target.value)}
-                    />
-                    {newCardType === 'SISWA' ? (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="NIS *"
-                          value={newOwnerNis}
-                          onChange={(e) => setNewOwnerNis(e.target.value)}
-                        />
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="Kelas *"
-                          value={newOwnerClass}
-                          onChange={(e) => setNewOwnerClass(e.target.value)}
-                        />
-                      </div>
-                    ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                        <input
-                          type="tel"
-                          className="form-input"
-                          placeholder="Nomor telepon *"
-                          value={newOwnerPhone}
-                          onChange={(e) => setNewOwnerPhone(e.target.value)}
-                        />
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="Hubungan (Ayah/Ibu/Wali) *"
-                          value={newOwnerRelationship}
-                          onChange={(e) => setNewOwnerRelationship(e.target.value)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={handleAddCard}
+                  className="btn btn-emerald"
+                  style={{ width: '100%', marginTop: '0.75rem', fontWeight: 800, padding: '0.75rem', fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(16,185,129,0.25)' }}
+                >
+                  💳 Terbitkan & Petakan Kartu RFID
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={handleAddCard}
-                className="btn btn-primary"
-                style={{ width: '100%', marginTop: '0.5rem', fontWeight: 800, padding: '0.75rem' }}
-              >
-                Terbitkan & Petakan Kartu RFID
-              </button>
-            </form>
+            </div>
           </div>
 
           {/* Cards List Table */}
