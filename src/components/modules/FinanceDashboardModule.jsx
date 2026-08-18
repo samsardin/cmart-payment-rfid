@@ -36,7 +36,7 @@ export default function FinanceDashboardModule({ state }) {
   // Calculate filtered ledger transactions based on time range and selected month/year
   const filteredLedger = useMemo(() => {
     if (!Array.isArray(state.ledger)) return [];
-    const fixedLedger = recalculateLedgerRunningBalances(state.ledger);
+    const fixedLedger = recalculateLedgerRunningBalances(state.ledger, state.students);
     const now = new Date();
 
     return fixedLedger.filter(tx => {
@@ -53,7 +53,7 @@ export default function FinanceDashboardModule({ state }) {
       }
       return true; // 'ALL'
     });
-  }, [state.ledger, timeRange, selectedMonth, selectedYear]);
+  }, [state.ledger, state.students, timeRange, selectedMonth, selectedYear]);
 
   // Overall and Filtered Statistics
   const stats = useMemo(() => {

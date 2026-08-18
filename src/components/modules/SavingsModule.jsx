@@ -312,11 +312,11 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
 
   const studentTransactionHistory = useMemo(() => {
     if (!currentActiveStudent) return [];
-    const fixedLedger = recalculateLedgerRunningBalances(state.ledger);
+    const fixedLedger = recalculateLedgerRunningBalances(state.ledger, state.students);
     return fixedLedger
       .filter((transaction) => (transaction.studentId === currentActiveStudent.id || transaction.student_id === currentActiveStudent.id))
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [state.ledger, currentActiveStudent]);
+  }, [state.ledger, state.students, currentActiveStudent]);
 
   const studentSavingsHistory = useMemo(() => (
     studentTransactionHistory.filter(t => t.accountType === 'TABUNGAN')
