@@ -1,7 +1,14 @@
 import { supabase } from './supabaseClient';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from './dateUtils';
 import { getClientIpAndDevice } from './networkUtils';
-import { LOGIN_ACCOUNTS } from '../data/mockData';
+import {
+  LOGIN_ACCOUNTS,
+  INITIAL_STUDENTS,
+  INITIAL_GUARDIANS,
+  INITIAL_RFID_CARDS,
+  INITIAL_LEDGER,
+  INITIAL_AUDIT_LOGS
+} from '../data/mockData';
 
 const tableMappings = [
   ['guardians', 'guardians'],
@@ -142,6 +149,43 @@ export async function forceUpsertSystemAccountsToSupabase() {
   }
 }
 
+export async function seedInitialDataToSupabase() {
+  if (!supabase) return { success: false, text: 'Koneksi Supabase belum aktif.' };
+
+  try {
+    // 1. Seed Guardians
+    for (const g of INITIAL_GUARDIANS) {
+      await supabase.from('guardians').upsert(toDatabaseRow(g, 'guardians'));
+    }
+
+    // 2. Seed Students
+    for (const s of INITIAL_STUDENTS) {
+      await supabase.from('students').upsert(toDatabaseRow(s, 'students'));
+    }
+
+    // 3. Seed RFID Cards
+    for (const c of INITIAL_RFID_CARDS) {
+      await supabase.from('rfid_cards').upsert(toDatabaseRow(c, 'rfidCards'));
+    }
+
+    // 4. Seed Ledger
+    for (const l of INITIAL_LEDGER) {
+      await supabase.from('ledger').upsert(toDatabaseRow(l, 'ledger'));
+    }
+
+    // 5. Seed Audit Logs
+    for (const a of INITIAL_AUDIT_LOGS) {
+      await supabase.from('audit_logs').upsert(toDatabaseRow(a, 'auditLogs'));
+    }
+
+    await forceUpsertSystemAccountsToSupabase();
+    return { success: true, text: 'Seluruh data sekolah (Siswa, Wali, RFID, Ledger, & Akun) BERHASIL 100% dipulihkan dan di-seed ke Supabase Cloud!' };
+  } catch (err) {
+    console.error('Error seeding initial data to Supabase:', err);
+    return { success: false, text: `Gagal pemulihan data: ${err.message}` };
+  }
+}
+
 export async function ensureDefaultAccountsInSupabase() {
   await forceUpsertSystemAccountsToSupabase();
 }
@@ -151,7 +195,31 @@ export async function loadSchoolState() {
 
   await ensureDefaultAccountsInSupabase();
 
-  const stateObj = Object.fromEntries(results);
+  let results = await Promise.all(
+    tableMappings.map(async ([stateKey, tableName]) => {
+      const { data, error } = await supabase.from(tableName).select('*');
+      if (error) {
+        console.warn(`Warning loading ${stateKey} from Supabase table ${tableName}:`, error);
+        return [stateKey, []];
+      }
+      return [stateKey, (data || []).map(r => toAppRow(r, stateKey))];
+    })
+  );
+
+  let stateObj = Object.fromEntries(results);
+
+  // If students table is empty in Supabase Cloud, automatically seed initial data!
+  if (!stateObj.students || !stateObj.students.length) {
+    await seedInitialDataToSupabase();
+
+    results = await Promise.all(
+      tableMappings.map(async ([stateKey, tableName]) => {
+        const { data } = await supabase.from(tableName).select('*');
+        return [stateKey, (data || []).map(r => toAppRow(r, stateKey))];
+      })
+    );
+    stateObj = Object.fromEntries(results);
+  }
 
   if (Array.isArray(stateObj.ledger)) {
     stateObj.ledger = stateObj.ledger.map(tx => {
@@ -219,15 +287,6 @@ export async function saveSchoolState(state) {
   for (const [stateKey, tableName] of tableMappings) {
     const rows = state[stateKey] || [];
     if (!rows.length) {
-      try {
-        if (tableName === 'login_accounts') {
-          await supabase.from(tableName).delete().in('role_id', ['ORANG_TUA', 'SISWA']);
-        } else {
-          await supabase.from(tableName).delete().not('id', 'is', null);
-        }
-      } catch (emptyErr) {
-        console.warn(`Warning clearing empty table ${tableName} in Supabase:`, emptyErr);
-      }
       continue;
     }
 

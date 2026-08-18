@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
-import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, deleteGuardian, saveSchoolState } from '../../services/schoolRepository';
+import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, seedInitialDataToSupabase, deleteGuardian, saveSchoolState } from '../../services/schoolRepository';
 
 export default function AdminModule({ state, setState, scannedCardUid, currentRole, onDeleteRfidCard, onNavigateToSavings, externalSubTab, onSubTabChange }) {
   const [internalSubTab, setInternalSubTab] = useState(() => (currentRole?.id === 'SUPER_ADMIN' ? 'database' : 'rfid'));
@@ -2447,6 +2447,28 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     disabled={isProcessingAction}
                   >
                     <Upload size={18} /> {isProcessingAction ? 'Memulihkan...' : 'Restore Database (.json / .enc)'}
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      setIsProcessingAction(true);
+                      try {
+                        const res = await seedInitialDataToSupabase();
+                        setDbFeedback({ success: res.success, text: res.text });
+                        if (res.success) {
+                          window.location.reload();
+                        }
+                      } catch (err) {
+                        setDbFeedback({ success: false, text: `Gagal pemulihan: ${err.message}` });
+                      } finally {
+                        setIsProcessingAction(false);
+                      }
+                    }}
+                    className="btn btn-primary"
+                    style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontWeight: 700, marginTop: '0.5rem' }}
+                    disabled={isProcessingAction}
+                  >
+                    <Zap size={18} /> {isProcessingAction ? 'Memulihkan...' : '🔄 Pulihkan & Seed Data Sekolah Ke Supabase Cloud'}
                   </button>
                 </div>
               </div>
