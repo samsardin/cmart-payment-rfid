@@ -146,12 +146,12 @@ export default function App() {
 
         const rawStudents = Array.isArray(savedState.students) ? savedState.students : (isSupabaseConfigured ? [] : INITIAL_STUDENTS);
         const rawGuardians = Array.isArray(savedState.guardians) ? savedState.guardians : (isSupabaseConfigured ? [] : INITIAL_GUARDIANS);
-        const harmonizedStudents = harmonizeStudentBalancesWithLedger(rawStudents, rawLedger);
-        const cleanAccounts = sanitizeLoginAccounts(rawAccounts, harmonizedStudents, rawGuardians);
+        const cleanStudents = isSupabaseConfigured ? rawStudents : harmonizeStudentBalancesWithLedger(rawStudents, rawLedger);
+        const cleanAccounts = sanitizeLoginAccounts(rawAccounts, cleanStudents, rawGuardians);
 
         const cleanState = {
           ...savedState,
-          students: harmonizedStudents,
+          students: cleanStudents,
           guardians: rawGuardians,
           rfidCards: Array.isArray(savedState.rfidCards) ? savedState.rfidCards : (isSupabaseConfigured ? [] : INITIAL_RFID_CARDS),
           ledger: rawLedger,

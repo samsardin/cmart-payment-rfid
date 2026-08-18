@@ -154,11 +154,19 @@ const toAppRow = (row, tableKey) => {
   }
 
   if (tableKey === 'students') {
-    mapped.savingsBalance = Number(row.savings_balance ?? row.savingsbalance ?? mapped.savingsBalance) || 0;
-    mapped.canteenDepositBalance = Number(row.canteen_deposit_balance ?? row.canteendepositbalance ?? mapped.canteenDepositBalance) || 0;
+    mapped.savingsBalance = Number(row.savings_balance ?? row.savingsbalance ?? mapped.savingsBalance ?? 0) || 0;
+    mapped.canteenDepositBalance = Number(row.canteen_deposit_balance ?? row.canteendepositbalance ?? mapped.canteenDepositBalance ?? 0) || 0;
     if (!mapped.rfidUid && (row.rfid_uid || row.rfiduid || row.rfid_card_uid)) {
       mapped.rfidUid = row.rfid_uid || row.rfiduid || row.rfid_card_uid;
     }
+  }
+
+  if (tableKey === 'ledger') {
+    mapped.amount = Number(row.amount ?? mapped.amount) || 0;
+    mapped.balanceAfter = Number(row.balance_after ?? row.balanceAfter ?? mapped.balanceAfter) || 0;
+    mapped.studentId = row.student_id || row.studentId || mapped.studentId || 'STD-UNKNOWN';
+    mapped.studentName = row.student_name || row.studentName || mapped.studentName || 'Siswa';
+    mapped.accountType = row.account_type || row.accountType || mapped.accountType || 'TABUNGAN';
   }
 
   // If username is penjemputan, always map to ADMIN_PENJEMPUTAN role in app
