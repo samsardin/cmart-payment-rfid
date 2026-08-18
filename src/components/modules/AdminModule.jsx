@@ -2812,70 +2812,64 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 />
               </div>
 
-              {/* DATA ORANG TUA / WALI LENGKAP */}
-              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--slate-200)', display: 'grid', gap: '0.75rem' }}>
-                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--slate-800)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <User size={15} style={{ color: '#f59e0b' }} />
-                  <span>Data Orang Tua / Wali Siswa</span>
+              {/* KONEKSI DATA ORANG TUA / WALI SISWA (SUPER SIMPLE & PRAKTIS) */}
+              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1.5px solid var(--primary-300)', display: 'grid', gap: '0.75rem' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--slate-800)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <User size={16} style={{ color: 'var(--primary-600)' }} />
+                  <span>Koneksi Data Orang Tua / Wali Siswa</span>
                 </div>
 
+                {/* Opsi A: Pilih dari Daftar Orang Tua yang Sudah Didaftarkan */}
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Nama Orang Tua / Wali</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Nama lengkap Ayah/Ibu/Wali..."
-                    value={
-                      (studentForm.guardianName && (
-                        studentForm.guardianName.toLowerCase().includes('orang tua') ||
-                        studentForm.guardianName.toLowerCase().includes('wali') ||
-                        studentForm.guardianName.trim() === 'Orang Tua / Wali'
-                      ))
-                        ? ''
-                        : (studentForm.guardianName || '')
-                    }
+                  <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 700 }}>
+                    Pilih Dari Daftar Orang Tua Yang Sudah Ada:
+                  </label>
+                  <select
+                    className="form-select"
+                    style={{ fontWeight: 700, background: 'white' }}
+                    value={studentForm.guardianId || ''}
                     onChange={(e) => {
-                      let text = e.target.value;
-                      if (text.toLowerCase().includes('orang tua') || text.toLowerCase().includes('wali')) {
-                        text = text.replace(/orang\s*tua\s*\/?\s*wali/gi, '').replace(/orang\s*tua/gi, '').replace(/wali/gi, '').trim();
-                      }
-                      setStudentForm(prev => ({ ...prev, guardianName: text }));
-                    }}
-                    onFocus={(e) => {
-                      const cur = e.target.value || studentForm.guardianName || '';
-                      if (cur.toLowerCase().includes('orang tua') || cur.toLowerCase().includes('wali') || cur.trim() === 'Orang Tua / Wali') {
-                        setStudentForm(prev => ({ ...prev, guardianName: '' }));
+                      const selectedGdrId = e.target.value;
+                      const gdr = (state.guardians || []).find(g => g.id === selectedGdrId);
+                      if (gdr) {
+                        setStudentForm(prev => ({
+                          ...prev,
+                          guardianId: gdr.id,
+                          guardianName: gdr.name,
+                          guardianPhone: gdr.phone || '',
+                          guardianRelationship: gdr.relationship || 'Ayah'
+                        }));
                       } else {
-                        e.target.select();
+                        setStudentForm(prev => ({
+                          ...prev,
+                          guardianId: '',
+                          guardianName: '',
+                          guardianPhone: '',
+                          guardianRelationship: 'Ayah'
+                        }));
                       }
                     }}
-                    onClick={(e) => {
-                      const cur = e.target.value || studentForm.guardianName || '';
-                      if (cur.toLowerCase().includes('orang tua') || cur.toLowerCase().includes('wali') || cur.trim() === 'Orang Tua / Wali') {
-                        setStudentForm(prev => ({ ...prev, guardianName: '' }));
-                      }
-                    }}
-                    onMouseDown={(e) => {
-                      const cur = e.target.value || studentForm.guardianName || '';
-                      if (cur.toLowerCase().includes('orang tua') || cur.toLowerCase().includes('wali') || cur.trim() === 'Orang Tua / Wali') {
-                        setStudentForm(prev => ({ ...prev, guardianName: '' }));
-                      }
-                    }}
-                  />
+                  >
+                    <option value="">-- Atau Ketik Langsung Nama Wali Baru Di Bawah --</option>
+                    {(state.guardians || []).map(g => (
+                      <option key={g.id} value={g.id}>
+                        {g.name} ({g.relationship}) - Telp: {g.phone || '-'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
+                {/* Opsi B: Input Langsung Wali Baru */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.78rem' }}>Hubungan / Relasi</label>
-                    <select
-                      className="form-select"
-                      value={studentForm.guardianRelationship || 'Ayah'}
-                      onChange={(e) => setStudentForm({ ...studentForm, guardianRelationship: e.target.value })}
-                    >
-                      <option value="Ayah">Ayah</option>
-                      <option value="Ibu">Ibu</option>
-                      <option value="Wali">Wali</option>
-                    </select>
+                    <label className="form-label" style={{ fontSize: '0.78rem' }}>Atau Ketik Nama Wali Baru</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Nama Ayah/Ibu/Wali..."
+                      value={studentForm.guardianName || ''}
+                      onChange={(e) => setStudentForm({ ...studentForm, guardianName: e.target.value, guardianId: '' })}
+                    />
                   </div>
 
                   <div className="form-group">
@@ -2883,11 +2877,24 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="0812xxxxxxx"
-                      value={studentForm.guardianPhone}
+                      placeholder="0812xxxxxxxx"
+                      value={studentForm.guardianPhone || ''}
                       onChange={(e) => setStudentForm({ ...studentForm, guardianPhone: e.target.value })}
                     />
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Hubungan / Relasi Wali</label>
+                  <select
+                    className="form-select"
+                    value={studentForm.guardianRelationship || 'Ayah'}
+                    onChange={(e) => setStudentForm({ ...studentForm, guardianRelationship: e.target.value })}
+                  >
+                    <option value="Ayah">Ayah Kandung</option>
+                    <option value="Ibu">Ibu Kandung</option>
+                    <option value="Wali">Wali / Keluarga</option>
+                  </select>
                 </div>
               </div>
 
