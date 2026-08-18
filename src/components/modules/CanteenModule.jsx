@@ -6,6 +6,7 @@ import {
 import { verifyRfidCard, checkIdempotency } from '../../services/rfidService';
 import { executeLedgerTransaction, recalculateLedgerRunningBalances } from '../../services/ledgerEngine';
 import { saveSchoolState } from '../../services/schoolRepository';
+import { formatDisplayTimestamp, parseTimestampMs } from '../../services/dateUtils';
 
 export default function CanteenModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
   const [activeStudent, setActiveStudent] = useState(null);
@@ -97,7 +98,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
         l.category === 'DEPOSIT_KANTIN' ||
         l.category === 'PENARIKAN_DEPOSIT_KANTIN'
       ))
-      .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+      .sort((a, b) => parseTimestampMs(b.timestamp) - parseTimestampMs(a.timestamp));
   }, [state.ledger, state.students]);
 
   // Keep activeStudent synced with latest state.students
@@ -917,7 +918,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
                         {t.reference || t.id}
                       </div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)' }}>
-                        {new Date(t.timestamp).toLocaleString('id-ID')}
+                        {formatDisplayTimestamp(t.timestamp)}
                       </div>
                     </td>
                     <td style={{ fontWeight: 800, color: 'var(--slate-900)' }}>{t.studentName}</td>

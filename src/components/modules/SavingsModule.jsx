@@ -7,7 +7,7 @@ import {
 import confetti from 'canvas-confetti';
 import { executeLedgerTransaction, recalculateLedgerRunningBalances } from '../../services/ledgerEngine';
 import { verifyRfidCard, checkIdempotency, playRfidBeep } from '../../services/rfidService';
-import { getLocalIsoTimestamp, getLocalTodayDateString, formatDisplayTimestamp } from '../../services/dateUtils';
+import { getLocalIsoTimestamp, getLocalTodayDateString, formatDisplayTimestamp, parseTimestampMs } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
 import { saveSchoolState } from '../../services/schoolRepository';
 
@@ -315,7 +315,7 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
     const fixedLedger = recalculateLedgerRunningBalances(state.ledger, state.students);
     return fixedLedger
       .filter((transaction) => (transaction.studentId === currentActiveStudent.id || transaction.student_id === currentActiveStudent.id))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      .sort((a, b) => parseTimestampMs(b.timestamp) - parseTimestampMs(a.timestamp));
   }, [state.ledger, state.students, currentActiveStudent]);
 
   const studentSavingsHistory = useMemo(() => (

@@ -150,7 +150,7 @@ export default function FinanceDashboardModule({ state }) {
 
     const dataRows = filteredLedger.map(tx => [
       tx.id,
-      new Date(tx.timestamp).toLocaleString('id-ID'),
+      formatDisplayTimestamp(tx.timestamp),
       tx.studentName,
       tx.accountType === 'TABUNGAN' ? 'Tabungan Utama' : 'Deposit Kantin',
       tx.type === 'CREDIT' ? 'MASUK (+)' : 'KELUAR (-)',

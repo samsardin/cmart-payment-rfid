@@ -83,3 +83,32 @@ export function formatDisplayTimestamp(ts) {
     return str;
   }
 }
+
+export function parseTimestampMs(ts) {
+  if (!ts) return 0;
+  if (typeof ts === 'number') return ts;
+  const str = String(ts).trim();
+  const sqlIsoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2}):(\d{2})/);
+  if (sqlIsoMatch) {
+    const [_, year, month, day, hour, minute, second] = sqlIsoMatch;
+    return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10), parseInt(hour, 10), parseInt(minute, 10), parseInt(second, 10)).getTime();
+  }
+  if (str.includes('/')) {
+    const dParts = str.split(/[\s,]+/);
+    if (dParts.length >= 2) {
+      const dateTokens = dParts[0].split('/');
+      const timeTokens = dParts[1].replace(/\./g, ':').split(':');
+      if (dateTokens.length === 3 && timeTokens.length >= 2) {
+        const year = parseInt(dateTokens[2], 10);
+        const month = parseInt(dateTokens[1], 10) - 1;
+        const day = parseInt(dateTokens[0], 10);
+        const hour = parseInt(timeTokens[0], 10);
+        const min = parseInt(timeTokens[1], 10);
+        const sec = parseInt(timeTokens[2] || '0', 10);
+        return new Date(year, month, day, hour, min, sec).getTime();
+      }
+    }
+  }
+  const parsed = Date.parse(str);
+  return isNaN(parsed) ? 0 : parsed;
+}

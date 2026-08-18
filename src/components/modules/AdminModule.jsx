@@ -2331,7 +2331,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                     <td>
                       <div style={{ fontWeight: 700, fontSize: '0.78rem', color: 'var(--slate-700)' }}>{log.id}</div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--slate-400)' }}>
-                        {new Date(log.timestamp).toLocaleString('id-ID')}
+                        {formatDisplayTimestamp(log.timestamp)}
                       </div>
                     </td>
                     <td style={{ fontWeight: 700 }}>{log.actor}</td>

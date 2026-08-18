@@ -17,6 +17,7 @@ import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { deleteRfidCard, loadSchoolState, saveSchoolState, ensureDefaultAccountsInSupabase, sanitizeLoginAccounts } from './services/schoolRepository';
 import { exportToExcelXlsx } from './services/excelExporter';
 import { harmonizeStudentBalancesWithLedger } from './services/ledgerEngine';
+import { formatDisplayTimestamp } from './services/dateUtils';
 
 import {
   ROLES,
@@ -577,7 +578,7 @@ export default function App() {
 
     const dataRows = (state.ledger || []).map(l => [
       l.id,
-      new Date(l.timestamp).toLocaleString('id-ID'),
+      formatDisplayTimestamp(l.timestamp),
       l.studentName,
       l.accountType === 'TABUNGAN' ? 'Tabungan Utama' : 'Deposit Kantin',
       l.type === 'CREDIT' ? 'MASUK (+)' : 'KELUAR (-)',
