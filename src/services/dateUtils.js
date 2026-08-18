@@ -29,32 +29,25 @@ export function formatDisplayTimestamp(ts) {
     return '18/08/2026, 20.18.55';
   }
 
-  let date = null;
+  // 1. If timestamp is already formatted as Indonesian string (e.g. "18/08/2026, 22.27.35" or "18/08/2026 22:27:35")
+  if (/^\d{2}\/\d{2}\/\d{4}[,\s]+\d{2}[\.:]\d{2}[\.:]\d{2}$/.test(str)) {
+    return str.replace(/:/g, '.').replace(/, /g, ', ');
+  }
 
+  // 2. If timestamp is SQL / ISO format (e.g. "2026-08-18 22:27:35.448+00" or "2026-08-18T22:27:35")
+  // Extract year, month, day, hour, minute, second directly from string to preserve exact local wall-clock hours
+  const sqlIsoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2}):(\d{2})/);
+  if (sqlIsoMatch) {
+    const [_, year, month, day, hour, minute, second] = sqlIsoMatch;
+    return `${day}/${month}/${year}, ${hour}.${minute}.${second}`;
+  }
+
+  // 3. Fallback parsing for numeric epoch or unexpected formats
+  let date = null;
   if (typeof ts === 'number') {
     date = new Date(ts);
   } else {
-    let parseableStr = str;
-
-    // Handle DD/MM/YYYY, HH.mm.ss or DD/MM/YYYY HH:mm:ss format
-    if (parseableStr.includes('/')) {
-      const dParts = parseableStr.split(/[\s,]+/);
-      if (dParts.length >= 2) {
-        const dateTokens = dParts[0].split('/');
-        const timeTokens = dParts[1].replace(/\./g, ':').split(':');
-        if (dateTokens.length === 3 && timeTokens.length >= 2) {
-          const year = dateTokens[2];
-          const month = dateTokens[1].padStart(2, '0');
-          const day = dateTokens[0].padStart(2, '0');
-          const hour = timeTokens[0].padStart(2, '0');
-          const min = timeTokens[1].padStart(2, '0');
-          const sec = (timeTokens[2] || '00').padStart(2, '0');
-          parseableStr = `${year}-${month}-${day}T${hour}:${min}:${sec}`;
-        }
-      }
-    }
-
-    const parsed = Date.parse(parseableStr);
+    const parsed = Date.parse(str);
     if (!isNaN(parsed)) {
       date = new Date(parsed);
     }

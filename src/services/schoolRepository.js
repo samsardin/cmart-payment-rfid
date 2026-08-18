@@ -312,12 +312,9 @@ export async function loadSchoolState() {
     stateObj.auditLogs = stateObj.auditLogs.map(aud => {
       if (!aud || !aud.timestamp) return aud;
 
-      let fixedTimestamp = aud.timestamp;
-      if (aud.timestamp.includes('T') || aud.timestamp.includes('Z')) {
-        fixedTimestamp = formatDisplayTimestamp(aud.timestamp);
-        if (fixedTimestamp !== aud.timestamp && supabase) {
-          supabase.from('audit_logs').update({ timestamp: fixedTimestamp }).eq('id', aud.id).then(() => {});
-        }
+      let fixedTimestamp = formatDisplayTimestamp(aud.timestamp);
+      if (fixedTimestamp !== aud.timestamp && supabase) {
+        supabase.from('audit_logs').update({ timestamp: fixedTimestamp }).eq('id', aud.id).then(() => {});
       }
       return { ...aud, timestamp: fixedTimestamp };
     });
