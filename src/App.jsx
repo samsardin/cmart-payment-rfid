@@ -35,10 +35,21 @@ const STATE_COLLECTIONS = ['students', 'guardians', 'rfidCards', 'ledger', 'audi
 function mergeLocalDataIntoCloud(cloudState, localState) {
   if (!cloudState) return localState || {};
 
-  // Supabase Cloud DB is the 100% authoritative source of truth.
-  // Empty tables in Supabase MUST remain 100% empty.
+  // Merge student rfidUid so local card assignments never vanish during cloud sync polling
+  const localStudentMap = new Map((localState.students || []).map(s => [s && s.id, s]));
+  const cloudStudents = cloudState.students || [];
+  
+  const mergedStudents = cloudStudents.map(cs => {
+    if (!cs) return cs;
+    const ls = localStudentMap.get(cs.id);
+    if (ls && ls.rfidUid && (!cs.rfidUid || cs.rfidUid.trim() === '')) {
+      return { ...cs, rfidUid: ls.rfidUid };
+    }
+    return cs;
+  });
+
   const mergedState = {
-    students: cloudState.students || [],
+    students: mergedStudents,
     guardians: cloudState.guardians || [],
     rfidCards: cloudState.rfidCards || [],
     ledger: cloudState.ledger || [],

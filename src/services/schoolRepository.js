@@ -106,6 +106,12 @@ const toAppRow = (row, tableKey) => {
     mapped.timestamp = row.created_at || mapped.createdAt;
   }
 
+  if (tableKey === 'students') {
+    if (!mapped.rfidUid && (row.rfid_uid || row.rfiduid || row.rfid_card_uid)) {
+      mapped.rfidUid = row.rfid_uid || row.rfiduid || row.rfid_card_uid;
+    }
+  }
+
   // If username is penjemputan, always map to ADMIN_PENJEMPUTAN role in app
   if (tableKey === 'loginAccounts') {
     if (mapped.username === 'penjemputan') {
