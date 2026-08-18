@@ -798,15 +798,39 @@ export default function RoleManagementModule({ state, setState }) {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">UID Kartu RFID Siswa (Opsional)</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>UID Kartu RFID Siswa (Opsional)</label>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setStudentForm({ ...studentForm, rfidUid: '' });
+                      }}
+                      style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', background: '#eff6ff', color: 'var(--primary-700)', borderColor: '#bfdbfe', fontWeight: 700 }}
+                    >
+                      + Tap RFID / Kosongkan
+                    </button>
+                  </div>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Tempelkan/ketik UID RFID kartu..."
+                    placeholder={studentForm.rfidUid ? studentForm.rfidUid : "📡 Kosong — Silakan Tempelkan/Tap Kartu RFID Baru..."}
                     value={studentForm.rfidUid}
                     onChange={(e) => setStudentForm({ ...studentForm, rfidUid: e.target.value.toUpperCase() })}
-                    style={{ fontFamily: 'monospace', fontWeight: 700 }}
+                    style={{ fontFamily: 'monospace', fontWeight: 700, background: studentForm.rfidUid ? '#ffffff' : '#f0fdf4', borderColor: studentForm.rfidUid ? '#cbd5e1' : '#86efac' }}
                   />
+                  {studentForm.rfidUid && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)', marginTop: '0.3rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>Kartu Terdaftar: <b style={{ fontFamily: 'monospace', color: 'var(--primary-700)' }}>{studentForm.rfidUid}</b></span>
+                      <button
+                        type="button"
+                        onClick={() => setStudentForm({ ...studentForm, rfidUid: '' })}
+                        style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, textDecoration: 'underline' }}
+                      >
+                        (Kosongkan untuk Tap Baru)
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">
