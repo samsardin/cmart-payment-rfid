@@ -3,6 +3,7 @@ import {
   Users, UserPlus, UserCheck, Edit3, Trash2, KeyRound, ShieldCheck,
   Plus, Search, CheckCircle2, XCircle, Store, Wallet, Lock, X, Volume2
 } from 'lucide-react';
+import { saveSchoolState } from '../../services/schoolRepository';
 
 export default function RoleManagementModule({ state, setState }) {
   // Sub-tabs: 'STUDENTS' | 'FINANCE_ADMIN' | 'PICKUP_ADMIN' | 'CASHIER'
@@ -109,6 +110,8 @@ export default function RoleManagementModule({ state, setState }) {
       return;
     }
 
+    let newState = null;
+
     if (modalType === 'ADD_STUDENT') {
       const newStudentId = `STD-${Date.now()}`;
       const newStudent = {
@@ -124,7 +127,6 @@ export default function RoleManagementModule({ state, setState }) {
         status: studentForm.status
       };
 
-      // Also create login account for student if needed
       const newAccount = {
         id: `ACC-${newStudentId}`,
         username: studentForm.nis.trim(),
@@ -133,15 +135,15 @@ export default function RoleManagementModule({ state, setState }) {
         studentId: newStudentId
       };
 
-      setState(prev => ({
-        ...prev,
-        students: [newStudent, ...prev.students],
-        loginAccounts: [...(prev.loginAccounts || []), newAccount]
-      }));
+      newState = {
+        ...state,
+        students: [newStudent, ...(state.students || [])],
+        loginAccounts: [...(state.loginAccounts || []), newAccount]
+      };
 
       setFeedback({ type: 'success', text: `Berhasil menambah siswa baru: ${newStudent.name}` });
     } else if (modalType === 'EDIT_STUDENT' && selectedItem) {
-      const updatedStudents = state.students.map(s => {
+      const updatedStudents = (state.students || []).map(s => {
         if (s.id === selectedItem.id) {
           return {
             ...s,
@@ -155,12 +157,17 @@ export default function RoleManagementModule({ state, setState }) {
         return s;
       });
 
-      setState(prev => ({
-        ...prev,
+      newState = {
+        ...state,
         students: updatedStudents
-      }));
+      };
 
       setFeedback({ type: 'success', text: `Berhasil memperbarui data siswa: ${studentForm.name}` });
+    }
+
+    if (newState) {
+      setState(newState);
+      saveSchoolState(newState).catch(err => console.warn('Sync error saving student:', err));
     }
 
     setModalType(null);
@@ -168,12 +175,14 @@ export default function RoleManagementModule({ state, setState }) {
 
   const handleDeleteStudent = (studentId, studentName) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus data siswa "${studentName}"?`)) {
-      setState(prev => ({
-        ...prev,
-        students: prev.students.filter(s => s.id !== studentId),
-        loginAccounts: (prev.loginAccounts || []).filter(a => a.studentId !== studentId)
-      }));
+      const newState = {
+        ...state,
+        students: (state.students || []).filter(s => s.id !== studentId),
+        loginAccounts: (state.loginAccounts || []).filter(a => a.studentId !== studentId)
+      };
+      setState(newState);
       setFeedback({ type: 'success', text: `Siswa "${studentName}" berhasil dihapus.` });
+      saveSchoolState(newState).catch(err => console.warn('Sync error deleting student:', err));
     }
   };
 
@@ -210,10 +219,11 @@ export default function RoleManagementModule({ state, setState }) {
     }
 
     const cleanUsername = accountForm.username.trim().toLowerCase();
+    let newState = null;
 
     if (modalType === 'ADD_ACCOUNT') {
       // Check duplicate username
-      const exists = (state.loginAccounts || []).some(a => a.username === cleanUsername);
+      const exists = (state.loginAccounts || []).some(a => (a.username || '').toLowerCase() === cleanUsername);
       if (exists) {
         setFeedback({ type: 'error', text: `Username "${cleanUsername}" sudah digunakan!` });
         return;
@@ -227,12 +237,12 @@ export default function RoleManagementModule({ state, setState }) {
         roleId: accountForm.roleId
       };
 
-      setState(prev => ({
-        ...prev,
-        loginAccounts: [...(prev.loginAccounts || []), newAccount]
-      }));
+      newState = {
+        ...state,
+        loginAccounts: [...(state.loginAccounts || []), newAccount]
+      };
 
-      const roleLabel = accountForm.roleId === 'ADMIN_KEUANGAN' ? 'Admin Keuangan' : 'Kasir Kantin';
+      const roleLabel = accountForm.roleId === 'ADMIN_KEUANGAN' ? 'Admin Keuangan' : accountForm.roleId === 'ADMIN_PENJEMPUTAN' ? 'Admin Penjemputan' : 'Kasir Kantin';
       setFeedback({ type: 'success', text: `Berhasil menambahkan akun ${roleLabel}: ${cleanUsername}` });
     } else if (modalType === 'EDIT_ACCOUNT' && selectedItem) {
       const updatedAccounts = (state.loginAccounts || []).map(a => {
@@ -241,18 +251,24 @@ export default function RoleManagementModule({ state, setState }) {
             ...a,
             username: cleanUsername,
             name: accountForm.name.trim() || cleanUsername,
-            password: accountForm.password.trim()
+            password: accountForm.password.trim(),
+            roleId: accountForm.roleId || a.roleId
           };
         }
         return a;
       });
 
-      setState(prev => ({
-        ...prev,
+      newState = {
+        ...state,
         loginAccounts: updatedAccounts
-      }));
+      };
 
       setFeedback({ type: 'success', text: `Berhasil memperbarui data akun: ${cleanUsername}` });
+    }
+
+    if (newState) {
+      setState(newState);
+      saveSchoolState(newState).catch(err => console.warn('Sync error saving account:', err));
     }
 
     setModalType(null);
@@ -260,11 +276,13 @@ export default function RoleManagementModule({ state, setState }) {
 
   const handleDeleteAccount = (accId, username) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus akun "${username}"?`)) {
-      setState(prev => ({
-        ...prev,
-        loginAccounts: (prev.loginAccounts || []).filter(a => a.id !== accId)
-      }));
+      const newState = {
+        ...state,
+        loginAccounts: (state.loginAccounts || []).filter(a => a.id !== accId)
+      };
+      setState(newState);
       setFeedback({ type: 'success', text: `Akun "${username}" berhasil dihapus.` });
+      saveSchoolState(newState).catch(err => console.warn('Sync error deleting account:', err));
     }
   };
 
