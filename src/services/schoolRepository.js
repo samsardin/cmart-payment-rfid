@@ -31,8 +31,11 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.gender) mapped.gender = 'L';
     if (!mapped.canteen_balance_source) mapped.canteen_balance_source = 'TABUNGAN';
     if (!mapped.status) mapped.status = 'AKTIF';
-    mapped.savings_balance = Number(mapped.savings_balance) || 0;
-    mapped.canteen_deposit_balance = Number(mapped.canteen_deposit_balance) || 0;
+
+    const savBal = row.savingsBalance ?? row.savings_balance ?? row.savingsbalance ?? 0;
+    const depBal = row.canteenDepositBalance ?? row.canteen_deposit_balance ?? row.canteendepositbalance ?? 0;
+    mapped.savings_balance = Number(savBal) || 0;
+    mapped.canteen_deposit_balance = Number(depBal) || 0;
 
     // Ensure rfid_uid and rfid_card_uid are both clean string or NULL
     const cleanRfid = (mapped.rfid_uid && typeof mapped.rfid_uid === 'string' && mapped.rfid_uid.trim() !== '') 
@@ -542,6 +545,21 @@ export async function saveLedgerTransactionToSupabase(newTx, newAudit = null, up
         if (retryStErr) {
           console.error(`Retry upsert student ${updatedStudent.name} failed:`, retryStErr);
         }
+      }
+
+      // Explicit direct UPDATE by ID to guarantee student balances are forced into Supabase
+      const { error: directUpdateErr } = await supabase
+        .from('students')
+        .update({
+          savings_balance: dbStudent.savings_balance,
+          canteen_deposit_balance: dbStudent.canteen_deposit_balance,
+          rfid_uid: dbStudent.rfid_uid,
+          rfid_card_uid: dbStudent.rfid_card_uid
+        })
+        .eq('id', dbStudent.id);
+
+      if (directUpdateErr) {
+        console.warn(`Direct update student balance ${dbStudent.id} warning:`, directUpdateErr);
       }
     }
 
