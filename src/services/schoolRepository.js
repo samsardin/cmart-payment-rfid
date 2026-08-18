@@ -203,13 +203,32 @@ export async function saveSchoolState(state) {
             console.warn(`Exception upserting account ${r.username}:`, accExc);
           }
         }
+      } else if (tableName === 'students') {
+        const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
+        const { error } = await supabase.from(tableName).upsert(dbRows);
+        if (error) {
+          console.warn(`Batch upsert students returned error (${error.message}), falling back to row-by-row:`, error);
+          for (const dbRow of dbRows) {
+            try {
+              const { error: rowErr } = await supabase.from(tableName).upsert(dbRow);
+              if (rowErr) {
+                console.error(`Failed upserting student ${dbRow.name} (${dbRow.id}):`, rowErr);
+              }
+            } catch (e) {}
+          }
+        } else {
+          const activeIds = rows.map(r => r.id).filter(Boolean);
+          if (activeIds.length > 0) {
+            const formattedIds = activeIds.join(',');
+            await supabase.from(tableName).delete().not('id', 'in', `(${formattedIds})`);
+          }
+        }
       } else {
         const dbRows = rows.map(r => toDatabaseRow(r, stateKey));
         const { error } = await supabase.from(tableName).upsert(dbRows);
         if (error) {
           console.error(`Error saving ${stateKey} to Supabase table ${tableName}:`, error);
         } else {
-          // Purge obsolete rows in Supabase for non-auth tables
           const activeIds = rows.map(r => r.id).filter(Boolean);
           if (activeIds.length > 0) {
             const formattedIds = activeIds.join(',');

@@ -38,24 +38,28 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     const localMap = new Map(localRows.map((row) => [row.id, row]));
 
     if (collection === 'students') {
-      const mergedStudents = cloudRows.map((cloudStudent) => {
-        const localStudent = localMap.get(cloudStudent.id);
-        if (!localStudent) return cloudStudent;
-        return {
-          ...cloudStudent,
-          ...localStudent,
-          savingsBalance: localStudent.savingsBalance !== undefined ? Number(localStudent.savingsBalance) : Number(cloudStudent.savingsBalance || 0),
-          canteenDepositBalance: localStudent.canteenDepositBalance !== undefined ? Number(localStudent.canteenDepositBalance) : Number(cloudStudent.canteenDepositBalance || 0),
-          rfidUid: localStudent.rfidUid || cloudStudent.rfidUid
-        };
+      const mergedStudentsMap = new Map();
+      cloudRows.forEach(cStudent => {
+        if (cStudent && cStudent.id) {
+          mergedStudentsMap.set(cStudent.id, cStudent);
+        }
       });
-
-      const cloudIds = new Set(cloudRows.map((row) => row.id));
-      const brandNewLocalStudents = localRows.filter((row) => !cloudIds.has(row.id));
+      localRows.forEach(lStudent => {
+        if (lStudent && lStudent.id) {
+          const existingCloud = mergedStudentsMap.get(lStudent.id) || {};
+          mergedStudentsMap.set(lStudent.id, {
+            ...existingCloud,
+            ...lStudent,
+            savingsBalance: lStudent.savingsBalance !== undefined ? Number(lStudent.savingsBalance) : Number(existingCloud.savingsBalance || 0),
+            canteenDepositBalance: lStudent.canteenDepositBalance !== undefined ? Number(lStudent.canteenDepositBalance) : Number(existingCloud.canteenDepositBalance || 0),
+            rfidUid: lStudent.rfidUid || existingCloud.rfidUid
+          });
+        }
+      });
 
       return {
         ...mergedState,
-        students: [...mergedStudents, ...brandNewLocalStudents]
+        students: Array.from(mergedStudentsMap.values())
       };
     }
 
