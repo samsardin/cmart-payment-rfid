@@ -21,7 +21,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   const [newCardUid, setNewCardUid] = useState(scannedCardUid || '');
   const [newCardType, setNewCardType] = useState('SISWA');
   const [newCardAssignedTo, setNewCardAssignedTo] = useState(state.students[0]?.id || '');
-  const [isNewOwner, setIsNewOwner] = useState(true);
+  const [isNewOwner, setIsNewOwner] = useState(false);
   const [newOwnerName, setNewOwnerName] = useState('');
   const [newOwnerNis, setNewOwnerNis] = useState('');
   const [newOwnerClass, setNewOwnerClass] = useState('');
@@ -1583,14 +1583,46 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                 </div>
 
                 {!isNewOwner ? (
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ display: 'grid', gap: '0.65rem' }}>
+                    <select
+                      className="form-input"
+                      style={{ fontWeight: 700, padding: '0.65rem 0.85rem', fontSize: '0.9rem', borderRadius: 'var(--radius-md)', background: '#f8fafc', border: '1.5px solid var(--primary-500)' }}
+                      value={newCardAssignedTo}
+                      onChange={(e) => {
+                        const selId = e.target.value;
+                        setNewCardAssignedTo(selId);
+                        setIsNewOwner(false);
+                        if (newCardType === 'SISWA') {
+                          const st = (state.students || []).find(s => s.id === selId);
+                          if (st) setOwnerSearchQuery(`${st.name} (${st.class}) - NIS: ${st.nis}`);
+                        } else {
+                          const gd = (state.guardians || []).find(g => g.id === selId);
+                          if (gd) setOwnerSearchQuery(`${gd.name} (${gd.relationship})`);
+                        }
+                      }}
+                    >
+                      <option value="">-- Klik Untuk Pilih {newCardType === 'SISWA' ? 'Siswa' : 'Orang Tua / Wali'} Dari Daftar --</option>
+                      {newCardType === 'SISWA'
+                        ? (state.students || []).map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} (Kelas {s.class}) - NIS: {s.nis} {s.rfidUid ? `[RFID: ${s.rfidUid}]` : '[Belum Ada RFID]'}
+                            </option>
+                          ))
+                        : (state.guardians || []).map(g => (
+                            <option key={g.id} value={g.id}>
+                              {g.name} ({g.relationship}) - Telp: {g.phone || '-'}
+                            </option>
+                          ))
+                      }
+                    </select>
+
                     <div style={{ position: 'relative' }}>
                       <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
                       <input
                         ref={ownerSearchInputRef}
                         type="text"
                         className="form-input"
-                        placeholder={newCardType === 'SISWA' ? "ketik nama/nis" : "ketik nama/hp"}
+                        placeholder={newCardType === 'SISWA' ? "Atau pencarian cepat nama/NIS..." : "Atau pencarian cepat nama/no HP..."}
                         style={{ paddingLeft: '36px', paddingRight: ownerSearchQuery ? '36px' : '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)' }}
                         value={ownerSearchQuery}
                         onFocus={(e) => {
@@ -1601,7 +1633,6 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                           setOwnerSearchQuery(e.target.value);
                           setIsOwnerDropdownOpen(true);
                         }}
-                        autoFocus
                       />
                       {ownerSearchQuery && (
                         <button
@@ -1987,6 +2018,25 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn btn-gold btn-sm"
+                            onClick={() => {
+                              setNewCardType('SISWA');
+                              setNewCardAssignedTo(s.id);
+                              setIsNewOwner(false);
+                              setOwnerSearchQuery(`${s.name} (${s.class}) - NIS: ${s.nis}`);
+                              setActiveSubTab('rfid');
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              setTimeout(() => {
+                                if (uidInputRef.current) uidInputRef.current.focus();
+                              }, 200);
+                            }}
+                            style={{ fontWeight: 700, fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                            title="Daftarkan Kartu RFID fisik untuk siswa ini secara cepat"
+                          >
+                            <CreditCard size={13} /> {s.rfidUid ? 'Ganti RFID' : '+ Tap RFID'}
+                          </button>
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
