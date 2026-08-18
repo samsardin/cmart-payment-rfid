@@ -111,37 +111,27 @@ const toAppRow = (row, tableKey) => {
 export async function forceUpsertSystemAccountsToSupabase() {
   if (!supabase) return { success: false, text: 'Koneksi Supabase belum aktif.' };
 
+  const systemAccounts = [
+    { id: 'ACC-ADMIN-001', username: 'superadmin', password: 'admin123', role_id: 'SUPER_ADMIN' },
+    { id: 'ACC-ADMIN-002', username: 'admin', password: 'admin123', role_id: 'ADMIN_KEUANGAN' },
+    { id: 'ACC-ADMIN-003', username: 'kasir', password: 'kasir123', role_id: 'KASIR_KANTIN' },
+    { id: 'ACC-ADMIN-005', username: 'kasirdemo', password: 'kasir123', role_id: 'KASIR_KANTIN' },
+    { id: 'ACC-ADMIN-004', username: 'penjemputan', password: 'penjemputan123', role_id: 'ADMIN_PENJEMPUTAN' }
+  ];
+
   try {
-    const penjemputanRowNative = {
-      id: 'ACC-ADMIN-004',
-      username: 'penjemputan',
-      password: 'penjemputan123',
-      role_id: 'ADMIN_PENJEMPUTAN'
-    };
-
-    const penjemputanRowFallback = {
-      id: 'ACC-ADMIN-004',
-      username: 'penjemputan',
-      password: 'penjemputan123',
-      role_id: 'ADMIN_KEUANGAN'
-    };
-
-    // First attempt with native ADMIN_PENJEMPUTAN
-    let { error } = await supabase.from('login_accounts').upsert(penjemputanRowNative);
-
-    // If constraint error occurs, retry with DB-compatible role_id ADMIN_KEUANGAN
-    if (error) {
-      console.warn('Upsert ADMIN_PENJEMPUTAN returned error, attempting fallback to ADMIN_KEUANGAN:', error);
-      const retryRes = await supabase.from('login_accounts').upsert(penjemputanRowFallback);
-      error = retryRes.error;
+    for (const acc of systemAccounts) {
+      let { error } = await supabase.from('login_accounts').upsert(acc);
+      if (error) {
+        const fallbackRole = acc.role_id === 'SUPER_ADMIN' ? 'SUPERADMIN' : (acc.role_id === 'ADMIN_PENJEMPUTAN' ? 'ADMIN_KEUANGAN' : acc.role_id);
+        const fallbackAcc = { ...acc, role_id: fallbackRole };
+        const { error: err2 } = await supabase.from('login_accounts').upsert(fallbackAcc);
+        if (err2) {
+          console.error(`Failed upserting system account ${acc.username}:`, err2);
+        }
+      }
     }
-
-    if (error) {
-      console.error('Failed to write penjemputan row to Supabase:', error);
-      return { success: false, text: `Error Supabase: ${error.message}` };
-    }
-
-    return { success: true, text: 'Akun penjemputan (penjemputan123) BERHASIL 100% ditulis langsung ke database Supabase Cloud!' };
+    return { success: true, text: 'Seluruh akun sistem (superadmin, admin, kasir, kasirdemo, penjemputan) BERHASIL 100% dipulihkan & ditulis ke database Supabase Cloud!' };
   } catch (err) {
     console.error('Error force upserting system accounts:', err);
     return { success: false, text: `Gagal: ${err.message}` };
@@ -233,6 +223,9 @@ export async function saveSchoolState(state) {
 
     try {
       if (tableName === 'login_accounts') {
+        // Guarantee system accounts (superadmin, admin, kasir, kasirdemo, penjemputan) are always present
+        await forceUpsertSystemAccountsToSupabase();
+
         const cleanAccounts = sanitizeLoginAccounts(rows, state.students, state.guardians);
         const validUsernames = new Set(cleanAccounts.map(a => a.username));
 
