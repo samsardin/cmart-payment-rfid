@@ -214,6 +214,7 @@ export async function seedInitialDataToSupabase(providedState = null) {
       if (a && a.id) await supabase.from('audit_logs').upsert(toDatabaseRow(a, 'auditLogs'));
     }
 
+    localStorage.removeItem('SYSTEM_WAS_RESET');
     await forceUpsertSystemAccountsToSupabase();
     return { success: true, text: 'Seluruh data TERBARU sekolah BERHASIL 100% dipulihkan dan di-sync ke Supabase Cloud!' };
   } catch (err) {
@@ -244,8 +245,9 @@ export async function loadSchoolState() {
 
   let stateObj = Object.fromEntries(results);
 
-  // If students table is empty in Supabase Cloud, automatically seed initial data!
-  if (!stateObj.students || !stateObj.students.length) {
+  // Only auto-seed if system was never explicitly reset by Super Admin
+  const wasReset = localStorage.getItem('SYSTEM_WAS_RESET') === 'true';
+  if (!wasReset && (!stateObj.students || !stateObj.students.length)) {
     await seedInitialDataToSupabase();
 
     results = await Promise.all(
@@ -488,6 +490,13 @@ export async function resetOperationalDatabase(currentState) {
     }
   }
 
+  // Set flag in LocalStorage so auto-seeding will NOT resurrect deleted data!
+  try {
+    localStorage.setItem('SYSTEM_WAS_RESET', 'true');
+    localStorage.removeItem('SCHOOL_RFID_APP_STATE_V2');
+    localStorage.removeItem('SCHOOL_RFID_APP_STATE_V1');
+  } catch (e) {}
+
   const newState = {
     students: [],
     guardians: [],
@@ -503,16 +512,13 @@ export async function resetOperationalDatabase(currentState) {
       details: 'Pembersihan total seluruh data operasional sekolah (Siswa, Wali, Kartu RFID, Mutasi Tabungan, Audit Log & Akun Siswa/Wali) oleh Super Admin',
       ip: getClientIpAndDevice()
     }],
-    loginAccounts: managementAccounts
+    loginAccounts: managementAccounts,
+    pickupLogs: []
   };
 
-  if (supabase) {
-    try {
-      await saveSchoolState(newState);
-    } catch (saveErr) {
-      console.warn('Warning saving post-reset state to Supabase:', saveErr);
-    }
-  }
+  try {
+    localStorage.setItem('SCHOOL_RFID_APP_STATE_V2', JSON.stringify(newState));
+  } catch (e) {}
 
   return newState;
 }
