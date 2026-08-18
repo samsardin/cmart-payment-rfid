@@ -24,12 +24,17 @@ const toDatabaseRow = (row, tableKey) => {
     if (!mapped.gender) mapped.gender = 'L';
     if (!mapped.canteen_balance_source) mapped.canteen_balance_source = 'TABUNGAN';
     if (!mapped.status) mapped.status = 'AKTIF';
-    if (mapped.savings_balance === undefined || mapped.savings_balance === null) mapped.savings_balance = 0;
-    if (mapped.canteen_deposit_balance === undefined || mapped.canteen_deposit_balance === null) mapped.canteen_deposit_balance = 0;
+    mapped.savings_balance = Number(mapped.savings_balance) || 0;
+    mapped.canteen_deposit_balance = Number(mapped.canteen_deposit_balance) || 0;
 
     // Ensure guardian_id is NULL if empty string, preventing FK constraint errors in Supabase
     if (!mapped.guardian_id || typeof mapped.guardian_id !== 'string' || mapped.guardian_id.trim() === '') {
       mapped.guardian_id = null;
+    }
+
+    // Ensure rfid_uid is NULL if empty string, preventing UNIQUE constraint errors in Supabase
+    if (!mapped.rfid_uid || typeof mapped.rfid_uid !== 'string' || mapped.rfid_uid.trim() === '') {
+      mapped.rfid_uid = null;
     }
 
     // Guarantee non-empty unique NIS
@@ -265,8 +270,8 @@ export async function saveSchoolState(state) {
             try {
               let { error: rowErr } = await supabase.from(tableName).upsert(dbRow);
               if (rowErr) {
-                console.warn(`Upsert student ${dbRow.name} failed (${rowErr.message}), retrying with guardian_id = null...`);
-                const retryRow = { ...dbRow, guardian_id: null };
+                console.warn(`Upsert student ${dbRow.name} failed (${rowErr.message}), retrying with guardian_id = null and rfid_uid = null...`);
+                const retryRow = { ...dbRow, guardian_id: null, rfid_uid: null };
                 const { error: retryErr } = await supabase.from(tableName).upsert(retryRow);
                 if (retryErr) {
                   console.error(`Failed upserting student ${dbRow.name} (${dbRow.id}):`, retryErr);
