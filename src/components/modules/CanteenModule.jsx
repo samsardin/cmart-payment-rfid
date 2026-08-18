@@ -90,8 +90,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
   // Derived canteen transaction history sorted NEWEST FIRST (timestamp DESC)
   const canteenLedgerHistory = useMemo(() => {
     if (!Array.isArray(state.ledger)) return [];
-    const fixedLedger = recalculateLedgerRunningBalances(state.ledger, state.students);
-    return [...fixedLedger]
+    return [...state.ledger]
       .filter(l => (
         l.category === 'BELANJA_KANTIN_RFID' ||
         l.accountType === 'DEPOSIT_KANTIN' ||
@@ -99,7 +98,7 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
         l.category === 'PENARIKAN_DEPOSIT_KANTIN'
       ))
       .sort((a, b) => parseTimestampMs(b.timestamp) - parseTimestampMs(a.timestamp));
-  }, [state.ledger, state.students]);
+  }, [state.ledger]);
 
   // Keep activeStudent synced with latest state.students
   useEffect(() => {
