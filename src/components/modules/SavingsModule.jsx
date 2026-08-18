@@ -311,12 +311,12 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
   const [studentHistoryTab, setStudentHistoryTab] = useState('ALL');
 
   const studentTransactionHistory = useMemo(() => (
-    activeStudent
+    currentActiveStudent
       ? state.ledger
-        .filter((transaction) => transaction.studentId === activeStudent.id)
+        .filter((transaction) => (transaction.studentId === currentActiveStudent.id || transaction.student_id === currentActiveStudent.id))
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
       : []
-  ), [state.ledger, activeStudent]);
+  ), [state.ledger, currentActiveStudent]);
 
   const studentSavingsHistory = useMemo(() => (
     studentTransactionHistory.filter(t => t.accountType === 'TABUNGAN')

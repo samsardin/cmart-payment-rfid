@@ -202,6 +202,12 @@ export default function App() {
     }
   });
 
+  // Ref tracking the latest state in memory to prevent stale localState reads during cloud sync
+  const latestStateRef = useRef(state);
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
+
   // Ref tracking the baseline JSON signature of state synced with Supabase Cloud
   const lastSyncedStateRef = useRef(null);
 
@@ -211,12 +217,7 @@ export default function App() {
       .then(() => loadSchoolState())
       .then((cloudState) => {
         if (cloudState) {
-          let localState = state;
-          try {
-            const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (saved) localState = JSON.parse(saved);
-          } catch (e) {}
-
+          const localState = latestStateRef.current || state;
           const merged = mergeLocalDataIntoCloud(cloudState, localState || {});
 
           const cloudAccounts = merged.loginAccounts || [];
