@@ -9,6 +9,7 @@ import { executeLedgerTransaction } from '../../services/ledgerEngine';
 import { verifyRfidCard, checkIdempotency, playRfidBeep } from '../../services/rfidService';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
+import { saveSchoolState } from '../../services/schoolRepository';
 
 export default function SavingsModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
   // activeStudent is null by default until an RFID card is scanned or student is selected manually
@@ -250,14 +251,21 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
         description: description || (transactionType === 'CREDIT' ? 'Setoran Tabungan/Deposit' : 'Penarikan Tunai')
       });
 
-      setState(prev => ({
-        ...prev,
+      const newState = {
+        ...state,
         students: result.updatedStudents,
-        ledger: [result.newTransaction, ...prev.ledger],
-        auditLogs: [result.newAudit, ...prev.auditLogs]
-      }));
+        ledger: [result.newTransaction, ...state.ledger],
+        auditLogs: [result.newAudit, ...state.auditLogs]
+      };
 
-      setActiveStudent(result.updatedStudents.find(s => s.id === activeStudent.id));
+      setState(newState);
+
+      const updatedActive = result.updatedStudents.find(s => s.id === activeStudent.id);
+      if (updatedActive) {
+        setActiveStudent({ ...updatedActive });
+      }
+
+      saveSchoolState(newState).catch(err => console.warn('Sync error saving transaction:', err));
 
       if (transactionType === 'CREDIT') {
         try {

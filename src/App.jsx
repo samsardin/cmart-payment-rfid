@@ -44,8 +44,8 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
         return {
           ...cloudStudent,
           ...localStudent,
-          savingsBalance: Math.max(Number(cloudStudent.savingsBalance) || 0, Number(localStudent.savingsBalance) || 0),
-          canteenDepositBalance: Math.max(Number(cloudStudent.canteenDepositBalance) || 0, Number(localStudent.canteenDepositBalance) || 0),
+          savingsBalance: localStudent.savingsBalance !== undefined ? Number(localStudent.savingsBalance) : Number(cloudStudent.savingsBalance || 0),
+          canteenDepositBalance: localStudent.canteenDepositBalance !== undefined ? Number(localStudent.canteenDepositBalance) : Number(cloudStudent.canteenDepositBalance || 0),
           rfidUid: localStudent.rfidUid || cloudStudent.rfidUid
         };
       });
@@ -56,6 +56,23 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
       return {
         ...mergedState,
         students: [...mergedStudents, ...brandNewLocalStudents]
+      };
+    }
+
+    if (collection === 'ledger' || collection === 'auditLogs') {
+      const rowMap = new Map();
+      cloudRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
+      localRows.forEach(r => { if (r && r.id) rowMap.set(r.id, r); });
+
+      const sortedRows = Array.from(rowMap.values()).sort((a, b) => {
+        const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return tB - tA;
+      });
+
+      return {
+        ...mergedState,
+        [collection]: sortedRows
       };
     }
 

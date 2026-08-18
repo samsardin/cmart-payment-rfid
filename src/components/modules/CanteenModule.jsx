@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { verifyRfidCard, checkIdempotency } from '../../services/rfidService';
 import { executeLedgerTransaction } from '../../services/ledgerEngine';
+import { saveSchoolState } from '../../services/schoolRepository';
 
 export default function CanteenModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
   const [activeStudent, setActiveStudent] = useState(null);
@@ -139,15 +140,20 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
         description: `Pembayaran Kantin RFID Rp ${paymentAmount.toLocaleString('id-ID')}`
       });
 
-      // Update state
-      setState(prev => ({
-        ...prev,
+      const newState = {
+        ...state,
         students: result.updatedStudents,
-        ledger: [result.newTransaction, ...prev.ledger],
-        auditLogs: [result.newAudit, ...prev.auditLogs]
-      }));
+        ledger: [result.newTransaction, ...state.ledger],
+        auditLogs: [result.newAudit, ...state.auditLogs]
+      };
+
+      setState(newState);
+      saveSchoolState(newState).catch(err => console.warn('Sync error saving canteen transaction:', err));
 
       const updatedStudent = result.updatedStudents.find(s => s.id === activeStudent.id);
+      if (updatedStudent) {
+        setActiveStudent({ ...updatedStudent });
+      }
 
       // Generate Digital Receipt
       setReceipt({
