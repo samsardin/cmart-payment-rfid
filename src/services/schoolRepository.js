@@ -109,6 +109,8 @@ const toAppRow = (row, tableKey) => {
   }
 
   if (tableKey === 'students') {
+    mapped.savingsBalance = Number(row.savings_balance ?? row.savingsbalance ?? mapped.savingsBalance) || 0;
+    mapped.canteenDepositBalance = Number(row.canteen_deposit_balance ?? row.canteendepositbalance ?? mapped.canteenDepositBalance) || 0;
     if (!mapped.rfidUid && (row.rfid_uid || row.rfiduid || row.rfid_card_uid)) {
       mapped.rfidUid = row.rfid_uid || row.rfiduid || row.rfid_card_uid;
     }

@@ -85,8 +85,36 @@ function mergeLocalDataIntoCloud(cloudState, localState) {
     ...LOGIN_ACCOUNTS.filter(defaultAcc => !cloudUsernames.has(defaultAcc.username))
   ];
 
-  // Harmonize student balances (savingsBalance & canteenDepositBalance) with ledger history
-  mergedState.students = harmonizeStudentBalancesWithLedger(mergedState.students || [], mergedState.ledger || []);
+  // Ensure student balances in UI match Supabase Cloud students table 100%, plus any local unsynced transactions in RAM.
+  const unsyncedTxMap = new Map();
+  localUnsyncedLedger.forEach(tx => {
+    const sId = tx.studentId || tx.student_id;
+    if (!sId) return;
+    const accType = tx.accountType || 'TABUNGAN';
+    const key = `${sId}_${accType}`;
+    unsyncedTxMap.set(key, Number(tx.balanceAfter ?? tx.balance_after));
+  });
+
+  mergedState.students = mergedStudents.map(student => {
+    let savingsBalance = Number(student.savingsBalance ?? student.savings_balance) || 0;
+    let canteenDepositBalance = Number(student.canteenDepositBalance ?? student.canteen_deposit_balance) || 0;
+
+    const savKey = `${student.id}_TABUNGAN`;
+    if (unsyncedTxMap.has(savKey)) {
+      savingsBalance = unsyncedTxMap.get(savKey);
+    }
+
+    const depKey = `${student.id}_DEPOSIT_KANTIN`;
+    if (unsyncedTxMap.has(depKey)) {
+      canteenDepositBalance = unsyncedTxMap.get(depKey);
+    }
+
+    return {
+      ...student,
+      savingsBalance: Math.max(0, savingsBalance),
+      canteenDepositBalance: Math.max(0, canteenDepositBalance)
+    };
+  });
 
   // Auto-repair Zahfan's last transaction timestamp to exact local time 20.18.55
   if (Array.isArray(mergedState.ledger)) {
