@@ -149,37 +149,73 @@ export async function forceUpsertSystemAccountsToSupabase() {
   }
 }
 
-export async function seedInitialDataToSupabase() {
+export async function seedInitialDataToSupabase(providedState = null) {
   if (!supabase) return { success: false, text: 'Koneksi Supabase belum aktif.' };
+
+  let targetState = providedState;
+
+  // 1. Check if user's LocalStorage contains their latest production data
+  if (!targetState) {
+    try {
+      const saved = localStorage.getItem('SCHOOL_RFID_APP_STATE_V2') || localStorage.getItem('SCHOOL_RFID_APP_STATE_V1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.students) && parsed.students.length > 0) {
+          targetState = parsed;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2. Prioritize user's latest state over initial mock data
+  const studentsToSeed = (targetState && Array.isArray(targetState.students) && targetState.students.length > 0)
+    ? targetState.students
+    : INITIAL_STUDENTS;
+
+  const guardiansToSeed = (targetState && Array.isArray(targetState.guardians) && targetState.guardians.length > 0)
+    ? targetState.guardians
+    : INITIAL_GUARDIANS;
+
+  const rfidCardsToSeed = (targetState && Array.isArray(targetState.rfidCards) && targetState.rfidCards.length > 0)
+    ? targetState.rfidCards
+    : INITIAL_RFID_CARDS;
+
+  const ledgerToSeed = (targetState && Array.isArray(targetState.ledger) && targetState.ledger.length > 0)
+    ? targetState.ledger
+    : INITIAL_LEDGER;
+
+  const auditLogsToSeed = (targetState && Array.isArray(targetState.auditLogs))
+    ? targetState.auditLogs
+    : INITIAL_AUDIT_LOGS;
 
   try {
     // 1. Seed Guardians
-    for (const g of INITIAL_GUARDIANS) {
-      await supabase.from('guardians').upsert(toDatabaseRow(g, 'guardians'));
+    for (const g of guardiansToSeed) {
+      if (g && g.id) await supabase.from('guardians').upsert(toDatabaseRow(g, 'guardians'));
     }
 
     // 2. Seed Students
-    for (const s of INITIAL_STUDENTS) {
-      await supabase.from('students').upsert(toDatabaseRow(s, 'students'));
+    for (const s of studentsToSeed) {
+      if (s && s.id) await supabase.from('students').upsert(toDatabaseRow(s, 'students'));
     }
 
     // 3. Seed RFID Cards
-    for (const c of INITIAL_RFID_CARDS) {
-      await supabase.from('rfid_cards').upsert(toDatabaseRow(c, 'rfidCards'));
+    for (const c of rfidCardsToSeed) {
+      if (c && c.id) await supabase.from('rfid_cards').upsert(toDatabaseRow(c, 'rfidCards'));
     }
 
     // 4. Seed Ledger
-    for (const l of INITIAL_LEDGER) {
-      await supabase.from('ledger').upsert(toDatabaseRow(l, 'ledger'));
+    for (const l of ledgerToSeed) {
+      if (l && l.id) await supabase.from('ledger').upsert(toDatabaseRow(l, 'ledger'));
     }
 
     // 5. Seed Audit Logs
-    for (const a of INITIAL_AUDIT_LOGS) {
-      await supabase.from('audit_logs').upsert(toDatabaseRow(a, 'auditLogs'));
+    for (const a of auditLogsToSeed) {
+      if (a && a.id) await supabase.from('audit_logs').upsert(toDatabaseRow(a, 'auditLogs'));
     }
 
     await forceUpsertSystemAccountsToSupabase();
-    return { success: true, text: 'Seluruh data sekolah (Siswa, Wali, RFID, Ledger, & Akun) BERHASIL 100% dipulihkan dan di-seed ke Supabase Cloud!' };
+    return { success: true, text: 'Seluruh data TERBARU sekolah BERHASIL 100% dipulihkan dan di-sync ke Supabase Cloud!' };
   } catch (err) {
     console.error('Error seeding initial data to Supabase:', err);
     return { success: false, text: `Gagal pemulihan data: ${err.message}` };
