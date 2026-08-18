@@ -489,7 +489,7 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
               </div>
 
               {/* Status Filter Buttons */}
-              <div className="pickup-filter-buttons">
+              <div className="pickup-filter-buttons" style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <button
                   className={`btn btn-sm ${statusFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setStatusFilter('ALL')}
@@ -508,6 +508,24 @@ export default function PickupSystemModule({ state, setState, onOpenRfidModal, s
                 >
                   Selesai ({pickupLogs.filter(p => p.status === 'SUDAH_DIJEMPUT').length})
                 </button>
+                {pickupLogs.some(p => p.status === 'SUDAH_DIJEMPUT') && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      if (window.confirm('Bersihkan riwayat siswa yang SUDAH SELESAI PULANG dari tabel antrean hari ini?')) {
+                        setState(prev => ({
+                          ...prev,
+                          pickupLogs: (prev.pickupLogs || []).filter(p => p.status === 'DIPANGGIL')
+                        }));
+                      }
+                    }}
+                    style={{ fontSize: '0.72rem', color: '#64748b' }}
+                    title="Bersihkan riwayat siswa yang sudah selesai dijemput dari layar antrean"
+                  >
+                    🧹 Bersihkan Selesai
+                  </button>
+                )}
               </div>
             </div>
 
