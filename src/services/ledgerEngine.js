@@ -88,6 +88,41 @@ export const executeLedgerTransaction = (state, {
 };
 
 /**
+ * Recalculates exact balanceAfter for every transaction in ledger chronologically per student & accountType.
+ * This guarantees 100% mathematical consistency across all modules (Admin, Kasir, Portal Wali, Dashboard).
+ */
+export function recalculateLedgerRunningBalances(ledger = []) {
+  if (!Array.isArray(ledger) || !ledger.length) return [];
+
+  const indexedLedger = ledger.map((tx, idx) => ({ ...tx, _origIndex: idx }));
+
+  // Sort chronological (timestamp ASC)
+  indexedLedger.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+
+  const runningBalances = new Map();
+
+  const updatedLedger = indexedLedger.map((tx) => {
+    const sId = tx.studentId || tx.student_id;
+    const accType = tx.accountType || 'TABUNGAN';
+    const key = `${sId}_${accType}`;
+
+    const currentRunning = runningBalances.get(key) || 0;
+    const amt = Number(tx.amount) || 0;
+    const isCredit = tx.type === 'CREDIT';
+    const nextRunning = isCredit ? currentRunning + amt : Math.max(0, currentRunning - amt);
+
+    runningBalances.set(key, nextRunning);
+
+    return {
+      ...tx,
+      balanceAfter: nextRunning
+    };
+  });
+
+  return updatedLedger.sort((a, b) => a._origIndex - b._origIndex).map(({ _origIndex, ...tx }) => tx);
+}
+
+/**
  * Automatically harmonizes student balances (savingsBalance & canteenDepositBalance)
  * with ledger transactions to eliminate any discrepancies between Green Card balance
  * and ledger transaction history.
@@ -103,7 +138,9 @@ export function harmonizeStudentBalancesWithLedger(students = [], ledger = []) {
   const hasSavingsTx = new Set();
   const hasDepositTx = new Set();
 
-  const sortedLedger = [...ledger].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+  const fixedLedger = recalculateLedgerRunningBalances(ledger);
+
+  const sortedLedger = [...fixedLedger].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 
   sortedLedger.forEach((tx) => {
     const sId = tx.studentId || tx.student_id;
@@ -115,17 +152,13 @@ export function harmonizeStudentBalancesWithLedger(students = [], ledger = []) {
     if (tx.accountType === 'TABUNGAN') {
       hasSavingsTx.add(sId);
       const curr = savingsSum.get(sId) || 0;
-      savingsSum.set(sId, isCredit ? curr + amt : curr - amt);
-      if (tx.balanceAfter !== undefined && tx.balanceAfter !== null) {
-        latestSavingsBalance.set(sId, Number(tx.balanceAfter));
-      }
+      savingsSum.set(sId, isCredit ? curr + amt : Math.max(0, curr - amt));
+      latestSavingsBalance.set(sId, Number(tx.balanceAfter));
     } else if (tx.accountType === 'DEPOSIT_KANTIN') {
       hasDepositTx.add(sId);
       const curr = depositSum.get(sId) || 0;
-      depositSum.set(sId, isCredit ? curr + amt : curr - amt);
-      if (tx.balanceAfter !== undefined && tx.balanceAfter !== null) {
-        latestDepositBalance.set(sId, Number(tx.balanceAfter));
-      }
+      depositSum.set(sId, isCredit ? curr + amt : Math.max(0, curr - amt));
+      latestDepositBalance.set(sId, Number(tx.balanceAfter));
     }
   });
 

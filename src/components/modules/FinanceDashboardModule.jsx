@@ -5,6 +5,7 @@ import {
   PiggyBank, BadgeDollarSign, Calendar, FileSpreadsheet, Download, Filter
 } from 'lucide-react';
 import { exportToExcelXlsx } from '../../services/excelExporter';
+import { recalculateLedgerRunningBalances } from '../../services/ledgerEngine';
 
 const MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -34,9 +35,11 @@ export default function FinanceDashboardModule({ state }) {
 
   // Calculate filtered ledger transactions based on time range and selected month/year
   const filteredLedger = useMemo(() => {
+    if (!Array.isArray(state.ledger)) return [];
+    const fixedLedger = recalculateLedgerRunningBalances(state.ledger);
     const now = new Date();
 
-    return (state.ledger || []).filter(tx => {
+    return fixedLedger.filter(tx => {
       if (!tx.timestamp) return false;
       const txDate = new Date(tx.timestamp);
 

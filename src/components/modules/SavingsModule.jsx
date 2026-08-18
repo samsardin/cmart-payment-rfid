@@ -5,7 +5,7 @@ import {
   Coins, Receipt, UserCheck, UserPlus, XCircle, RotateCcw, Sparkles, BookOpen 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { executeLedgerTransaction } from '../../services/ledgerEngine';
+import { executeLedgerTransaction, recalculateLedgerRunningBalances } from '../../services/ledgerEngine';
 import { verifyRfidCard, checkIdempotency, playRfidBeep } from '../../services/rfidService';
 import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
@@ -310,13 +310,13 @@ export default function SavingsModule({ state, setState, onOpenRfidModal, scanne
 
   const [studentHistoryTab, setStudentHistoryTab] = useState('ALL');
 
-  const studentTransactionHistory = useMemo(() => (
-    currentActiveStudent
-      ? state.ledger
-        .filter((transaction) => (transaction.studentId === currentActiveStudent.id || transaction.student_id === currentActiveStudent.id))
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      : []
-  ), [state.ledger, currentActiveStudent]);
+  const studentTransactionHistory = useMemo(() => {
+    if (!currentActiveStudent) return [];
+    const fixedLedger = recalculateLedgerRunningBalances(state.ledger);
+    return fixedLedger
+      .filter((transaction) => (transaction.studentId === currentActiveStudent.id || transaction.student_id === currentActiveStudent.id))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [state.ledger, currentActiveStudent]);
 
   const studentSavingsHistory = useMemo(() => (
     studentTransactionHistory.filter(t => t.accountType === 'TABUNGAN')

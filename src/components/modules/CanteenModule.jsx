@@ -4,7 +4,7 @@ import {
   Calculator, DollarSign, UserCheck, Search, ArrowRight, Receipt, ShieldCheck, Zap, X
 } from 'lucide-react';
 import { verifyRfidCard, checkIdempotency } from '../../services/rfidService';
-import { executeLedgerTransaction } from '../../services/ledgerEngine';
+import { executeLedgerTransaction, recalculateLedgerRunningBalances } from '../../services/ledgerEngine';
 import { saveSchoolState } from '../../services/schoolRepository';
 
 export default function CanteenModule({ state, setState, onOpenRfidModal, scannedCardResult }) {
@@ -89,7 +89,8 @@ export default function CanteenModule({ state, setState, onOpenRfidModal, scanne
   // Derived canteen transaction history sorted NEWEST FIRST (timestamp DESC)
   const canteenLedgerHistory = useMemo(() => {
     if (!Array.isArray(state.ledger)) return [];
-    return [...state.ledger]
+    const fixedLedger = recalculateLedgerRunningBalances(state.ledger);
+    return [...fixedLedger]
       .filter(l => (
         l.category === 'BELANJA_KANTIN_RFID' ||
         l.accountType === 'DEPOSIT_KANTIN' ||
