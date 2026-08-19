@@ -56,7 +56,6 @@ class ErrorBoundary extends React.Component {
             </pre>
             <button 
               onClick={() => {
-                localStorage.clear();
                 window.location.reload();
               }} 
               style={{
