@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { exportToExcelXlsx } from '../../services/excelExporter';
-import { getLocalIsoTimestamp, getLocalTodayDateString } from '../../services/dateUtils';
+import { getLocalIsoTimestamp, getLocalTodayDateString, formatDisplayTimestamp } from '../../services/dateUtils';
 import { getClientIpAndDevice } from '../../services/networkUtils';
 import { resetOperationalDatabase, backupDatabaseJson, backupDatabaseEncrypted, decryptAndParseBackup, restoreDatabaseFromJson, forceUpsertSystemAccountsToSupabase, seedInitialDataToSupabase, deleteGuardian, saveSchoolState, saveRfidCardToSupabase, forcePullStateFromSupabase } from '../../services/schoolRepository';
 
