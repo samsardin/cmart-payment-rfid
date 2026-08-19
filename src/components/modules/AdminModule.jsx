@@ -18,7 +18,7 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
     if (onSubTabChange) onSubTabChange(val);
   };
   const [searchQuery, setSearchQuery] = useState('');
-  const [newCardUid, setNewCardUid] = useState(scannedCardUid || '');
+  const [newCardUid, setNewCardUid] = useState('');
   const [newCardType, setNewCardType] = useState('SISWA');
   const [newCardAssignedTo, setNewCardAssignedTo] = useState(state.students[0]?.id || '');
   const [isNewOwner, setIsNewOwner] = useState(false);
@@ -28,7 +28,29 @@ export default function AdminModule({ state, setState, scannedCardUid, currentRo
   const [newOwnerPhone, setNewOwnerPhone] = useState('');
   const [newOwnerRelationship, setNewOwnerRelationship] = useState('');
   const [feedback, setFeedback] = useState(null);
-  const [lastScannedUid, setLastScannedUid] = useState(scannedCardUid || null);
+  const [lastScannedUid, setLastScannedUid] = useState(null);
+  const prevScannedUidRef = useRef(null);
+
+  // Clear pre-filled input on RFID menu open so form remains empty until a NEW card is tapped
+  useEffect(() => {
+    if (activeSubTab === 'rfid') {
+      setNewCardUid('');
+      setFeedback(null);
+    }
+  }, [activeSubTab]);
+
+  // Only populate newCardUid when a FRESH card scan occurs
+  useEffect(() => {
+    if (scannedCardUid && scannedCardUid !== prevScannedUidRef.current) {
+      setNewCardUid(scannedCardUid);
+      setLastScannedUid(scannedCardUid);
+      setFeedback({
+        type: 'info',
+        text: `📡 Kartu RFID Baru Terdeteksi: ${scannedCardUid}`
+      });
+    }
+    prevScannedUidRef.current = scannedCardUid;
+  }, [scannedCardUid]);
   const [ownerSearchQuery, setOwnerSearchQuery] = useState('');
   const [isOwnerDropdownOpen, setIsOwnerDropdownOpen] = useState(false);
 
